@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 import { withTimeout } from '../utils.mjs';
 import { convert as htmlToText } from 'html-to-text';
 
@@ -79,7 +79,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
   }
 }
 
-const webFetchSchema = z.object({
+const webFetchSchema = createToolSchema({
   url: z.string().describe('The URL to fetch content from'),
 });
 
@@ -88,7 +88,7 @@ export function registerWebFetchTool(server: McpServer): void {
     'web_fetch',
     'Fetches content from a web URL. Supports both public and private/local URLs.',
     webFetchSchema.shape,
-    async ({ url }) => {
+    async ({ reason, url }) => {
       const config = getConfig();
       
       try {
@@ -157,6 +157,7 @@ export function registerWebFetchTool(server: McpServer): void {
           contentType: contentType,
           contentLength: content.length,
           isPrivate: isPrivate,
+          reason: reason,
         };
 
         return {

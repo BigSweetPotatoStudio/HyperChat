@@ -1,18 +1,18 @@
-import type { CoreMessage, TextPart, ImagePart, ToolCallPart } from 'ai';
+import type { ModelMessage, TextPart, ImagePart, ToolCallPart } from 'ai';
 import type { MyMessage } from "@dadigua/hyperchat-shared";
 import { v4 } from "uuid";
-
+import { LanguageModelV2ToolResultOutput } from "@ai-sdk/provider"
 /**
  * 消息转换工具类
  * 负责在不同消息格式之间进行转换
  */
 export class MessageConverter {
   /**
-   * 将 MyMessage 数组转换为 CoreMessage 数组
+   * 将 MyMessage 数组转换为 ModelMessage 数组
    * 支持记忆压缩和多种消息类型
    */
-  static convertToCoreMessages(messages: MyMessage[]): CoreMessage[] {
-    const results: CoreMessage[] = [];
+  static convertToCoreMessages(messages: MyMessage[]): ModelMessage[] {
+    const results: ModelMessage[] = [];
 
     // 查找最后一个成功的记忆消息索引
     const lastMemoryIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
@@ -39,7 +39,7 @@ export class MessageConverter {
   /**
    * 转换单个消息
    */
-  private static convertSingleMessage(message: MyMessage): CoreMessage | null {
+  private static convertSingleMessage(message: MyMessage): ModelMessage | null {
     switch (message.role) {
       case 'tool':
         return this.convertToolMessage(message);
@@ -60,7 +60,7 @@ export class MessageConverter {
   /**
    * 转换工具消息
    */
-  private static convertToolMessage(message: MyMessage): CoreMessage {
+  private static convertToolMessage(message: MyMessage): ModelMessage {
     return {
       role: 'tool',
       content: [
@@ -68,7 +68,12 @@ export class MessageConverter {
           type: 'tool-result',
           toolCallId: message.tool_call_id || "",
           toolName: message.tool_call_name || "",
-          result: message.content as string,
+          output: typeof message.content === "string" ? { type: "text", value: message.content } : {
+            type: 'content',
+            value: message.content.map((item) => {
+              return item.type === 'text' ? { type: 'text', text: item.text } : { type: 'media', mediaType: 'image', data: item.image_url?.url || '' };
+            }),
+          }
         },
       ],
     };
@@ -77,7 +82,7 @@ export class MessageConverter {
   /**
    * 转换记忆消息为用户消息
    */
-  private static convertMemoryMessage(message: MyMessage): CoreMessage {
+  private static convertMemoryMessage(message: MyMessage): ModelMessage {
     const memoryMessage = message as MyMessage & { memory_key_points?: string[] };
     const memoryContent = `[Memory Summary]: ${message.content}${memoryMessage.memory_key_points ? '\n[Key Points]: ' + memoryMessage.memory_key_points.join(', ') : ''
       }`;
@@ -91,7 +96,7 @@ export class MessageConverter {
   /**
    * 转换系统消息
    */
-  private static convertSystemMessage(message: MyMessage): CoreMessage {
+  private static convertSystemMessage(message: MyMessage): ModelMessage {
     return {
       role: 'system',
       content: message.content as string,
@@ -101,7 +106,7 @@ export class MessageConverter {
   /**
    * 转换用户消息
    */
-  private static convertUserMessage(message: MyMessage): CoreMessage {
+  private static convertUserMessage(message: MyMessage): ModelMessage {
     const content: Array<TextPart | ImagePart> = [];
 
     if (typeof message.content === 'string') {
@@ -132,7 +137,7 @@ export class MessageConverter {
   /**
    * 转换助手消息
    */
-  private static convertAssistantMessage(message: MyMessage): CoreMessage {
+  private static convertAssistantMessage(message: MyMessage): ModelMessage {
     const content: Array<TextPart | ToolCallPart> = [];
 
     // 处理文本内容
@@ -155,7 +160,7 @@ export class MessageConverter {
       for (const toolCall of message.content_tool_calls) {
         const toolCallId = toolCall.id || v4();
         content.push({
-          args: toolCall.function.args || {},
+          input: toolCall.function.args || {},
           toolCallId: toolCallId,
           toolName: toolCall.function.name,
           type: "tool-call",

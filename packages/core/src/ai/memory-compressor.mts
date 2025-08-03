@@ -8,43 +8,10 @@ import { Command } from "../command.mjs";
  * Token 计算工具类
  */
 export class TokenCalculator {
-  private static tokenCache = new Map<string, number>();
-  private static readonly CACHE_MAX_SIZE = 1000;
-
-  // 清空缓存
-  static clearCache(): void {
-    this.tokenCache.clear();
-  }
-
-  // 获取缓存大小
-  static getCacheSize(): number {
-    return this.tokenCache.size;
-  }
-
-  // 生成消息的缓存键
-  private static generateCacheKey(message: MyMessage): string {
-    let content = '';
-    if (typeof message.content === 'string') {
-      content = message.content;
-    } else if (Array.isArray(message.content)) {
-      content = JSON.stringify(message.content);
-    }
-    return `${message.role}:${content.substring(0, 100)}:${message.content_usage?.total_tokens || 0}`;
-  }
 
   // 估算消息token数量
   static estimateTokenCount(message: MyMessage): number {
     // 如果消息有实际的token使用统计，优先使用
-    if (message.content_usage?.total_tokens) {
-      return message.content_usage.total_tokens;
-    }
-
-    // 检查缓存
-    const cacheKey = this.generateCacheKey(message);
-    const cachedCount = this.tokenCache.get(cacheKey);
-    if (cachedCount !== undefined) {
-      return cachedCount;
-    }
 
     let content = '';
     if (typeof message.content === 'string') {
@@ -57,53 +24,32 @@ export class TokenCalculator {
       }).join('');
     }
 
-    // 简单估算：1 token ≈ 4 字符（对英文），1 token ≈ 1.5 字符（对中文）
-    // 取平均值：1 token ≈ 2.5 字符
-    const tokenCount = Math.ceil(content.length / 2.5);
-
-    // 缓存结果，但限制缓存大小
-    if (this.tokenCache.size >= this.CACHE_MAX_SIZE) {
-      // 删除最早的缓存条目（简单的LRU策略）
-      const firstKey = this.tokenCache.keys().next().value;
-      if (firstKey) {
-        this.tokenCache.delete(firstKey);
-      }
-    }
-    this.tokenCache.set(cacheKey, tokenCount);
-
-    return tokenCount;
+    return TokenCalculator.estimatePromptTokenCount(content);
   }
 
-  // 计算从指定索引到最后的消息token总数
-  static calculateMessagesTokenCount(messages: MyMessage[], fromIndex: number = 0): number {
+
+  // 计算消息token总数并返回是否包含真实数据
+  static calculateMessagesTokenCountWithType(messages: MyMessage[], prompt: string, fromIndex: number = 0): { totalTokens: number; hasActualTokens: boolean } {
     let totalTokens = 0;
+    let hasActualTokens = false;
+
+
     for (let i = fromIndex; i < messages.length; i++) {
-      const message = messages[i]!;
-      totalTokens += this.estimateTokenCount(message);
+      const message = messages[i];
+      if (message.content_usage?.total_tokens) {
+        totalTokens = message.content_usage.total_tokens;
+        hasActualTokens = true; // 如果有实际的token使用统计，则标记为true
+      } else {
+        totalTokens += TokenCalculator.estimateTokenCount(message);
+      }
     }
-    return totalTokens;
+    const promptTokens = hasActualTokens ? 0 : TokenCalculator.estimatePromptTokenCount(prompt || '');
+    return { totalTokens: promptTokens + totalTokens, hasActualTokens };
   }
 
   // 估算prompt的token数量
   static estimatePromptTokenCount(prompt: string): number {
-    const cacheKey = `prompt:${prompt.substring(0, 100)}`;
-    const cachedCount = this.tokenCache.get(cacheKey);
-    if (cachedCount !== undefined) {
-      return cachedCount;
-    }
-
-    const tokenCount = Math.ceil(prompt.length / 2.5);
-
-    // 缓存结果
-    if (this.tokenCache.size >= this.CACHE_MAX_SIZE) {
-      const firstKey = this.tokenCache.keys().next().value;
-      if (firstKey) {
-        this.tokenCache.delete(firstKey);
-      }
-    }
-    this.tokenCache.set(cacheKey, tokenCount);
-
-    return tokenCount;
+    return Math.ceil(prompt.length / 4);
   }
 }
 
@@ -119,6 +65,18 @@ export interface MemorySummary {
 }
 
 /**
+ * 记忆压缩检查结果
+ */
+export interface MemoryCompressionCheck {
+  shouldCompress: boolean;
+  current: number;
+  max: number;
+  percentage: number;
+  strategy: 'tokens';
+  type: 'estimated' | 'actual'; // 添加类型字段：estimated（估计）或 actual（真实）
+}
+
+/**
  * 记忆压缩器类
  * 负责处理聊天记录的记忆压缩逻辑
  */
@@ -127,62 +85,47 @@ export class MemoryCompressor {
     private generateSummaryFn: (messages: MyMessage[], modelKey: string) => Promise<MemorySummary>
   ) { }
 
-  /**
-   * 获取当前AI设置配置
-   */
-  private async getAISettings(): Promise<AISettings> {
-    const appSettings = await Command.getAppSettings();
-    if (!appSettings.ai) {
-      throw new Error('AI配置未找到');
-    }
-    return appSettings.ai;
-  }
 
   /**
-   * 检查是否需要压缩记忆
+   * 检查是否需要压缩记忆（返回详细信息）
    */
-  shouldCompressMemory(messages: MyMessage[], params: BaseAIConfig): boolean {
-    const strategy = params.compressionStrategy || "tokens";
+  shouldCompressMemory(messages: MyMessage[], params: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "prompt">): MemoryCompressionCheck {
     const lastMemoryIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryIndex === -1 ? 0 : lastMemoryIndex + 1;
 
-    // 基于token数量的压缩策略
-    if (strategy === "tokens") {
-      return this.shouldCompressMemoryByTokens(messages, params, startIndex);
-    }
-
-
-    // 基于对话轮数的压缩策略（原有逻辑）
-    return this.shouldCompressMemoryByDialogs(messages, params, startIndex);
+    // 只使用基于token数量的压缩策略
+    return this.checkCompressByTokens(messages, params, startIndex);
   }
 
   /**
-   * 基于token数量的压缩判断
+   * 基于token数量的压缩检查（返回详细信息）
    */
-  private shouldCompressMemoryByTokens(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
-    const maxTokens = params.maxContextTokens || 36000;
+  private checkCompressByTokens(messages: MyMessage[], params: Pick<BaseAIConfig, "maxContextTokens" | "prompt">, startIndex: number): MemoryCompressionCheck {
+    const maxTokens = params.maxContextTokens || 32000;
 
-    const promptTokens = TokenCalculator.estimatePromptTokenCount(params.prompt);
-    const messageTokens = TokenCalculator.calculateMessagesTokenCount(messages, startIndex);
-    const totalTokens = promptTokens + messageTokens;
+    // 计算消息token并检查是否有真实统计
+    const { totalTokens: messageTokens, hasActualTokens } = TokenCalculator.calculateMessagesTokenCountWithType(messages, params.prompt, startIndex);
+    const currentTokens = messageTokens;
+    const percentage = Math.round((currentTokens / maxTokens) * 100);
+    const shouldCompress = currentTokens >= maxTokens;
 
-    Logger.debug(`Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${totalTokens}, limit=${maxTokens}`);
-    return totalTokens >= maxTokens;
+    // 确定数据类型：如果消息包含真实token统计且prompt使用估计，则为混合（标记为estimated）
+    // 只有当所有数据都是真实的时候才标记为actual
+    const type: 'estimated' | 'actual' = hasActualTokens ? 'actual' : 'estimated';
+
+    Logger.debug(`Token usage: (estimated), messages=${messageTokens}(${hasActualTokens ? 'actual' : 'estimated'}), total=${currentTokens}, limit=${maxTokens}, type=${type}`);
+
+    return {
+      shouldCompress,
+      current: currentTokens,
+      max: maxTokens,
+      percentage,
+      strategy: 'tokens',
+      type
+    };
   }
 
-  /**
-   * 基于对话轮数的压缩判断
-   */
-  private shouldCompressMemoryByDialogs(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
-    let userMessageCount = 0;
-    for (let i = startIndex; i < messages.length; i++) {
-      if (messages[i]!.role === "user") {
-        userMessageCount++;
-      }
-    }
-    const maxDialogs = params.maxAttachedDialogs || 5;
-    return userMessageCount >= maxDialogs;
-  }
+
 
   /**
    * 执行记忆压缩
@@ -196,7 +139,7 @@ export class MemoryCompressor {
     const lastMemoryMessageIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryMessageIndex === -1 ? 0 : lastMemoryMessageIndex;
     let lastMessageIndex = messages.length;
-    if (messages.length > 0 && messages[messages.length - 1].role === "user") { 
+    if (messages.length > 0 && messages[messages.length - 1].role === "user") {
       lastMessageIndex -= 1; // 如果最后一条消息是用户消息，则不参与压缩
     }
     const compressMessagesCount = lastMessageIndex - lastMemoryMessageIndex - 1;

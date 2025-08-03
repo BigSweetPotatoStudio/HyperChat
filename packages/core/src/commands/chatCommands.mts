@@ -5,20 +5,23 @@
 
 import { AiChannel } from "../ai/ai.mjs";
 import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
-import { AgentConfig, BaseAIConfig } from "@dadigua/hyperchat-shared";
+import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getBuiltinPrompts } from "../ai/hyperchat-builtin-prompts.mjs";
 import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 import { Logger } from "../log.mjs";
 import { getWorkspaceManager } from "../workspace/index.mjs";
+import { AgentInstance } from "../agent/agentInstance.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from 'uuid';
 import { z, ZodSchema } from "zod";
 import { buildEffectiveConfig } from "../utils/aiConfigHelper.mjs";
+import { TaskQueue } from "../utils/taskQueue.mjs";
+
 
 // 全局工具确认事件发射器
 const toolConfirmEmitter = new EventEmitter();
-
+const queue = new TaskQueue({ concurrency: 1 });
 /**
  * 聊天完成请求参数
  */
@@ -38,18 +41,20 @@ interface ChatCompletionRequest {
   configOverrides?: Partial<BaseAIConfig>;
   /** SSE 写入器 */
   sseWriter?: SSEWriter;
+  workingPath?: string; // 工作路径（可选）
+  /** 可选的预存在的 AI 通道 */
+  aiChannel?: AiChannel;
 }
 
 
 /**
  * 流式聊天完成
  */
-export async function streamChatCompletion(params: ChatCompletionRequest): Promise<void> {
+export async function streamChatCompletion(params: ChatCompletionRequest): Promise<AiChannel> {
   const {
     sessionId,
     chatKey,
     agentName,
-    agentScope = "workspace",
     messages,
     userMessage,
     configOverrides = {},
@@ -72,31 +77,37 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
       throw new Error("No AI models configured");
     }
 
-    // 获取 Agent 配置
-    let agent = workspace.getAgentInstance(agentName, agentScope);
-
+    let agent = await workspace.getAgentInstance(agentName);
     if (!agent) {
       throw new Error(`Agent not found: ${agentName}`);
     }
+    let WorkspaceMCPManager = workspace.getMcpManager();
+    if (WorkspaceMCPManager !== undefined) {
+      agent.setMcpManager(WorkspaceMCPManager);
+    }
 
     // console.log("Using Agent:", agentName, "agent:", agent);
-    // 合并配置
-    const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), workspace.getSettings().aiConfig, aiSettings);
+    // 合并配置（移除工作区AI配置）
+    const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), undefined, aiSettings);
     // console.log("Effective AI Config:", effectiveConfig);
-    // 创建 AI 通道
-    const aiChannel = new AiChannel({}, [...messages]);
 
-
-
-    // 注册扩展（现在不需要传入任何参数）
-    aiChannel.register();
-
+    // 使用传入的 AI 通道或创建新的
+    let aiChannel = params.aiChannel;
+    if (!aiChannel) {
+      // 创建新的 AI 通道
+      aiChannel = new AiChannel({}, [...messages]);
+      // 注册扩展（现在不需要传入任何参数）
+      aiChannel.register();
+    } else {
+      // 使用现有的 aiChannel，更新消息（如果需要同步）
+      // 这里可能需要根据实际需求决定是否同步消息
+      Logger.debug(`Reusing existing AI channel for sessionId: ${sessionId}`);
+    }
     // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
     const systemPrompt = getBuiltinPrompts(
-      workspace.workspacePath,
       effectiveConfig.prompt,
-      agentName || "",
-      agentScope
+      workspace.workspacePath,
+      agent.getAgentPath()
     ).prompt;
 
     // 调用工具确认回调
@@ -111,16 +122,20 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         sseWriter: sseWriter, // 传递 SSE 写入器
         confirm_call_tool_cb: confirmCallToolCb,
         userMessage: userMessage, // 传递用户消息
+        agentInstance: agent, // 直接传递AgentInstance对象
         onUpdate: async (_updateData?: any) => {
-          await agent.setChatLog({
-            key: chatKey,
-            label: getLabelByFirstUserContent(aiChannel.messages),
-            messages: aiChannel.messages,
-            agentName,
-            dateTime: Date.now(),
-            chatType: "user",
-            configOverrides: effectiveConfig,
+          queue.add(async () => {
+            await agent.setChatLog({
+              key: chatKey,
+              label: getLabelByFirstUserContent(aiChannel.messages),
+              messages: aiChannel.messages,
+              agentName,
+              dateTime: Date.now(),
+              chatType: "user",
+              configOverrides: effectiveConfig,
+            });
           });
+
         },
       },
       {
@@ -133,6 +148,8 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     }).catch(async (error) => {
       Logger.error("Chat completion error:", error);
     });
+
+    return aiChannel;
   } catch (error) {
     Logger.error("Stream chat completion error:", error);
 
@@ -328,6 +345,8 @@ export const chatCommands = {
 
   // AI 结构化解析
   aiCompletionParse,
+
+
 };
 
 export default chatCommands;

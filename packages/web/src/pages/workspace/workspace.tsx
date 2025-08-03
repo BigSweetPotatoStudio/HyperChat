@@ -23,8 +23,7 @@ import { t } from "../../i18n";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
 import { MCPManagementRef } from "../../components/MCPManagement";
 import { AgentManagementRef } from "../../components/AgentManagement";
-import { TaskManagementRef } from "../../components/TaskManagement";
-import { WorkspaceLeftPanel } from "./WorkspaceLeftPanel";
+// WorkspaceLeftPanel removed in simplified layout
 import { WorkspaceMiddlePanel } from "./WorkspaceMiddlePanel";
 import { WorkspaceRightPanel } from "./WorkspaceRightPanel";
 import { WorkspaceOpenModal } from "./WorkspaceOpenForm";
@@ -37,14 +36,11 @@ import {
 } from "./types";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
 import { AgentConfig, MessageData, MessageDataMap } from "@dadigua/hyperchat-shared";
-import { WorkspaceSettingsSchema } from "@dadigua/hyperchat-shared";
 import { AppSettingsSchema, MCPGatewaySchema } from "@dadigua/hyperchat-shared";
 import type { z } from "zod";
 import { ProviderSettings } from "../../components/ProviderSettings";
 import { AppHeader } from "../../components/AppHeader";
 import { AppActions } from "../../components/AppActions";
-
-import { WorkspaceSettings } from "../../components/WorkspaceSettings";
 import { AppSettings } from "../../components/AppSettings";
 import { MCPGatewaysSettings } from "../../components/MCPGatewaysSettings";
 
@@ -70,106 +66,66 @@ export function Workspace() {
   const [drawerStates, setDrawerStates] = useState({
     modelConfig: false,
     appSettings: false,
-    workspaceSettings: false,
     mcpGateways: false,
   });
 
 
   const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("");
 
-  // 新架构：只需要当前工作区信息
+  // 当前工作区状态
   const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceInfo | null>(null);
   const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<CurrentWorkspaceDetails | null>(null);
   const [switchingWorkspace, setSwitchingWorkspace] = useState(false);
 
+  // 工作区切换相关状态
   const [openModalOpen, setOpenModalOpen] = useState(false);
   const [confirmCreateModalOpen, setConfirmCreateModalOpen] = useState(false);
   const [pendingWorkspacePath, setPendingWorkspacePath] = useState<string>("");
-  // 移除了 runningWorkspaces 状态 - 新架构下没有运行工作区概念
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [workspaceHistory, setWorkspaceHistory] = useState<WorkspaceHistoryItem[]>(() => getWorkspaceHistory());
-  // 设置相关状态
-  const [currentSettingsWorkspace, setCurrentSettingsWorkspace] = useState<WorkspaceInfo | null>(null);
-  const [workspaceSettings, setWorkspaceSettings] = useState<z.infer<typeof WorkspaceSettingsSchema> | null>(null);
+  
+  // 应用设置状态
   const [appSettings, setAppSettings] = useState<z.infer<typeof AppSettingsSchema> | null>(null);
-  const [globalWorkspacePath, setGlobalWorkspacePath] = useState<string>('unknown'); // 全局工作区路径
+  const [globalWorkspacePath, setGlobalWorkspacePath] = useState<string>('unknown');
+  
+  
+  // 表单和UI状态
   const [form] = Form.useForm();
-  // 单工作区的标签页状态
   const [chatTabs, setChatTabs] = useState<ChatTab[]>([]);
   const [activeTabKey, setActiveTabKey] = useState<string>("");
 
-  // 单工作区的管理组件 ref
+  // 管理组件引用
   const agentManagementRef = useRef<AgentManagementRef | null>(null);
   const mcpManagementRef = useRef<MCPManagementRef | null>(null);
-  const taskManagementRef = useRef<TaskManagementRef | null>(null);
 
   // 防抖计时器 ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
-  // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
+  // 面板尺寸状态 - 两列布局：中间面板和右侧面板
   const [panelSizes, setPanelSizes] = useState<number[]>(() => {
-    // 初始化时使用默认尺寸（Splitter使用数字）
-    return [25, 50, 25]; // 对应25%、50%、25%
+    // 初始化时使用默认尺寸（移除左侧面板后调整）
+    return [75, 25]; // 对应75%、25%（中间面板，右侧面板）
   });
 
-  // // 监听MCP客户端状态变化
-  // useEffect(() => {
-  //   // 监听传统的 MCP 变化消息（兼容性）
-  //   const unsubscribeChangeMcp = msg_receive("message-from-main", (res: MessageData) => {
-  //     if (res.type === "changeMcpClient") {
-  //       const payload = res.data as MessageDataMap["changeMcpClient"];
 
-  //       // 更新当前工作区的MCP客户端数据
-  //       if (currentWorkspace && payload.workspacePath === currentWorkspace.path) {
-  //         setCurrentWorkspaceDetails(prev => {
-  //           if (!prev) return null;
-  //           const newDetails = { ...prev };
-
-  //           if (payload.status === "deleted") {
-  //             // 删除客户端
-  //             delete newDetails.mcpClients[payload.serverName];
-  //           } else {
-  //             // 添加或更新客户端
-  //             newDetails.mcpClients[payload.serverName] = payload;
-  //           }
-
-  //           return newDetails;
-  //         });
-  //       }
-  //     }
-  //   });
-
-  //   // 返回清理函数
-  //   return () => {
-  //     if (unsubscribeChangeMcp) unsubscribeChangeMcp();
-  //   };
-  // }, []);
-
-  // 加载当前工作区（新架构：只需要当前工作区）
+  // 加载当前工作区
   const loadCurrentWorkspace = async () => {
     try {
-
-      // 只需要获取当前工作区信息
       const currentWorkspaceData = await call("getCurrentWorkspace");
       if (currentWorkspaceData) {
-        console.log("Current workspace:", currentWorkspaceData);
-
-        // 创建当前工作区信息
         const currentWorkspaceInfo: WorkspaceInfo = {
           path: currentWorkspaceData.path || '',
           name: currentWorkspaceData.name || 'Workspace',
           description: currentWorkspaceData.description,
           created: currentWorkspaceData.created || Date.now(),
-          settings: currentWorkspaceData.settings || {},
           agentsCount: currentWorkspaceData.agentsCount || 0,
           mcpServersCount: currentWorkspaceData.mcpServersCount || 0,
           isGlobal: currentWorkspaceData.isGlobal || false,
         };
 
-        // 设置当前工作区
         setCurrentWorkspace(currentWorkspaceInfo);
         setActiveWorkspaceKey(currentWorkspaceInfo.path);
       }
@@ -180,15 +136,12 @@ export function Workspace() {
 
   // 加载当前工作区详细信息
   const loadWorkspaceDetails = async (workspace: WorkspaceInfo) => {
-    // 如果已经加载过，直接返回
-    // if (currentWorkspaceDetails) return;
 
     try {
       const details: CurrentWorkspaceDetails = {
         agents: [],
-        mcpClients: {},
-        fileTreeData: undefined,
-        tasks: []
+        mcpClients: {} as Record<string, any>,
+        fileTreeData: undefined
       };
 
       // 加载根目录文件列表（懒加载）
@@ -214,14 +167,10 @@ export function Workspace() {
       if (mcpList && Array.isArray(mcpList)) {
         mcpList.forEach((client) => {
           if (client && client.serverName) {
-            details.mcpClients[client.serverName] = client;
+            (details.mcpClients as Record<string, any>)[client.serverName as string] = client;
           }
         });
       }
-
-      // 加载任务
-      const taskList = await call("getAllTasks", { workspacePath: workspace.path });
-      details.tasks = taskList || [];
 
       setCurrentWorkspaceDetails(details);
     } catch (error) {
@@ -257,43 +206,32 @@ export function Workspace() {
     }
   };
 
-  // 切换工作区（新架构：简化为只需要切换当前工作区）
+  // 切换工作区
   const switchToWorkspace = async (workspacePath: string) => {
     try {
-      // 使用switchWorkspace API切换工作区
       await call("switchWorkspace", { workspacePath, force: false });
-
-      // 关闭对话框
       setOpenModalOpen(false);
-
-      // 重新加载当前工作区信息
       await loadCurrentWorkspace();
-
       message.success(t`Switched to workspace`);
     } catch (error) {
       setConfirmCreateModalOpen(true);
       setPendingWorkspacePath(workspacePath);
-
       handleError(error, "Failed to switch to workspace");
     }
   };
 
-  // 创建工作区
+  // 创建并切换工作区
   const createAndSwitchWorkspace = async (workspacePath: string) => {
     try {
-      // 从路径提取文件夹名称作为工作区名称
-
       await call("switchWorkspace", {
         workspacePath: workspacePath,
-        force: true // 强制切换工作区
+        force: true
       });
+      
       const folderName = workspacePath.split(/[/\\]/).pop() || 'Workspace';
-      // 添加到历史记录
       addToWorkspaceHistory(workspacePath, folderName);
       setWorkspaceHistory(getWorkspaceHistory());
-
       message.success(t`Switched to workspace`);
-
     } catch (error) {
       handleError(error, "Failed to create workspace");
     }
@@ -305,9 +243,7 @@ export function Workspace() {
     try {
       await createAndSwitchWorkspace(pendingWorkspacePath);
 
-      // 重新加载工作区列表
       await loadCurrentWorkspace();
-
       setConfirmCreateModalOpen(false);
       setPendingWorkspacePath("");
     } catch (error) {
@@ -317,52 +253,7 @@ export function Workspace() {
     }
   };
 
-  // 创建工作区后的初始化操作（新架构下不需要显式启动MCP）
-  // 移除了 startWorkspaceMcpClients 函数 - 新架构下工作区自动管理MCP服务
 
-
-  // 处理工作区设置
-  const handleWorkspaceSettings = async (workspace: WorkspaceInfo) => {
-    try {
-      setCurrentSettingsWorkspace(workspace);
-      // 加载工作区设置
-      const settings = await call("getWorkspaceSettings", { workspacePath: workspace.path });
-      setWorkspaceSettings(settings);
-      setDrawerStates(prev => ({ ...prev, workspaceSettings: true }));
-    } catch (error) {
-      handleError(error, "Failed to load workspace settings");
-    }
-  };
-
-  // 更新工作区设置
-  const updateWorkspaceSettings = async (updates: Partial<z.infer<typeof WorkspaceSettingsSchema>>) => {
-    if (!currentSettingsWorkspace) return;
-
-    try {
-      const updatedSettings = await call("updateWorkspaceSettings", {
-        workspacePath: currentSettingsWorkspace.path,
-        updates
-      });
-      setWorkspaceSettings(updatedSettings);
-      message.success(t`Settings updated successfully`);
-
-      // 如果更改了主题设置，应用到界面
-      if (updates.appearance?.isDarkMode !== undefined) {
-        const darkReader = await import('darkreader');
-        if (updates.appearance.isDarkMode) {
-          darkReader.enable({
-            brightness: 100,
-            contrast: 90,
-            sepia: 10,
-          });
-        } else {
-          darkReader.disable();
-        }
-      }
-    } catch (error) {
-      handleError(error, "Failed to update workspace settings");
-    }
-  };
 
   // 处理应用设置
   const handleAppSettings = async () => {
@@ -480,7 +371,7 @@ export function Workspace() {
   };
 
   // 刷新工作区详情
-  const refreshWorkspaceDetails = async (refreshType?: 'agents' | 'mcp' | 'tasks' | 'all') => {
+  const refreshWorkspaceDetails = async (refreshType?: 'agents' | 'mcp' | 'all') => {
     const type = refreshType || 'all';
 
     if (currentWorkspace && currentWorkspaceDetails) {
@@ -503,20 +394,14 @@ export function Workspace() {
           const mcpList = await call("getWorkspaceMcpClients");
 
           // 将数组转换为对象格式
-          updatedDetails.mcpClients = {};
+          updatedDetails.mcpClients = {} as Record<string, any>;
           if (mcpList && Array.isArray(mcpList)) {
             mcpList.forEach((client) => {
               if (client && client.serverName) {
-                updatedDetails.mcpClients[client.serverName] = client;
+                (updatedDetails.mcpClients as Record<string, any>)[client.serverName as string] = client;
               }
             });
           }
-        }
-
-        if (type === 'tasks' || type === 'all') {
-          // 刷新任务
-          const taskList = await call("getAllTasks", { workspacePath: currentWorkspace.path });
-          updatedDetails.tasks = taskList || [];
         }
 
         setCurrentWorkspaceDetails(updatedDetails);
@@ -557,18 +442,18 @@ export function Workspace() {
     // 不需要重新加载数据，文件树组件会自动通过useEffect重新过滤和渲染
   };
 
-  // 处理面板尺寸变化
+  // 处理面板尺寸变化（2栏布局）
   const handlePanelSizeChange = (sizes: number[]) => {
     const currentWorkspace = getCurrentWorkspace();
-    if (currentWorkspace && sizes.length >= 3) {
+    if (currentWorkspace && sizes.length >= 2) {
       // 直接更新状态数组
       setPanelSizes(sizes);
 
-      // 构建保存到localStorage的对象格式
+      // 构建保存到localStorage的对象格式（保持兼容性）
       const sizesToSave: PanelSizes = {
-        left: `${sizes[0] || 25}%`,
-        middle: `${sizes[1] || 50}%`,
-        right: `${sizes[2] || 25}%`
+        left: '0%',                      // 左侧面板已移除
+        middle: `${sizes[0] || 75}%`,    // 中间面板（聊天区域）
+        right: `${sizes[1] || 25}%`      // 右侧面板（管理区域）
       };
 
       // 保存到localStorage（使用防抖，避免频繁保存）
@@ -603,20 +488,19 @@ export function Workspace() {
     const workspace = getCurrentWorkspace();
     if (workspace) {
       loadWorkspaceDetails(workspace);
-      // 加载当前工作区的面板尺寸
+      // 加载当前工作区的面板尺寸（2栏布局）
       const workspaceKey = workspace.path;
       const sizes = getPanelSizes(workspaceKey);
-      // 将百分比字符串转换为数字
-      const leftNum = parseInt(sizes.left) || 25;
-      const middleNum = parseInt(sizes.middle) || 50;
-      const rightNum = parseInt(sizes.right) || 25;
-      setPanelSizes([leftNum, middleNum, rightNum]);
+      // 将百分比字符串转换为数字，适配2栏布局
+      const middleNum = parseInt(sizes.middle) || 75; // 中间面板默认75%
+      const rightNum = parseInt(sizes.right) || 25;   // 右侧面板默认25%
+      setPanelSizes([middleNum, rightNum]);
       // 初始化默认聊天标签页
       initDefaultChatTab(workspace);
     }
   }, [activeWorkspaceKey]);
 
-  // 获取当前活动工作区（新架构：直接返回当前工作区）
+  // 获取当前活动工作区
   const getCurrentWorkspace = () => {
     return currentWorkspace;
   };
@@ -627,15 +511,14 @@ export function Workspace() {
     return currentWorkspaceDetails || {
       agents: [],
       mcpClients: {},
-      fileTreeData: undefined,
-      tasks: []
+      fileTreeData: undefined
     };
   };
 
-  // 处理标签页切换（新架构下移除，只有一个工作区）
+  // 处理标签页切换（简化版：不再需要切换工作区标签）
   const handleTabChange = async (key: string) => {
-    // 新架构下只有一个工作区，这个函数保留以防UI组件调用
-    console.warn('handleTabChange called in new architecture, key:', key);
+    // 工作区切换逻辑已简化，这里保留以防UI组件调用
+    console.log('Tab change:', key);
   };
 
   // 打开Agent聊天
@@ -661,7 +544,7 @@ export function Workspace() {
         title: tabTitle,
         type: 'chat',
         agentName: agent.config.name,
-        agentScope: (agent.config as any).scope || "workspace",
+        agentScope: "workspace", // Fixed scope in Agent-centered architecture
         workspacePath: workspace.path,
         closable: true,
         chatLogToLoad: chatLog, // 传递聊天记录数据
@@ -719,7 +602,7 @@ export function Workspace() {
     }
   };
 
-  // 获取当前工作区（新架构：只有一个当前工作区）
+  // 获取当前工作区用于显示
   const getCurrentWorkspaceForDisplay = () => {
     return currentWorkspace ? [currentWorkspace] : [];
   };
@@ -738,27 +621,18 @@ export function Workspace() {
           </div>
         </div>
         {isGlobal && <Tag color="blue">{t`Global`}</Tag>}
-        <Button
-          type="text"
-          size="small"
-          icon={<SettingOutlined />}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleWorkspaceSettings(workspace);
-          }}
-        />
       </Space>
     );
   };
 
-  // 生成标签页items（新架构：只显示当前工作区）
+  // 生成标签页items
   const getTabItems = () => {
     const workspaceList = getCurrentWorkspaceForDisplay();
 
     return workspaceList.map(workspace => ({
       key: workspace.path,
       label: renderWorkspaceLabel(workspace),
-      closable: false, // 工作区不可关闭
+      closable: false,
     }));
   };
 
@@ -784,26 +658,10 @@ export function Workspace() {
           style={{ height: '100%' }}
           onResize={handlePanelSizeChange}
         >
-          {/* 左侧面板：工作区侧边栏 */}
-          <Splitter.Panel
-            size={panelSizes[0] || 25}
-            min="15%"
-            max="40%"
-          >
-            <WorkspaceLeftPanel
-              workspace={workspace}
-              fileTreeData={details.fileTreeData}
-              showHidden={showHiddenFiles}
-              onShowHiddenChange={handleShowHiddenChange}
-              onRefreshFileTree={refreshFileTree}
-              onFileSelect={openFileEditor}
-            />
-          </Splitter.Panel>
-
           {/* 中间面板：聊天界面 */}
           <Splitter.Panel
-            size={panelSizes[1] || 50}
-            min="30%"
+            size={panelSizes[0] || 75}
+            min="50%"
           >
             <WorkspaceMiddlePanel
               workspace={workspace}
@@ -834,22 +692,19 @@ export function Workspace() {
 
           {/* 右侧面板：Agents 和 MCP 管理 */}
           <Splitter.Panel
-            size={panelSizes[2] || 25}
-            min="15%"
-            max="40%"
+            size={panelSizes[1] || 25}
+            min="20%"
+            max="50%"
           >
             <WorkspaceRightPanel
               workspace={workspace}
               workspaceKey={workspaceKey}
               agents={details.agents || []}
               mcpClients={mcpClients}
-              tasks={details.tasks || []}
               agentManagementRef={agentManagementRef}
               mcpManagementRef={mcpManagementRef}
-              taskManagementRef={taskManagementRef}
               onRefreshAgents={async () => { await refreshWorkspaceDetails('agents'); }}
               onRefreshMCP={async () => { await refreshWorkspaceDetails('mcp'); }}
-              onRefreshTasks={async () => { await refreshWorkspaceDetails('tasks'); }}
               onOpenChat={openAgentChat}
             />
           </Splitter.Panel>
@@ -983,37 +838,6 @@ export function Workspace() {
         )}
       </Drawer>
 
-      {/* 工作区设置抽屉 */}
-      <Drawer
-        width={800}
-        title={currentSettingsWorkspace ? `${t`Workspace Settings`} - ${currentSettingsWorkspace.name}` : t`Workspace Settings`}
-        open={drawerStates.workspaceSettings}
-        onClose={() => {
-          setDrawerStates(prev => ({ ...prev, workspaceSettings: false }));
-          setCurrentSettingsWorkspace(null);
-          setWorkspaceSettings(null);
-        }}
-      >
-        {workspaceSettings && (
-          <WorkspaceSettings
-            settings={workspaceSettings}
-            onUpdate={updateWorkspaceSettings}
-            mcpClients={Object.values(currentWorkspaceDetails?.mcpClients || {})}
-            onReset={async () => {
-              if (!currentSettingsWorkspace) return;
-              try {
-                const resetSettings = await call("resetWorkspaceSettings", {
-                  workspacePath: currentSettingsWorkspace.path
-                });
-                setWorkspaceSettings(resetSettings);
-              } catch (error) {
-                console.error("Failed to reset settings:", error);
-                message.error(t`Failed to reset settings`);
-              }
-            }}
-          />
-        )}
-      </Drawer>
 
       {/* AI 提供商设置抽屉 */}
       <Drawer
@@ -1050,6 +874,7 @@ export function Workspace() {
               name: string;
               description?: string;
               allowMCPs: string[];
+              blockMCPTools: string[];
             }>}
             onUpdate={updateMCPGateways}
             availableMCPs={getAvailableMCPs()}

@@ -9,13 +9,12 @@ import {
   normalizePath,
   validateCommand
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, createToolSchema } from '../lib.mjs';
 
-const runShellCommandSchema = z.object({
+const runShellCommandSchema = createToolSchema({
   command: z.string().describe('The shell command to execute'),
-  working_directory: z.string().describe('Working directory for the command. This parameter is required.'),
+  working_directory: z.string().optional().describe('Working directory for the command. This parameter is required.'),
   timeout: z.number().int().min(1000).max(300000).default(30000).describe('Command timeout in milliseconds (1s to 5min)'),
-  description: z.string().optional().describe('Brief description of the command for the user'),
 });
 
 interface CommandResult {
@@ -57,15 +56,23 @@ function isCommandAllowed(command: string): { allowed: boolean; reason?: string 
     };
   }
 
-  // 禁止一些危险命令
-  const dangerousCommands = ['rm -rf /', 'mkfs', 'dd if=', 'format', ':(){:|:&};:'];
-  const normalizedCommand = command.trim().toLowerCase();
+  // 使用正则表达式精确匹配危险命令模式
+  const dangerousPatterns = [
+    /^\s*rm\s+-rf\s+\/\s*$/i,                    // rm -rf /
+    /^\s*mkfs\s/i,                               // mkfs 开头的命令
+    /^\s*dd\s+if=/i,                             // dd if= 开头的命令
+    /^\s*format\s+[a-z]:\s*/i,                   // format C: / format D: 等
+    /^\s*:\(\)\{\s*:\|\s*:\s*&\s*\}\s*;\s*:\s*$/i, // fork bomb
+    /^\s*sudo\s+rm\s+-rf\s+\/\s*$/i,            // sudo rm -rf /
+  ];
 
-  for (const dangerous of dangerousCommands) {
-    if (normalizedCommand.includes(dangerous)) {
+  const normalizedCommand = command.trim();
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(normalizedCommand)) {
       return {
         allowed: false,
-        reason: `Dangerous command pattern detected: ${dangerous}`,
+        reason: `Dangerous command pattern detected: ${pattern.source}`,
       };
     }
   }
@@ -264,7 +271,7 @@ async function executeCommand(
       }
 
       resolve({
-        success: exitCode === 0 && !timedOut && !cancelled && !error,
+        success: !timedOut && !cancelled && !error, // 只关心命令是否正常执行完毕
         exitCode,
         signal,
         stdout: stdout.trim(),
@@ -286,26 +293,19 @@ export function registerRunShellCommandTool(server: McpServer): void {
     'run_shell_command',
     'Executes a shell command in the specified working directory. Supports timeout, user cancellation, background process tracking, and comprehensive security checks.',
     runShellCommandSchema.shape,
-    async ({ command, working_directory, timeout, description }, extra) => {
+    async ({ reason, command, working_directory, timeout }, extra) => {
       try {
         // 验证命令
         validateCommand(command);
 
-        // 验证必需参数
-        if (!working_directory || typeof working_directory !== 'string' || working_directory.trim() === '') {
-          throw new HyperSystemToolError(
-            'Parameter "working_directory" is required and must be a non-empty string',
-            ERROR_CODES.INVALID_PATH
-          );
-        }
-
-        // 确定工作目录
+        working_directory = working_directory || os.homedir();
+        // 规范化文件路径
         const workingDir = normalizePath(working_directory);
 
         // 检查工作目录是否存在
         if (!fs.existsSync(workingDir)) {
           throw new HyperSystemToolError(
-            `Working directory not found: ${working_directory || 'workspace root'}`,
+            `Working directory not found: ${workingDir}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
         }
@@ -314,7 +314,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
         const stats = fs.statSync(workingDir);
         if (!stats.isDirectory()) {
           throw new HyperSystemToolError(
-            `Working directory path is not a directory: ${working_directory}`,
+            `Working directory path is not a directory: ${workingDir}`,
             ERROR_CODES.INVALID_PATH
           );
         }
@@ -327,8 +327,8 @@ export function registerRunShellCommandTool(server: McpServer): void {
 
         // 基本信息
         output.push(`Command: ${command}`);
-        if (description) {
-          output.push(`Description: ${description}`);
+        if (reason) {
+          output.push(`Reason: ${reason}`);
         }
         output.push(`Working Directory: ${working_directory}`);
         output.push(`Duration: ${result.duration}ms`);
@@ -401,8 +401,8 @@ export function registerRunShellCommandTool(server: McpServer): void {
         }
 
         const commandRoot = getCommandRoot(command);
-        const summary = description
-          ? `${commandRoot}: ${description} (${status}, ${result.duration}ms)`
+        const summary = reason
+          ? `${commandRoot}: ${reason} (${status}, ${result.duration}ms)`
           : `Executed ${commandRoot}: ${command} (${status}, ${result.duration}ms)`;
 
         return {

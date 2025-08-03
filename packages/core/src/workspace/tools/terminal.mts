@@ -51,71 +51,72 @@ export class WorkspaceTerminal extends EventEmitter {
    * 创建新的终端实例
    */
   async createTerminal(workingDirectory?: string): Promise<TerminalInstance> {
+    throw new Error("This method is not implemented ");
     const cwd = workingDirectory || process.env.HOME || os.homedir();
 
-    const pty = await import("node-pty");
-    const terminal = pty.spawn(shell, [], {
-      name: "xterm-color",
-      cols: 80,
-      rows: 30,
-      cwd,
-      env: process.env,
-      useConpty: os.platform() === "win32",
-    });
+    // const pty = await import("node-pty");
+    // const terminal = pty.spawn(shell, [], {
+    //   name: "xterm-color",
+    //   cols: 80,
+    //   rows: 30,
+    //   cwd,
+    //   env: process.env,
+    //   useConpty: os.platform() === "win32",
+    // });
 
     // 生成唯一的终端ID：时间戳 + 随机数
     const terminalId = Date.now() + Math.floor(Math.random() * 1000);
 
     const terminalInstance: TerminalInstance = {
       id: terminalId,
-      terminal,
+      terminal: null, // 这里需要实际的终端实例
       workingDirectory: cwd,
       createdAt: Date.now(),
       isActive: true,
       output: "",
     };
 
-    // 监听终端输出
-    terminal.onData((data) => {
-      terminalInstance.output += data;
+    // // 监听终端输出
+    // terminal.onData((data) => {
+    //   terminalInstance.output += data;
 
-      // 发送到前端
-      getMessageService().terminalMsg.emit("terminal-send", {
-        terminalID: terminalInstance.id,
-        data,
-        workspacePath: this.workspacePath,
-      });
+    //   // 发送到前端
+    //   getMessageService().terminalMsg.emit("terminal-send", {
+    //     terminalID: terminalInstance.id,
+    //     data,
+    //     workspacePath: this.workspacePath,
+    //   });
 
-      this.emit("output", {
-        terminalID: terminalInstance.id,
-        type: "output",
-        data,
-        timestamp: Date.now(),
-      });
-    });
+    //   this.emit("output", {
+    //     terminalID: terminalInstance.id,
+    //     type: "output",
+    //     data,
+    //     timestamp: Date.now(),
+    //   });
+    // });
 
-    // 监听终端退出
-    terminal.onExit((code) => {
-      Logger.info(`Terminal ${terminalInstance.id} exited with code: ${code}`);
-      this.terminals.delete(terminalInstance.id);
+    // // 监听终端退出
+    // terminal.onExit((code) => {
+    //   Logger.info(`Terminal ${terminalInstance.id} exited with code: ${code}`);
+    //   this.terminals.delete(terminalInstance.id);
 
-      if (this.activeTerminalId === terminalInstance.id) {
-        this.activeTerminalId = null;
-      }
+    //   if (this.activeTerminalId === terminalInstance.id) {
+    //     this.activeTerminalId = null;
+    //   }
 
-      // 发送关闭消息到前端
-      getMessageService().terminalMsg.emit("close-terminal", {
-        terminalID: terminalInstance.id,
-        workspacePath: this.workspacePath,
-      });
+    //   // 发送关闭消息到前端
+    //   getMessageService().terminalMsg.emit("close-terminal", {
+    //     terminalID: terminalInstance.id,
+    //     workspacePath: this.workspacePath,
+    //   });
 
-      this.emit("exit", {
-        terminalID: terminalInstance.id,
-        type: "exit",
-        data: code,
-        timestamp: Date.now(),
-      });
-    });
+    //   this.emit("exit", {
+    //     terminalID: terminalInstance.id,
+    //     type: "exit",
+    //     data: code,
+    //     timestamp: Date.now(),
+    //   });
+    // });
 
     this.terminals.set(terminalInstance.id, terminalInstance);
     this.activeTerminalId = terminalInstance.id;

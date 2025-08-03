@@ -7,7 +7,6 @@ import os from 'os';
 import process from 'process';
 import path from 'path';
 import { readFileSync, existsSync } from 'fs';
-import { appDataDir } from '../const.mjs';
 
 interface SystemInfo {
   platform: string;
@@ -83,7 +82,7 @@ function getSystemInfoSafe(): SystemInfo {
 /**
  * 格式化系统信息为Markdown字符串
  */
-function formatSystemInfo(systemInfo: SystemInfo, workspacePath: string): string {
+function formatSystemInfo(systemInfo: SystemInfo, workingPath?: string): string {
   const cpuModel = systemInfo.cpus[0]?.model || 'Unknown';
   const cpuCount = systemInfo.cpus.length;
   const memoryUsagePercent = systemInfo.totalMemory > 0 
@@ -106,32 +105,32 @@ function formatSystemInfo(systemInfo: SystemInfo, workspacePath: string): string
 - **可用内存**: ${systemInfo.freeMemory} GB
 - **内存使用率**: ${memoryUsagePercent}%
 
-### 目录路径
-- **用户主目录**: ${systemInfo.homeDir}
-- **临时目录**: ${systemInfo.tmpDir}
-- **当前工作目录**: ${workspacePath}
-
 ### 环境变量状态
 - **PATH**: ${systemInfo.envInfo.PATH}
 - **NODE_ENV**: ${systemInfo.envInfo.NODE_ENV}
 - **SHELL**: ${systemInfo.envInfo.SHELL}
 - **TERM**: ${systemInfo.envInfo.TERM}
 
+### 目录路径
+- **用户主目录**: ${systemInfo.homeDir}
+- **临时目录**: ${systemInfo.tmpDir}
+- **当前工作目录**: ${workingPath}
+
+${workingPath ?? `当前没有定义工作目录，如果用户要求本地操作，记得先让用户输入工作路径，避免歧义。`}
+
 ---
 `;
 }
 
 /**
- * 根据 agentScope 获取记忆内容和路径
+ * 根据 agentPath 获取记忆内容和路径
  */
-function getAgentMemory(workspacePath: string, agentName: string, agentScope: "global" | "workspace"): AgentMemoryResult {
-  if (!agentName?.trim()) {
+function getAgentMemory(agentPath: string): AgentMemoryResult {
+  if (!agentPath?.trim()) {
     return { content: "", filePath: "" };
   }
 
-  const memoryPath = agentScope === "global"
-    ? path.join(appDataDir, ".hyperchat", "agents", agentName, "memory.md")
-    : path.join(workspacePath, ".hyperchat", "agents", agentName, "memory.md");
+  const memoryPath = path.join(agentPath, "memory.md");
 
   let memoryContent = "";
   if (existsSync(memoryPath)) {
@@ -152,14 +151,11 @@ function getAgentMemory(workspacePath: string, agentName: string, agentScope: "g
 /**
  * 格式化Agent记忆信息
  */
-function formatAgentMemory(agentMemory: AgentMemoryResult, agentScope: "global" | "workspace"): string {
-  const scopeText = agentScope === "global" ? "全局" : "工作区";
-  
+function formatAgentMemory(agentMemory: AgentMemoryResult): string {
   if (agentMemory.content.trim()) {
     return `
 ## 🧠 Agent 记忆
 
-**作用域**: ${scopeText}
 **记忆文件路径**: ${agentMemory.filePath}
 
 ### 记忆内容:
@@ -171,7 +167,6 @@ ${agentMemory.content}
     return `
 ## 🧠 Agent 记忆
 
-**作用域**: ${scopeText}
 **记忆文件路径**: ${agentMemory.filePath}
 **状态**: 暂无记忆内容
 
@@ -240,24 +235,24 @@ const CORE_PROMPT_TEMPLATE = `
 /**
  * 获取所有可用的内置提示词
  */
-export function getBuiltinPrompts(workspacePath: string, systemPrompt: string): BuiltinPromptsResult;
-export function getBuiltinPrompts(workspacePath: string, systemPrompt: string, agentName: string, agentScope: "global" | "workspace"): BuiltinPromptsResult;
+export function getBuiltinPrompts(systemPrompt: string): BuiltinPromptsResult;
+export function getBuiltinPrompts(systemPrompt: string, workingPath?: string): BuiltinPromptsResult;
+export function getBuiltinPrompts(systemPrompt: string, workingPath?: string, agentPath?: string): BuiltinPromptsResult;
 export function getBuiltinPrompts(
-  workspacePath: string, 
-  systemPrompt: string, 
-  agentName?: string, 
-  agentScope?: "global" | "workspace"
+  systemPrompt: string,
+  workingPath?: string, 
+  agentPath?: string
 ): BuiltinPromptsResult {
   try {
     // 获取系统信息
     const systemInfo = getSystemInfoSafe();
-    const systemInfoStr = formatSystemInfo(systemInfo, workspacePath);
+    const systemInfoStr = formatSystemInfo(systemInfo, workingPath);
 
     // 获取Agent记忆信息（如果提供）
     let memoryStr = "";
-    if (agentName && agentScope) {
-      const agentMemory = getAgentMemory(workspacePath, agentName, agentScope);
-      memoryStr = formatAgentMemory(agentMemory, agentScope);
+    if (agentPath) {
+      const agentMemory = getAgentMemory(agentPath);
+      memoryStr = formatAgentMemory(agentMemory);
     }
 
     // 构建完整提示词

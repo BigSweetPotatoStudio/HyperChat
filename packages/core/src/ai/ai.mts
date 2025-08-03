@@ -4,7 +4,7 @@ import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentIt
 
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
+import type { LanguageModel, StreamTextResult, ToolChoice, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
 import { generateObject, streamObject, jsonSchema, smoothStream, streamText } from 'ai';
 import { z, ZodSchema } from "zod";
 // 兼容旧版本的 zod
@@ -19,8 +19,8 @@ import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
 import { Logger } from "../log.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
-import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator } from "./memory-compressor.mjs";
-import { workspaceManager } from "../workspace/index.mjs";
+import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator, type MemoryCompressionCheck } from "./memory-compressor.mjs";
+import { workspaceManager, AgentInstance } from "../workspace/index.mjs";
 import { AiProviderFactory, type ModelConfig } from "./providers/AiProviderFactory.mjs";
 import { ProxyUtils } from "./utils/ProxyUtils.mjs";
 import { MessageConverter } from "./utils/MessageConverter.mjs";
@@ -39,6 +39,9 @@ export class AiChannel {
   private mcpAbortController: AbortController | null = null;
   private sseWriter?: SSEWriter;
 
+  // Token/对话使用信息
+  public tokenUsage?: Omit<MemoryCompressionCheck, 'shouldCompress'>;
+
   constructor(
     public options?: {
 
@@ -48,46 +51,29 @@ export class AiChannel {
   }
   addMessage(
     message: MyMessage,
-    resourceResList: Array<CommonContentItem> = [],
-    promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     // 如果消息没有 messageId，生成一个基于数组索引和时间的ID
     if (!message.messageId) {
       const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
       message.messageId = `user_${this.messages.length}_${timestamp}`;
     }
-    // if (resourceResList.length > 0) {
-    //   if (message.content == "" || message.content == null) {
-    //     message.content = [];
-    //   } else {
-    //     message.content = [
-    //       {
-    //         type: "text",
-    //         text: message.content.toString() as string,
-    //       },
-    //     ];
-    //   }
-    //   for (let content of resourceResList) {
-
-    //     if (content.type == "text") {
-    //       message.content.push({
-    //         type: "text",
-    //         text: content.text.toString() as string,
-    //       });
-    //     } else if (content.type == "image_url") {
-    //       message.content.push({
-    //         type: "image_url",
-    //         image_url: { url: content.image_url.url },
-    //       });
-    //     } else {
-    //       Logger.warn("resource only supports text + images.");
-    //     }
-
-    //   }
-    // }
     this.messages.push(message);
 
     return this;
+  }
+
+  // 更新token/对话使用信息
+  updateTokenUsage(params: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "prompt">) {
+    if (!this.ext.memoryCompressor) return;
+
+    const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
+    this.tokenUsage = {
+      current: compressionCheck.current,
+      max: compressionCheck.max,
+      percentage: compressionCheck.percentage,
+      strategy: compressionCheck.strategy,
+      type: compressionCheck.type
+    };
   }
   // 取消当前请求
   cancel() {
@@ -106,20 +92,15 @@ export class AiChannel {
   }> {
     // 获取环境变量管理器
     const envManager = EnvManager.getInstance();
-    
+
     // 从环境变量获取配置
     const envApiKey = envManager.get('HyperChat_API_KEY');
     const envApiUrl = envManager.get('HyperChat_API_URL');
     const envProvider = envManager.get('HyperChat_AI_Provider');
-    
+
     // 尝试从应用设置获取配置
-    let appSettings, aiSettings;
-    try {
-      appSettings = await Command.getAppSettings();
-      aiSettings = appSettings.ai;
-    } catch (error) {
-      Logger.debug(`Failed to load app settings: ${error}`);
-    }
+    let appSettings = await Command.getAppSettings()
+    let aiSettings = appSettings?.ai || {};
 
     // 使用 buildEffectiveConfig 获取有效配置（包括modelKey选择）
     const effectiveConfig = buildEffectiveConfig(
@@ -131,14 +112,14 @@ export class AiChannel {
 
     const finalModelKey = effectiveConfig.modelKey;
     let modelConfig: AIModelConfigItem | null = null;
-    
+
     // 从应用设置中查找模型配置
     if (aiSettings && aiSettings.models && aiSettings.models.length > 0) {
       modelConfig = aiSettings.models.find((x) => x.key === finalModelKey) || null;
-      
+
       if (modelConfig) {
         Logger.debug(`Found model config from app settings: ${finalModelKey}`);
-        
+
         // 合并内置API配置
         if (modelConfig.provider !== "unknown") {
           modelConfig = {
@@ -149,16 +130,16 @@ export class AiChannel {
         }
       }
     }
-    
+
     // 如果应用设置中没有找到配置，尝试从环境变量创建基础配置
     if (!modelConfig) {
       // 检查是否有足够的环境变量来创建基础配置
       if (!envApiKey || !envApiUrl) {
         throw new Error(`Model not found: ${finalModelKey}. Please configure it in app settings or provide HyperChat_API_KEY and HyperChat_API_URL environment variables.`);
       }
-      
-      Logger.info(`Creating model config from environment variables for: ${finalModelKey}`);
-      
+
+      Logger.debug(`Creating model config from environment variables for: ${finalModelKey}`);
+
       // 从环境变量创建基础模型配置
       modelConfig = {
         key: finalModelKey,
@@ -178,12 +159,12 @@ export class AiChannel {
         modelConfig.apiKey = envApiKey;
         Logger.debug('Using API key from environment variable');
       }
-      
+
       if (!modelConfig.baseURL && envApiUrl) {
         modelConfig.baseURL = envApiUrl;
         Logger.debug('Using API URL from environment variable');
       }
-      
+
       if ((!modelConfig.provider || modelConfig.provider === "unknown") && envProvider) {
         modelConfig.provider = envProvider as any;
         Logger.debug(`Using provider from environment variable: ${envProvider}`);
@@ -194,11 +175,11 @@ export class AiChannel {
     if (!modelConfig) {
       throw new Error(`Model configuration not found: ${finalModelKey}. Please configure it in app settings or provide environment variables.`);
     }
-    
+
     if (!modelConfig.apiKey) {
       throw new Error(`API key not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_KEY environment variable.`);
     }
-    
+
     if (!modelConfig.baseURL) {
       throw new Error(`Base URL not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_URL environment variable.`);
     }
@@ -208,7 +189,7 @@ export class AiChannel {
 
     // 使用工厂创建模型
     const model = await AiProviderFactory.createModel(modelConfig as ModelConfig, customFetch);
-    
+
     // 构建完整的AI选项
     const aiOptions = {
       model,
@@ -217,7 +198,7 @@ export class AiChannel {
       maxTokens: effectiveConfig.maxTokens,
       maxRetries: 3, // 默认重试3次
     };
-    
+
     return aiOptions;
   }
   async completion(
@@ -228,6 +209,7 @@ export class AiChannel {
       sseWriter?: SSEWriter; // SSE 写入器
       chatKey?: string; // 聊天 Key
       userMessage?: MyMessage; // 用户消息
+      agentInstance: AgentInstance; // Agent实例，用于获取MCP工具（必填）
     } & BaseAIConfig,
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
     context: { step: number } = { step: 0 },
@@ -235,15 +217,11 @@ export class AiChannel {
 
 
     // 在开始请求前检查是否需要压缩记忆
-    if (this.lastMessage) { // 只在第一步时压缩
+    if (this.lastMessage) { // 确保有上一条消息
       if (this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) {
         await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
         params.onUpdate && params.onUpdate();
       }
-      // if (this.lastMessage.role === "user") {
-      //   params.userMessage = this.lastMessage;
-      //   this.messages.pop(); // 移除最后一条用户消息
-      // }
     }
 
     // 处理用户消息
@@ -262,7 +240,19 @@ export class AiChannel {
           params.sseWriter
         );
       }
+
+      // 更新并发送token使用信息
+      this.updateTokenUsage(params);
+      if (params.sseWriter && this.tokenUsage) {
+        params.sseWriter.write({
+          type: 'token_usage_update',
+          data: {
+            tokenUsage: this.tokenUsage
+          }
+        });
+      }
     }
+    params.onUpdate && params.onUpdate();
 
     // 🔄 只在首次调用时创建 AbortController，递归调用时复用
     if (!this.abortController || this.abortController.signal.aborted) {
@@ -288,10 +278,22 @@ export class AiChannel {
       messageId: messageId,
     };
 
+    if (params.sseWriter) {
+      Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);
+      params.sseWriter.write({
+        type: "chat_message_create",
+        data: {
+          messageId: messageId,
+          message: newMessage,
+        },
+      });
+    }
+    params.onUpdate && params.onUpdate();
+
     let format_message = MessageConverter.convertToCoreMessages(this.messages);
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
-    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.allowMCPs);
+    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools);
     const aiTools = ToolFormatter.formatTools(tools || []);
     options.tools = {
       ...options.tools,
@@ -304,31 +306,18 @@ export class AiChannel {
         ...options,
         model: aiOptions.model,
         temperature: params.temperature,
-        maxTokens: params.maxTokens,
+        maxOutputTokens: params.maxTokens,
       }
       const result = await streamText({
         ...newOptions,
         experimental_transform: smoothStream({
-          delayInMs: 50, // 增加延迟，使流式显示更明显
+          delayInMs: 200, // 增加延迟，使流式显示更明显
           chunking: 'word', // 按单词分块，更细致的流式效果
         }),
         abortSignal: this.abortController.signal,
       });
       this.messages.push(newMessage);
       newMessage.content_status = "dataLoading";
-      // 发送消息创建事件
-      if (params.sseWriter) {
-        Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);
-        params.sseWriter.write({
-          type: "chat_message_create",
-          data: {
-            messageId: messageId,
-            message: newMessage,
-          },
-        });
-      }
-
-      params.onUpdate && params.onUpdate();
 
       let toolIndex = 0;
       for await (const delta of result.fullStream) {
@@ -346,17 +335,17 @@ export class AiChannel {
           throw delta.error;
         }
         if (delta.type == "text-delta") {
-          newMessage.content += (delta.textDelta || "");
+          newMessage.content += (delta.text || "");
           newMessage.content_date = Date.now();
         }
-        if (delta.type == "reasoning") {
+        if (delta.type == "reasoning-delta") {
           // Logger.debug("reasoning", delta);
-          newMessage.reasoning_content += (delta.textDelta || "");
+          newMessage.reasoning_content += (delta.text || "");
           newMessage.content_date = Date.now();
         }
         if (delta.type == "tool-call") {
           newMessage.content_tool_calls = newMessage.content_tool_calls || [];
-          let localTool = this.getMcpTools().find(
+          let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools).find(
             (t) => t.name === delta.toolName
           );
           if (!localTool) {
@@ -369,7 +358,7 @@ export class AiChannel {
             type: "function" as const,
             function: {
               name: delta.toolName,
-              args: delta.args || {},
+              args: delta.input || {},
             },
             originalName: localTool.originalName,
             displayName: localTool.displayName,
@@ -377,11 +366,11 @@ export class AiChannel {
           (delta as typeof delta & { hypertool: typeof hypertool }).hypertool = hypertool;
           newMessage.content_tool_calls.push(hypertool);
         }
-        if (delta.type == "step-finish") {
+        if (delta.type == "finish-step") {
           if (delta.usage) {
             newMessage.content_usage = {
-              prompt_tokens: delta.usage.promptTokens || 0,
-              completion_tokens: delta.usage.completionTokens || 0,
+              prompt_tokens: delta.usage.inputTokens || 0,
+              completion_tokens: delta.usage.outputTokens || 0,
               total_tokens: delta.usage.totalTokens || 0,
             }
           }
@@ -425,8 +414,19 @@ export class AiChannel {
       params.sseWriter.write({
         type: "chat_message_complete",
         data: {
-          result: this.lastMessage.content,
+          // result: this.lastMessage.content,
         },
+      });
+    }
+
+    // 更新并发送token使用信息
+    this.updateTokenUsage(params);
+    if (params.sseWriter && this.tokenUsage) {
+      params.sseWriter.write({
+        type: 'token_usage_update',
+        data: {
+          tokenUsage: this.tokenUsage
+        }
       });
     }
 
@@ -523,7 +523,7 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
 
-        let localTool = this.getMcpTools().find(
+        let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools).find(
           (t) => t.name === tool.function.name
         );
         if (!localTool) {
@@ -531,17 +531,12 @@ export class AiChannel {
           continue;
         }
         this.mcpAbortController = new AbortController();
-        let call_res: MCPTypes.CallToolResult = await Command.mcpCallToolWithWorkspace
-          (
-            {
-              name: localTool?.clientName || "",
-              functionName: localTool.originalName,
-              args: tool.function.args || {},
-              workspacePath: localTool.workspacePath,
-              abortController: this.mcpAbortController,
-            }
-
-          )
+        let call_res: MCPTypes.CallToolResult = await params.agentInstance.callTool(
+          localTool?.clientName || "",
+          localTool.originalName,
+          tool.function.args || {},
+          this.mcpAbortController
+        )
           .then((res: MCPTypes.CallToolResult & { isError?: boolean }) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";
@@ -605,7 +600,7 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
       }
-      
+
       // 🚫 在递归调用前再次检查取消状态
       if (this.abortController?.signal?.aborted) {
         throw new Error('Request was cancelled by user during tool execution');
@@ -625,24 +620,13 @@ export class AiChannel {
     memoryCompressor?: MemoryCompressor;
   };
 
-  // 获取 MCP 工具
-  private getMcpTools(allowMCPs?: string[]): HyperChatCompletionTool[] {
-    const workspace = workspaceManager.getCurrentWorkspace();
-    if (!workspace) {
-      return [];
-    }
-
-    const mcpClients = workspace.getMcpClients();
+  // 获取 MCP 工具 - Agent-centered版本（使用封装的getMCPTools方法）
+  private getMcpTools(agentInstance: AgentInstance, allowMCPs?: string[], blockMCPTools?: string[]): HyperChatCompletionTool[] {
+    // 使用封装的getMCPTools方法获取工具信息
+    const mcpToolsInfo = agentInstance.getMCPTools(allowMCPs, blockMCPTools);
+    let tools = mcpToolsInfo.availableTools;
 
 
-    let tools = mcpClients.flatMap((client) => client.tools || []);
-
-    // 如果指定了允许的 MCP 工具，进行过滤
-    if (allowMCPs != null) {
-      tools = tools.filter((tool: HyperChatCompletionTool) =>
-        allowMCPs.includes(tool.name) || allowMCPs.includes(tool.clientName)
-      );
-    }
 
     return tools;
   }
@@ -668,7 +652,11 @@ export class AiChannel {
   // 检查是否需要压缩记忆
   private shouldCompressMemory(params: BaseAIConfig): boolean {
     if (!this.ext.memoryCompressor) return false;
-    return this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
+
+    this.updateTokenUsage(params);
+    const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
+
+    return compressionCheck.shouldCompress;
   }
 
   // 压缩记忆

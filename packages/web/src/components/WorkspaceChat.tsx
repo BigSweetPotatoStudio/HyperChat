@@ -25,6 +25,8 @@ import {
   Upload,
   message,
   Form,
+  Progress,
+  Alert,
 } from "antd";
 import {
   Welcome,
@@ -38,6 +40,8 @@ import {
   SendOutlined,
   SyncOutlined,
   DisconnectOutlined,
+  CompressOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 
 import { v4 } from "uuid";
@@ -59,6 +63,7 @@ import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
 import { CurrentWorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
 import { CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
+import { filterMCPTools, convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
 import { AgentCommonFormItems } from "./AgentManagement";
 import { useChatStream } from "../hooks/useChatStream";
 
@@ -135,10 +140,10 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     configOverrides: {
       modelKey: "",
       allowMCPs: [] as string[],
+      blockMCPTools: [] as string[],
       isConfirmCallTool: false,
       temperature: undefined as number | undefined,
-      maxAttachedDialogs: 5,
-      compressionStrategy: undefined as "dialogs" | "tokens" | undefined,
+      compressionStrategy: "tokens" as "tokens",
       maxContextTokens: undefined as number | undefined,
       prompt: ""
     }
@@ -237,7 +242,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
 
   // 获取有效配置值的帮助函数（聊天配置 > Agent配置 > 工作区配置 > 模型列表第一个）
   const getEffectiveConfig = () => {
-    const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
+    const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
     const agentConfig = agent?.config;
     const overrides = currentChat.current.configOverrides || {};
 
@@ -246,8 +251,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     const isModelAvailable = (modelKey: string) =>
       availableModels.some(model => model.key === modelKey);
 
-    // 获取工作区默认模型和模型列表第一个作为回退
-    const workspaceAIConfig = workspace?.settings?.aiConfig;
+    //模型列表第一个作为回退
     const firstAvailableModel = availableModels[0]?.key || "";
 
     // 按优先级查找有效的模型
@@ -255,7 +259,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       const candidates = [
         overrides.modelKey,
         agentConfig?.modelKey,
-        workspaceAIConfig?.modelKey,
         firstAvailableModel
       ].filter(Boolean); // 过滤掉空值
 
@@ -273,13 +276,13 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     return {
       modelKey: findValidModelKey(),
       allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
+      blockMCPTools: overrides.blockMCPTools || agentConfig?.blockMCPTools || [],
       isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
-      temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
-      maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
-      maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
-      compressionStrategy: overrides.compressionStrategy ?? agentConfig?.compressionStrategy ?? workspaceAIConfig?.compressionStrategy ?? "tokens",
-      maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceAIConfig?.maxContextTokens,
-      prompt: overrides.prompt || agentConfig?.prompt || workspaceAIConfig?.prompt || ""
+      temperature: overrides.temperature ?? agentConfig?.temperature,
+      maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? 8096,
+      compressionStrategy: "tokens",
+      maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens,
+      prompt: overrides.prompt || agentConfig?.prompt || ""
     };
   };
 
@@ -291,10 +294,16 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     currentChat.current.configOverrides.allowMCPs = allowMCPs;
   };
 
-  // 获取 allowMCPs 的帮助函数
-  const getAllowMCPs = () => {
-    return getEffectiveConfig().allowMCPs;
+
+  // 设置 blockMCPTools 的帮助函数
+  const setBlockMCPTools = (blockMCPTools: string[]) => {
+    if (!currentChat.current.configOverrides) {
+      currentChat.current.configOverrides = {};
+    }
+    currentChat.current.configOverrides.blockMCPTools = blockMCPTools;
   };
+
+
 
   // 加载状态从 chatStream 获取
   const loading = chatStream.loading;
@@ -315,6 +324,9 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   /** 设置模态框状态 */
   const [isSettingsShow, setIsSettingsShow] = useState(false);
 
+  /** 手动压缩加载状态 */
+  const [compressLoading, setCompressLoading] = useState(false);
+
   /** 设置表单 */
   const [settingsForm] = Form.useForm();
 
@@ -329,11 +341,11 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       }
       currentChat.current.configOverrides.temperature = values.temperature;
       currentChat.current.configOverrides.maxTokens = values.maxTokens;
-      currentChat.current.configOverrides.maxAttachedDialogs = values.maxAttachedDialogs;
       currentChat.current.configOverrides.isConfirmCallTool = values.isConfirmCallTool;
       currentChat.current.configOverrides.allowMCPs = values.allowMCPs;
+      currentChat.current.configOverrides.blockMCPTools = values.blockMCPTools;
       currentChat.current.configOverrides.modelKey = values.modelKey;
-      currentChat.current.configOverrides.compressionStrategy = values.compressionStrategy;
+      currentChat.current.configOverrides.compressionStrategy = "tokens";
       currentChat.current.configOverrides.maxContextTokens = values.maxContextTokens;
 
       setIsSettingsShow(false);
@@ -426,6 +438,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     }
   }, [chatStream.messages]);
 
+
   // 初始化
   useEffect(() => {
     (async () => {
@@ -441,7 +454,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         if (!currentChat.current.configOverrides) {
           currentChat.current.configOverrides = {};
         }
-        const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
+        const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
           defaultChatValue.current = ({
@@ -461,11 +474,11 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
             messages: [],
             configOverrides: {
               allowMCPs: agent.config.allowMCPs || [],
+              blockMCPTools: agent.config.blockMCPTools || [],
               // 不设置 modelKey，让 getEffectiveConfig 处理优先级
               temperature: agent.config.temperature,
               isConfirmCallTool: agent.config.isConfirmCallTool || false,
-              maxAttachedDialogs: agent.config.maxAttachedDialogs || 5,
-              compressionStrategy: agent.config.compressionStrategy,
+              compressionStrategy: "tokens",
               maxContextTokens: agent.config.maxContextTokens,
               prompt: agent.config.prompt || ""
             }
@@ -562,6 +575,33 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     }
   }, [workspace, agentName, aiSettings, aiSettingsLoading, chatStream]);
 
+  // 手动压缩记忆处理函数
+  const handleManualCompress = useCallback(async () => {
+    if (!chatStream.messages.length || compressLoading) return;
+
+    setCompressLoading(true);
+    try {
+      const effectiveConfig = getEffectiveConfig();
+      await chatStream.compressMemory(
+        effectiveConfig.modelKey || 'default',
+        currentChat.current.key,
+        effectiveConfig.maxContextTokens,
+        effectiveConfig.prompt,
+      );
+
+      message.success(t`Memory compression completed successfully`);
+    } catch (error) {
+      console.error('Memory compression failed:', error);
+      message.error(
+        error instanceof Error ?
+          `${t`Memory compression failed:`} ${error.message}` :
+          t`Memory compression failed, please try again later`
+      );
+    } finally {
+      setCompressLoading(false);
+    }
+  }, [chatStream, compressLoading, getEffectiveConfig]);
+
   // 获取当前模型配置
   const effectiveConfigForModel = getEffectiveConfig();
   let currModel = aiSettings ? (
@@ -573,7 +613,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   let supportImage = currModel?.supportImage;
   /** 是否支持工具 */
   let supportTool = currModel?.supportTool;
-  const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
+  const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
 
   // 提取系统消息
   const systemMessages = currentChat.current.configOverrides?.prompt!;
@@ -677,6 +717,74 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
               </div>
 
               <div className="flex items-center space-x-2">
+
+                {/* Token使用信息 */}
+                {chatStream.tokenUsage && (
+                  <div style={{
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '6px',
+                    border: '1px solid #e9ecef',
+                    fontSize: '12px'
+                  }}>
+                    <Flex justify="space-between" align="center">
+                      <Space size={8}>
+                        <InfoCircleOutlined style={{ color: '#6c757d' }} />
+                        <span style={{
+                          color: '#495057', fontWeight: 500
+                        }}>
+                          {`${t`Token Usage`}: ${chatStream.tokenUsage.current.toLocaleString()} / ${chatStream.tokenUsage.max.toLocaleString()}`}
+                          {chatStream.tokenUsage.type && (
+                            <span style={{
+                              marginLeft: '4px',
+                              fontSize: '10px',
+                              color: chatStream.tokenUsage.type === 'actual' ? '#52c41a' : '#faad14',
+                              fontWeight: 'normal'
+                            }}>
+                              ({chatStream.tokenUsage.type === 'actual' ? t`Actual` : t`Estimated`})
+                            </span>
+                          )}
+                        </span>
+                        <Progress
+                          percent={chatStream.tokenUsage.percentage}
+                          size="small"
+                          strokeColor={
+                            chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
+                              chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
+                                '#52c41a'
+                          }
+                          showInfo={false}
+                          style={{ width: '80px', minWidth: '80px' }}
+                        />
+                        <span style={{
+                          color: chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
+                            chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
+                              '#52c41a',
+                          fontWeight: 500,
+                          marginRight: '4px'
+                        }}>
+                          {chatStream.tokenUsage.percentage}%
+                        </span>
+                      </Space>
+                      <Tooltip title={
+                        chatStream.tokenUsage.percentage >= 80 ?
+                          (chatStream.tokenUsage.percentage >= 90 ? `⚠️ ${t`Memory compression will be triggered soon`}` : `⚡ ${t`Approaching compression threshold`}`) :
+                          t`Manually compress memory`
+                      }>
+                        <Button
+                          size="small"
+                          type={chatStream.tokenUsage.percentage >= 80 ? 'primary' : 'default'}
+                          icon={<CompressOutlined />}
+                          loading={compressLoading}
+                          onClick={handleManualCompress}
+                          disabled={chatStream.messages.length <= 1}
+                        >
+                          {t`Compress`}
+                        </Button>
+                      </Tooltip>
+                    </Flex>
+                  </div>
+                )}
+
                 <Tooltip title={t`Settings`}>
                   <Button
                     size="small"
@@ -689,10 +797,10 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                         modelKey: currentEffectiveConfig.modelKey,
                         temperature: currentEffectiveConfig.temperature ?? 1,
                         maxTokens: currentEffectiveConfig.maxTokens ?? 4000,
-                        maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 5,
                         isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
                         allowMCPs: currentEffectiveConfig.allowMCPs || [],
-                        compressionStrategy: currentEffectiveConfig.compressionStrategy ?? "tokens",
+                        blockMCPTools: currentEffectiveConfig.blockMCPTools || [],
+                        compressionStrategy: "tokens",
                         maxContextTokens: currentEffectiveConfig.maxContextTokens,
                       });
                       setIsSettingsShow(true);
@@ -717,6 +825,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                 message.success(t`Delete Success`);
               }}
             ></MyAttachR>
+
+
             {/* 发送框 */}
             <div className="my-sender-container">
               <HyperChatEditor
@@ -835,40 +945,21 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
 
 
                             {(() => {
-                              let set = new Set();
-                              for (let tool_name of getAllowMCPs()) {
-                                let [name, _] = tool_name.split(" > ");
-                                set.add(name);
-                              }
-                              let loading = mcpClients.filter((v) => v.status == "connecting").length > 0;
-                              let load = mcpClients.filter(
-                                (v) => v.status == "connected",
-                              ).length;
-                              let all = mcpClients.filter(x => x.status !== "disabled").length;
-                              let curr = mcpClients.filter((v) => {
-                                return v.status !== "disabled" && set.has(v.serverName);
-                              }).length;
 
-                              return loading ? (
-                                <>
-                                  {`${curr} `}
-                                  <SyncOutlined spin />
-                                  {`(${load}/${all})`}
-                                </>
-                              ) : curr
+                              let len = mcpClients.filter((v) => {
+                                return effectiveConfigForModel.allowMCPs.includes(v.serverName);
+                              }).length;
+                              return len;
                             })()}
                             <Icon name="chuizi-copy" ></Icon>{
 
                               (() => {
                                 let tools: IMCPClient["tools"] = [];
 
-                                mcpClients.forEach((v) => {
+                                mcpClients.filter(x => effectiveConfigForModel.allowMCPs.includes(x.serverName)).forEach((v) => {
                                   tools = tools.concat(
                                     v.tools.filter((t) => {
-
-                                      return (
-                                        getAllowMCPs().includes(t.clientName) || getAllowMCPs().includes(t.displayName)
-                                      );
+                                      return !effectiveConfigForModel.blockMCPTools.includes(t.displayName);
                                     }),
                                   );
                                 });
@@ -947,8 +1038,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         open={isToolsShow}
         onCancel={() => setIsToolsShow(false)}
         maskClosable
-        title={t`MCP Tool`}
-        // onOk={() => setIsToolsShow(false)}
+        title={t`MCP Tool Selection`}
         footer={[
           <Button
             key="1"
@@ -960,53 +1050,32 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
             {t`OK`}
           </Button>,
         ]}
-      // cancelButtonProps={{ style: { display: "none" } }}
       >
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ color: '#666', fontSize: '14px' }}>
+            {t`Select MCP clients and tools. Unchecked tools from selected clients will be blocked.`}
+          </p>
+        </div>
         <Tree
           checkable
           selectedKeys={[]}
-          onSelect={(selectedKeys, info) => {
-            // console.log("onSelect", selectedKeys, info);
-            let [clientName, _] = (selectedKeys[0] as string || "").split(" > ");
-            clientName = clientName || "";
-            if (info.node.isLeaf) {
-
-              if (info.node.checked) {
-                const currentAllowMCPs = getAllowMCPs().filter(x => x != selectedKeys[0]);
-                if (clientName) {
-                  setAllowMCPs(currentAllowMCPs.filter(x => x != clientName));
-                } else {
-                  setAllowMCPs(currentAllowMCPs);
-                }
-              } else {
-                setAllowMCPs([...getAllowMCPs(), selectedKeys[0] as string]);
-              }
-            } else {
-              if (info.node.halfChecked || info.node.checked == false) {
-                let newAllowMCPs = getAllowMCPs();
-                if (clientName) {
-                  newAllowMCPs = newAllowMCPs.filter((x: string) => !x.startsWith(clientName));
-                }
-                newAllowMCPs.push(info.node.key as string);
-                info.node.children?.forEach((x) => {
-                  newAllowMCPs.push(x.key as string);
-                });
-                setAllowMCPs(newAllowMCPs);
-              } else {
-                if (clientName) {
-                  setAllowMCPs(getAllowMCPs().filter((x: string) => !x.startsWith(clientName)));
-                }
-              }
-            }
-
-            refresh();
-          }}
           onCheck={(checkedKeys) => {
-            // console.log("onCheck", checkedKeys);
-            setAllowMCPs(checkedKeys as string[]);
+            // 使用新的转换逻辑
+            const selectedValues = checkedKeys as string[];
+            const { allowMCPs, blockMCPTools } = convertTreeSelectionToMCPConfig(selectedValues, mcpClients);
+
+            // 更新配置
+            setAllowMCPs(allowMCPs);
+            setBlockMCPTools(blockMCPTools);
+
             refresh();
           }}
-          checkedKeys={getAllowMCPs()}
+          checkedKeys={(() => {
+            // 将当前配置转换为 Tree 选中状态
+            const currentAllowMCPs = getEffectiveConfig().allowMCPs;
+            const currentBlockMCPTools = getEffectiveConfig().blockMCPTools;
+            return convertMCPConfigToTreeSelection(currentAllowMCPs, currentBlockMCPTools, mcpClients);
+          })()}
           treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
             return {
               title: (<Tooltip title={x.serverName}>
@@ -1033,8 +1102,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                 return {
                   title: (
                     <Tooltip title={tool.description}>
-                      <span
-                      >
+                      <span>
                         {tool.originalName || tool.name}
                       </span>
                     </Tooltip>
@@ -1046,7 +1114,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
             };
           })}
         />
-
       </Modal>
 
       {/* HOOK */}
@@ -1072,20 +1139,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   );
 };
 
-function getTools(mcpClients: IMCPClient[], allowMCPs?: string[]): HyperChatCompletionTool[] {
-  let tools: HyperChatCompletionTool[] = [];
-
-  mcpClients.forEach((v) => {
-    tools = tools.concat(
-      v.tools.filter((t) => {
-        if (!allowMCPs) return true;
-        return (
-          allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
-        );
-      }),
-    );
-  });
-  return tools;
+function getTools(mcpClients: IMCPClient[], allowMCPs?: string[], blockMCPTools?: string[]): HyperChatCompletionTool[] {
+  return filterMCPTools(mcpClients, allowMCPs, blockMCPTools) as HyperChatCompletionTool[];
 }
 
 function getLabelByFirstUserContent(messages: Array<MyMessage>): string {

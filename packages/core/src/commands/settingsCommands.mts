@@ -2,176 +2,13 @@ import { getWorkspaceManager } from "../workspace/index.mjs";
 import { getAppSettingsManager, isAppSettingsManagerInitialized, AppSettingsManager } from "../data/index.mjs";
 import { EVENT } from "../common/event.mjs";
 import { Logger } from "../log.mjs";
+import { ProxyUtils } from "../ai/utils/ProxyUtils.mjs";
 
 /**
  * 应用设置相关命令
- * 包含工作区设置和应用设置的管理
+ * 移除了工作区设置管理，现在使用envManage进行环境变量管理
  */
 export const settingsCommands = {
-
-  /**
-   * 获取工作区设置
-   * @param workspacePath 工作区路径
-   * @returns 工作区设置
-   */
-  async getWorkspaceSettings({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }) {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
-      }
-
-      const settings = workspace.getSettings();
-      const settingsManager = workspace.getSettingsManager();
-      
-      // 确保工作区元数据已初始化并包含在设置中
-      if (!settings.workspace) {
-        // 如果没有工作区元数据，从工作区配置中获取并初始化
-        const workspaceConfig = (workspace as any).config;
-        await settingsManager.initializeWorkspaceMetadata(
-          workspaceConfig?.name || 'Workspace',
-          workspaceConfig?.description
-        );
-        
-        // 重新获取更新后的设置
-        return workspace.getSettings();
-      }
-
-      return settings;
-    } catch (error) {
-      console.error(`Failed to get settings for workspace ${workspacePath}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * 更新工作区设置
-   * @param workspacePath 工作区路径
-   * @param updates 要更新的设置
-   * @returns 更新后的设置
-   */
-  async updateWorkspaceSettings({
-    workspacePath,
-    updates
-  }: {
-    workspacePath: string;
-    updates: Parameters<import('../data/managers/workspaceSettingsManager.mjs').WorkspaceSettingsManager['updateSettings']>[0];
-  }) {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
-      }
-
-      // 如果更新包含工作区元数据，也要同步更新工作区配置
-      if (updates.workspace) {
-        const workspaceConfig = (workspace as any).config;
-        if (updates.workspace.name && workspaceConfig) {
-          workspaceConfig.name = updates.workspace.name;
-        }
-        if (updates.workspace.description !== undefined && workspaceConfig) {
-          workspaceConfig.description = updates.workspace.description;
-        }
-      }
-
-      await workspace.updateSettings(updates);
-      return workspace.getSettings();
-    } catch (error) {
-      console.error(`Failed to update settings for workspace ${workspacePath}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * 重置工作区设置
-   * @param workspacePath 工作区路径
-   * @returns 重置后的设置
-   */
-  async resetWorkspaceSettings({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }) {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
-      }
-
-      const settingsManager = workspace.getSettingsManager();
-      await settingsManager.reset();
-      return settingsManager.getSettings();
-    } catch (error) {
-      console.error(`Failed to reset settings for workspace ${workspacePath}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * 导出工作区设置
-   * @param workspacePath 工作区路径
-   * @returns 设置的JSON字符串
-   */
-  async exportWorkspaceSettings({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }): Promise<string> {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
-      }
-
-      const settingsManager = workspace.getSettingsManager();
-      return await settingsManager.export();
-    } catch (error) {
-      console.error(`Failed to export settings for workspace ${workspacePath}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * 导入工作区设置
-   * @param workspacePath 工作区路径
-   * @param settingsJson 设置的JSON字符串
-   * @returns 导入后的设置
-   */
-  async importWorkspaceSettings({
-    workspacePath,
-    settingsJson
-  }: {
-    workspacePath: string;
-    settingsJson: string;
-  }) {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
-      }
-
-      const settingsManager = workspace.getSettingsManager();
-      await settingsManager.import(settingsJson);
-      return settingsManager.getSettings();
-    } catch (error) {
-      console.error(`Failed to import settings for workspace ${workspacePath}:`, error);
-      throw error;
-    }
-  },
 
   /**
    * 获取应用设置
@@ -261,6 +98,100 @@ export const settingsCommands = {
     } catch (error) {
       Logger.error('Failed to refresh MCP routes:', error);
       throw error;
+    }
+  },
+
+  /**
+   * 获取提供商的远程模型列表
+   * 支持代理环境变量和统一错误处理
+   * @param providerKey 提供商标识
+   * @param apiKey API Key
+   * @param baseURL Base URL
+   * @returns 模型列表数组
+   */
+  async fetchProviderModels({ 
+    providerKey, 
+    apiKey, 
+    baseURL 
+  }: { 
+    providerKey: string;
+    apiKey: string;
+    baseURL: string;
+  }) {
+    try {
+      // 检查提供商是否支持模型列表接口
+      const unsupportedProviders = ['gemini', 'anthropic'];
+      if (unsupportedProviders.includes(providerKey)) {
+        return {
+          success: false,
+          error: `Provider ${providerKey} does not support model list API`,
+          models: []
+        };
+      }
+
+      if (!apiKey || !baseURL) {
+        return {
+          success: false,
+          error: 'API Key or Base URL not provided',
+          models: []
+        };
+      }
+
+      // 构建模型列表接口 URL
+      const modelsEndpoint = baseURL.endsWith('/') ? `${baseURL}models` : `${baseURL}/models`;
+      
+      Logger.info(`Fetching models from ${providerKey}: ${modelsEndpoint}`);
+
+      // 发送请求（支持代理环境变量）
+      let response: Response;
+      
+      if (ProxyUtils.isProxyConfigured()) {
+        Logger.info(`Using proxy: ${ProxyUtils.getProxyUrl()}`);
+        const proxyFetch = ProxyUtils.createProxyFetch();
+        response = await proxyFetch(modelsEndpoint, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      } else {
+        // 没有代理配置，使用标准 fetch
+        response = await fetch(modelsEndpoint, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.data && Array.isArray(data.data)) {
+        Logger.info(`Successfully fetched ${data.data.length} models from ${providerKey}`);
+        return {
+          success: true,
+          models: data.data.map((model: any) => ({
+            id: model.id,
+            object: model.object || 'model',
+            created: model.created,
+            owned_by: model.owned_by
+          }))
+        };
+      } else {
+        throw new Error('Invalid response format from models API');
+      }
+
+    } catch (error) {
+      Logger.error(`Failed to fetch models for provider ${providerKey}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        models: []
+      };
     }
   }
 

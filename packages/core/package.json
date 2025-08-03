@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat",
-  "version": "2.0.0-alpha.51",
+  "version": "2.0.0-alpha.52",
   "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
   "license": "MIT",
@@ -27,12 +27,17 @@
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "0.2.16",
+    "@ai-sdk/anthropic": "2.0.0",
+    "@ai-sdk/google": "2.0.0",
+    "@ai-sdk/openai": "2.0.0",
+    "@ai-sdk/openai-compatible": "1.0.0",
     "@dadigua/hyperchat-shared": "file:../shared",
+    "@openrouter/ai-sdk-provider": "1.0.0-beta.6",
     "@inkjs/ui": "2.0.0",
     "@types/marked": "5.0.2",
     "@types/react": "19.1.8",
     "adm-zip": "^0.5.14",
+    "ai": "5.0.0",
     "bonjour": "^3.5.0",
     "bonjour-service": "^1.3.0",
     "chalk": "4.1.2",
@@ -104,7 +109,7 @@
   },
   "scripts": {
     "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx --inspect=19999 src/cli/index.mts serve",
-    "dev:proxy": "nodemon -w src --exec cross-env myEnv=dev HTTP_PROXY=http://localhost:8899 HYPERCHAT_SKIP_SSL_VERIFICATION=true npx tsx --inspect=19999 src/cli/index.mts serve",
+    "dev:proxy": "nodemon -w src --exec cross-env myEnv=dev HTTP_PROXY=http://localhost:8899 NODE_TLS_REJECT_UNAUTHORIZED=0 npx tsx --inspect=19999 src/cli/index.mts serve",
     "start": "npx tsx src/cli/index.mts serve",
     "build": "node build.mjs",
     "build:tsc": "tsc --project tsconfig.build.json",

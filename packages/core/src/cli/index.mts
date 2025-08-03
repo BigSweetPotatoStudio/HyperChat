@@ -13,7 +13,7 @@
 // 第一步：立即解析CLI参数并设置环境变量，必须在任何其他模块导入之前
 import process from 'process';
 import { EnvManager } from '../data/managers/envManager.mjs';
-import { parseCurrentArgs, CliArgsParser } from '../utils/cliArgsParser.mjs';
+import { parseCurrentArgs, GenericCliParser, CliArgsParser } from '../utils/cliArgsParser.mjs';
 
 // 简单的命令行参数解析
 const args = process.argv.slice(2);
@@ -26,38 +26,26 @@ if (args.includes('--verbose') || args.includes('-v')) {
   console.log('🔍 CLI Environment Overrides:', cliEnvOverrides);
 }
 
-// 创建带有 CLI 参数覆盖的环境管理器
-const envManager = EnvManager.getInstance(undefined, cliEnvOverrides);
-
-// 设置为全局默认实例，这样其他模块也能使用CLI参数覆盖
-EnvManager.setGlobalDefault(envManager);
+// 初始化环境管理器（基础模式，避免Agent循环依赖）
+const envManager = EnvManager.getInstance();
+envManager.initBase(undefined, cliEnvOverrides);
 
 // 第二步：现在可以安全地导入其他模块
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
-// startChat 现在通过动态导入加载
+import { startChat } from './commands/chat.mjs';
+import { startChatInk } from './commands/chat-ink.mjs';
 import { startServer } from './commands/server.mjs';
-import { startRun } from './commands/run.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists, showAgentMemory } from './commands/agent.mjs';
 import { Command } from '../command.mjs';
-import { 
-  listTasks, 
-  createTask, 
-  showTask, 
-  enableTask, 
-  disableTask, 
-  deleteTask, 
-  editTask, 
-  taskStats,
-  triggerTask,
-  showScheduler
-} from './commands/task.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
 import { initCliI18n, t, setCurrLang, getCurrLang } from '../i18n.mjs';
 import type { Language } from '@dadigua/hyperchat-shared';
+import type { ChatOptions } from './commands/chat.mjs';
+import { cleanupAgent } from './agentManager.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
@@ -69,10 +57,10 @@ const globalOptions = {
   quiet: args.includes('--quiet') || args.includes('-q'),
   help: args.includes('--help') || args.includes('-h'),
   host: getOptionValue(args, '--host') || 'localhost',
-  port: envManager.get('HyperChat_HTTP_PORT'),
-  password: envManager.get('HyperChat_Web_Password'),
+  port: envManager.getENV('HyperChat_HTTP_PORT'),
+  password: envManager.getENV('HyperChat_Web_Password'),
   workspace: getOptionValue(args, '--workspace'),
-  language: envManager.get('HyperChat_Language'),
+  language: envManager.getENV('HyperChat_Language'),
   ui: getOptionValue(args, '--ui') || 'ink' // 默认使用 ink UI
 };
 
@@ -82,7 +70,8 @@ function getCleanArgs(args: string[]): string[] {
   const optionsWithValues = [
     '--workspace', '--host', '--port', '--password', '--language', '--lang', '--ui',
     '--data-dir', '--app-data-dir', '--api-key', '--api-url', '--ai-provider', '--ai-model',
-    '--log-level', '--web-password', '--env', '--my-env', '-p'
+    '--log-level', '--web-password', '--env', '--my-env', '-p',
+    '--agent', '-a', '--agent-path', '-A'
   ];
   
   for (let i = 0; i < args.length; i++) {
@@ -136,6 +125,8 @@ ${t`Global options:`}
 ${t`Commands:`}
   # ${t`General chat`}
   chat [message]           ${t`Start AI chat session (default command)`}
+  chat --agent <name>      ${t`Chat with specific agent`}
+  chat --agent-path <path> ${t`Chat with agent from specific path`}
   chat                     ${t`Interactive chat`}
   
   # Agent${t`related`}
@@ -148,23 +139,10 @@ ${t`Commands:`}
   
   # ${t`System management`}
   serve                    ${t`Start backend server (includes Web UI)`}
-  run                      ${t`Start core service (no Web UI)`}
   workspace list           ${t`Show workspace information`}
   workspace current        ${t`Show current working directory and workspace`}
   workspace create         ${t`Create workspace in current directory`}
   language [lang]          ${t`Show or set interface language`}
-  
-  # ${t`Task management`}
-  task list                ${t`List all tasks`}
-  task create <name>       ${t`Create new task`}
-  task show <name>         ${t`Show task details`}
-  task edit <name>         ${t`Edit task`}
-  task enable <name>       ${t`Enable task`}
-  task disable <name>      ${t`Disable task`}
-  task delete <name>       ${t`Delete task`}
-  task trigger <name>      ${t`Manually trigger task execution`}
-  task scheduler           ${t`Show scheduler status`}
-  task stats               ${t`Show task statistics`}
   
   help                     ${t`Show help information`}
 
@@ -183,7 +161,6 @@ ${t`Examples:`}
   
   # ${t`System management`}
   hyperchat serve                   # ${t`Start server (includes Web UI)`}
-  hyperchat run                     # ${t`Start core service (background task scheduling)`}
   hyperchat workspace list          # ${t`Show workspace information`}
   hyperchat workspace current       # ${t`Show current status`}
   hyperchat workspace create        # ${t`Create workspace in current directory`}
@@ -205,12 +182,24 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 
   // 检测是否有非命令的消息 (直接聊天)
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && firstArg && !firstArg.match(/^(chat|serve|run|workspace|agent|task|language|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && firstArg && !firstArg.match(/^(chat|serve|workspace|agent|language|help)$/);
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
+    // 解析全局选项中的agent相关参数
+    const directChatArgs = process.argv.slice(2);
+    const directChatOptions = GenericCliParser.parseArgs(directChatArgs, [
+      { long: 'agent', short: 'a', hasValue: true },
+      { long: 'agent-path', short: 'A', hasValue: true },
+      { long: 'model', short: 'm', hasValue: true },
+    ]);
+    
     const message = cleanArgs.join(' ');
-    await startChatWrapper([message], logger);
+    await startChatWrapper([message], logger, undefined, {
+      agent: directChatOptions.agent as string | undefined,
+      agentPath: directChatOptions['agent-path'] as string | undefined,
+      model: directChatOptions.model as string | undefined
+    });
     return { shouldExit: true };  // 聊天完成后应该退出
   }
 
@@ -218,8 +207,20 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 
   switch (cmd) {
     case 'chat':
+      // 解析chat命令的特殊选项
+      const chatArgs = process.argv.slice(2); // 获取完整的参数列表
+      const chatOptions = GenericCliParser.parseArgs(chatArgs, [
+        { long: 'agent', short: 'a', hasValue: true },
+        { long: 'agent-path', short: 'A', hasValue: true },
+        { long: 'model', short: 'm', hasValue: true },
+      ]);
+      
       const messages = cleanArgs.slice(1);
-      await startChatWrapper(messages, logger);
+      await startChatWrapper(messages, logger, undefined, {
+        agent: chatOptions.agent as string | undefined,
+        agentPath: chatOptions['agent-path'] as string | undefined,
+        model: chatOptions.model as string | undefined
+      });
       return { shouldExit: true };  // 聊天完成后应该退出
 
     case 'serve':
@@ -230,14 +231,6 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         quiet: globalOptions.quiet
       });
       return { shouldExit: false };  // serve 需要保持进程运行
-
-    case 'run':
-      await startRun({
-        verbose: globalOptions.verbose,
-        quiet: globalOptions.quiet,
-        workspace: globalOptions.workspace
-      });
-      return { shouldExit: false };  // run 需要保持进程运行
 
     case 'workspace':
       const workspaceSubCmd = cleanArgs[1];
@@ -260,11 +253,6 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       await handleAgentCommand(cleanArgs.slice(1), logger);
       return { shouldExit: true };  // 所有agent命令执行完都应该退出
 
-    case 'task':
-      const taskSubCmd = cleanArgs[1];
-      await handleTaskCommand(taskSubCmd, cleanArgs.slice(2), logger);
-      return { shouldExit: true };  // 所有task命令执行完都应该退出
-
     case 'language':
       const langArg = cleanArgs[1];
       await handleLanguageCommand(langArg, logger);
@@ -280,24 +268,23 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 }
 
 // 聊天功能
-async function startChatWrapper(messages: string[], logger: Logger, agentName?: string) {
+async function startChatWrapper(messages: string[], logger: Logger, agentName?: string, extraOptions?: Partial<ChatOptions>) {
   try {
     const options = {
       verbose: globalOptions.verbose,
       quiet: globalOptions.quiet,
       workspace: globalOptions.workspace,
-      agent: agentName
+      agent: agentName,
+      ...extraOptions  // 合并额外的选项
     };
 
     const message = messages.length > 0 ? messages.join(' ') : undefined;
 
     // 根据 UI 选项选择不同的聊天实现
     if (globalOptions.ui === 'ink') {
-      const { startChatInk } = await import('./commands/chat-ink.mjs');
       await startChatInk(message, options);
     } else {
       // 默认使用传统 UI（为了向后兼容）
-      const { startChat } = await import('./commands/chat.mjs');
       await startChat(message, options);
     }
 
@@ -422,136 +409,12 @@ async function handleAgentCommand(args: string[], logger: Logger) {
   }
 }
 
-// 任务管理功能
-async function handleTaskCommand(subCmd: string, args: string[], logger: Logger) {
-  // 解析选项
-  function getOption(optionName: string): string | undefined {
-    const index = args.indexOf(optionName);
-    return index >= 0 && index + 1 < args.length ? args[index + 1] : undefined;
-  }
-
-  function hasFlag(flagName: string): boolean {
-    return args.includes(flagName);
-  }
-
-  // 移除选项，保留位置参数
-  const positionalArgs = args.filter(arg => !arg.startsWith('-'));
-
-  switch (subCmd) {
-    case 'list':
-    case undefined:
-      await listTasks();
-      break;
-
-    case 'create':
-      const taskName = positionalArgs[0];
-      if (!taskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task create <name> --description "description" --agent <agent_key> [--cron "0 0 * * *"] [--disabled]`);
-        break;
-      }
-
-      const createOptions = {
-        description: getOption('--description'),
-        agent: getOption('--agent'),
-        cron: getOption('--cron'),
-        disabled: hasFlag('--disabled'),
-      };
-
-      await createTask(taskName, createOptions);
-      break;
-
-    case 'show':
-      const showTaskName = positionalArgs[0];
-      if (!showTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task show <name>`);
-        break;
-      }
-      await showTask(showTaskName);
-      break;
-
-    case 'enable':
-      const enableTaskName = positionalArgs[0];
-      if (!enableTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task enable <name>`);
-        break;
-      }
-      await enableTask(enableTaskName);
-      break;
-
-    case 'disable':
-      const disableTaskName = positionalArgs[0];
-      if (!disableTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task disable <name>`);
-        break;
-      }
-      await disableTask(disableTaskName);
-      break;
-
-    case 'delete':
-      const deleteTaskName = positionalArgs[0];
-      if (!deleteTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task delete <name> [--force]`);
-        break;
-      }
-      await deleteTask(deleteTaskName, { force: hasFlag('--force') });
-      break;
-
-    case 'edit':
-      const editTaskName = positionalArgs[0];
-      if (!editTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task edit <name> [--description "new description"] [--agent <agent_key>] [--cron "new schedule"] [--enable|--disable]`);
-        break;
-      }
-
-      const editOptions = {
-        description: getOption('--description'),
-        agent: getOption('--agent'),
-        cron: getOption('--cron'),
-        enable: hasFlag('--enable'),
-        disable: hasFlag('--disable'),
-      };
-
-      await editTask(editTaskName, editOptions);
-      break;
-
-
-    case 'trigger':
-      const triggerTaskName = positionalArgs[0];
-      if (!triggerTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task trigger <name>`);
-        break;
-      }
-      await triggerTask(triggerTaskName);
-      break;
-
-    case 'scheduler':
-      await showScheduler();
-      break;
-
-    case 'stats':
-      await taskStats();
-      break;
-
-    default:
-      logger.error(`${t`Unknown task command:`} ${subCmd}`);
-      logger.info(t`Available commands: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats`);
-      break;
-  }
-}
-
 // 语言管理功能
 async function handleLanguageCommand(langArg: string | undefined, logger: Logger) {
   try {
     // 如果没有提供语言参数，显示当前语言
     if (!langArg) {
-      const currentLang = envManager.get('HyperChat_Language') || getCurrLang();
+      const currentLang = envManager.getENV('HyperChat_Language') || getCurrLang();
       let langName: string;
       if (currentLang === 'zh') langName = t`Chinese`;
       else if (currentLang === 'ja') langName = t`Japanese`;
@@ -600,7 +463,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     }
 
     // 获取当前语言
-    const currentLang = envManager.get('HyperChat_Language') || getCurrLang();
+    const currentLang = envManager.getENV('HyperChat_Language') || getCurrLang();
     if (currentLang === targetLang) {
       let langName: string;
       if (targetLang === 'zh') langName = t`Chinese`;
@@ -650,10 +513,11 @@ async function cleanup() {
   isExiting = true;
 
   try {
-    // 新架构下简化清理逻辑
-    console.log(t`Exiting...`);
+    // Agent-centered架构下，卸载当前Agent
+    await cleanupAgent();
+    console.log(t`Agent unloaded, exiting...`);
   } catch (error) {
-    console.error(`${t`Error occurred during exit:`} ${error}`);
+    console.error(`${t`Error occurred during agent cleanup:`} ${error}`);
   }
 
   process.exit(0);
@@ -679,10 +543,8 @@ async function main() {
     // 执行命令
     const result = await handleCommand();
     
-    // 根据命令类型决定是否退出
-    if (result.shouldExit) {
-      await workspaceManager.uninitialize(); // 清理工作区管理器
-    }
+    // Agent-centered架构下，Agent资源按需创建和自动清理
+    // 不需要显式的全局清理逻辑
   } catch (error) {
     console.error(`❌ ${t`Command execution failed:`} ${error}`);
     process.exit(1);

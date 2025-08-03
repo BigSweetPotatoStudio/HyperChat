@@ -77,6 +77,7 @@ export const MCPGatewaySchema = z.object({
   name: z.string().describe("Gateway name"),
   description: z.string().optional().describe("Gateway description"),
   allowMCPs: z.array(z.string()).default([]).describe("Allowed MCP list"),
+  blockMCPTools: z.array(z.string()).default([]).describe("Blocked MCP tool display names"),
 }).describe("MCP gateway configuration");
 
 // 系统设置 Schema  

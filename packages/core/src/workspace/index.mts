@@ -1,5 +1,5 @@
 // 导出常量
-export { CONSTANTS } from "./constants.mjs";
+export { CONSTANTS } from "../agent/constants.mjs";
 
 // 导出类型定义
 export type {
@@ -14,26 +14,14 @@ export {
   validateWorkspaceSettings
 } from "./types.mjs";
 
-// 导出设置相关
-export {
-  WorkspaceSettingsManager,
-  WorkspaceSettingsSchema,
-  DEFAULT_WORKSPACE_SETTINGS
-} from "../data/managers/workspaceSettingsManager.mjs";
-
-export type {
-  WorkspaceSettings as WorkspaceDetailedSettings,
-  WorkspaceAppearanceSettings,
-  WorkspaceEditorSettings,
-  WorkspaceDefaultAISettings,
-  WorkspaceAdvancedSettings
-} from "@dadigua/hyperchat-shared";
 
 // 导出数据列表管理类
-export { DataList } from "./dataList.mjs";
+export { DataList } from "../agent/dataList.mjs";
 
 // 导出 Agent 管理相关类
-export { AgentInstance, AgentManager } from "./agentManager.mjs";
+export { AgentInstance } from "../agent/agentInstance.mjs";
+export { AgentManager } from "./agentManager.mjs";
+
 
 // 导出工作区类
 export { Workspace } from "./workspace.mjs";
@@ -46,13 +34,7 @@ export { Data } from "./data.mjs";
 
 
 
-export type {
-  WorkspaceMCPConfig,
-  WorkspaceMCPClient,
-  MCPType,
-  MCPManagerOptions,
-  MCPManagerEvents,
-} from "./mcp/types.mjs";
+
 
 // 导出全局实例
 import { WorkspaceManager } from "./workspaceManager.mjs";
@@ -145,7 +127,6 @@ async function createDefaultAgent(workspace: any): Promise<void> {
   // 使用 Command API 创建 Agent
   await Command.createAgent({
     config: agentConfig,
-    scope: "global",
   });
 }
 

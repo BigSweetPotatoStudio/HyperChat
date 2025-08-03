@@ -79,8 +79,8 @@ export async function showCurrentWorkspace() {
     console.log(`📍 ${t`Working Directory:`} ${currentWorkingDirectory}`);
     console.log(`📁 ${t`Workspace:`} ${workspace.workspacePath}`);
 
-    if (workspace.isLocalWorkspace()) {
-      console.log(`\n✅ ${t`Using local workspace with .hyperchat directory (merging with global config).`}`);
+    if (workspace.exists()) {
+      console.log(`\n✅ ${t`Using local workspace with .hyperchat directory.`}`);
     } else if (workspace.isGlobal()) {
       console.log(`\n🌐 ${t`Using global workspace.`}`);
     } else {

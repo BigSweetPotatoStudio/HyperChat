@@ -4,7 +4,6 @@
  */
 
 import { AgentConfig, IMCPClient } from "@dadigua/hyperchat-shared";
-import type { Task } from "@dadigua/hyperchat-shared";
 
 /**
  * 工作区配置基础信息
@@ -30,7 +29,6 @@ export interface WorkspaceInfo {
   name: string;
   description?: string;
   created: number;
-  settings: Record<string, any>;
 }
 
 /**
@@ -80,7 +78,6 @@ export interface CurrentWorkspaceDetails {
     lastChatTime?: number;
   }>;
   mcpClients: Record<string, IMCPClient>;
-  tasks: Task[];
 }
 
 /**
@@ -173,13 +170,10 @@ export interface WorkspaceRightPanelProps {
     lastChatTime?: number;
   }>;
   mcpClients: IMCPClient[];
-  tasks: Task[];
   agentManagementRef: React.MutableRefObject<any>;
   mcpManagementRef: React.MutableRefObject<any>;
-  taskManagementRef: React.MutableRefObject<any>;
   onRefreshAgents: () => Promise<void>;
   onRefreshMCP: () => Promise<void>;
-  onRefreshTasks: () => Promise<void>;
   onOpenChat: (
     agent: { config: AgentConfig & { scope?: "global" | "workspace" }; chatLogsCount: number; lastChatTime?: number },
     chatLog?: any

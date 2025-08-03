@@ -789,9 +789,11 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
 
                         {/* Tool Calls */}
                         {x.content_tool_calls && x.content_tool_calls.length > 0 && (
-                            <div className="my-4">
+                            <div className="">
                                 {x.content_tool_calls.map((tool, index) => {
                                     const toolResult = contents.find(j => j.tool_call_id === tool.id);
+                                    // 分离 reason 和其他参数
+                                    const { reason, ...argsShow } = (tool.function.args || {}) as any;
 
                                     return (
                                         <div key={index} className="mb-2 p-2 bg-gray-50 rounded flex items-center justify-between">
@@ -809,8 +811,21 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                                                         <div className="line-clamp-1 text-blue-500 break-all">
                                                             <span className="text-purple-500">
                                                                 {tool.displayName || tool.function.name}
-                                                            </span>{" "}
-                                                            {JSON.stringify(tool.function.args)}
+                                                            </span>
+                                                            {reason && (
+                                                                <span className="text-green-600 ml-2">
+                                                                    {reason}
+                                                                </span>
+                                                            )}
+                                                            {Object.keys(argsShow).length > 0 && (
+                                                                <span className="ml-2">
+                                                                    {(() => {
+                                                                        const argsStr = JSON.stringify(argsShow, null, 0).replace(/\n\s*/g, ' ');
+                                                                        // 如果参数太长，截断显示
+                                                                        return argsStr.length > 200 ? argsStr.substring(0, 200) + '...' : argsStr;
+                                                                    })()}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     {toolResult && (

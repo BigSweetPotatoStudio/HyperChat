@@ -62,24 +62,24 @@ function isValidAgentName(name: string): boolean {
   if (!name || name.trim().length === 0) {
     return false;
   }
-  
+
   // 检查长度限制
   if (name.length > 100) {
     return false;
   }
-  
+
   // 检查是否包含非法字符（文件系统不允许的字符）
   const invalidChars = /[<>:"/\\|?*\x00-\x1f]/;
   if (invalidChars.test(name)) {
     return false;
   }
-  
+
   // 检查是否为系统保留名称
   const reservedNames = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
   if (reservedNames.includes(name.toUpperCase())) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -89,7 +89,7 @@ function isValidAgentName(name: string): boolean {
 function convertLegacyAIModelToNewFormat(legacyModel: LegacyAIModel): AIModelConfigItem {
   // 将老的 provider 映射到新的 KnownProvider
   let provider: KnownProvider = "unknown";
-  
+
   const providerLower = legacyModel.provider.toLowerCase();
   if (providerLower === "openai") provider = "openai";
   else if (providerLower === "anthropic") provider = "anthropic";
@@ -103,7 +103,7 @@ function convertLegacyAIModelToNewFormat(legacyModel: LegacyAIModel): AIModelCon
   else if (providerLower === "glm") provider = "glm";
   else if (providerLower === "ollama") provider = "ollama";
   else provider = "unknown"; // 其他未知提供商统一设为 unknown
-  
+
   return {
     key: uuidv4(), // 生成新的 UUID
     name: legacyModel.name,
@@ -125,23 +125,24 @@ function convertLegacyAIModelToNewFormat(legacyModel: LegacyAIModel): AIModelCon
  */
 function convertLegacyAgentToNewFormat(legacyAgent: LegacyAgent, modelKeyMapping?: Map<string, string>): AgentConfig {
   const name = legacyAgent.name || legacyAgent.label || `Agent-${legacyAgent.key}`;
-  
+
   // 如果有模型映射，更新 modelKey
   let newModelKey = legacyAgent.modelKey;
   if (modelKeyMapping && legacyAgent.modelKey && modelKeyMapping.has(legacyAgent.modelKey)) {
     newModelKey = modelKeyMapping.get(legacyAgent.modelKey);
   }
-  
+
   return {
     name: name.trim(),
     prompt: legacyAgent.prompt || '',
     description: legacyAgent.description,
     modelKey: newModelKey,
     allowMCPs: legacyAgent.allowMCPs || [],
-    temperature: legacyAgent.temperature,
-    maxAttachedDialogs: legacyAgent.attachedDialogueCount,
+    blockMCPTools: [], // 迁移过程中设为空数组
+    temperature: legacyAgent.temperature || 0.7, // 默认温度
     isConfirmCallTool: legacyAgent.confirm_call_tool ?? false,
     maxTokens: 4000, // 默认值
+    maxContextTokens: 32000, // 添加默认值
     tags: legacyAgent.type ? [legacyAgent.type] : [],
     subAgents: legacyAgent.subAgents || [],
     version: 1
@@ -260,7 +261,7 @@ export interface MigrationCommands {
  * 迁移命令实现
  */
 export async function createMigrationCommands(workspaceManager: WorkspaceManager): Promise<MigrationCommands> {
-  
+
   return {
     async migrateAIModels(params) {
       const {
@@ -293,7 +294,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         // 读取老版本数据
         const fileContent = await fs.promises.readFile(sourcePath, 'utf-8');
         let legacyData: LegacyAIModelData;
-        
+
         try {
           legacyData = JSON.parse(fileContent);
         } catch (error) {
@@ -309,7 +310,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         // 获取全局应用设置管理器
         const appSettingsManager = getAppSettingsManager();
         const currentSettings = await appSettingsManager.getSettings();
-        
+
         // 获取现有的 AI 模型列表（用于重复检查）
         const existingModels = currentSettings.ai?.models || [];
         const existingNames = new Set(existingModels.map((model: AIModelConfigItem) => model.name));
@@ -325,7 +326,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
           try {
             // 转换为新格式
             const newModelConfig = convertLegacyAIModelToNewFormat(legacyModel);
-            
+
             // 检查重复
             if (existingNames.has(newModelConfig.name)) {
               if (!force) {
@@ -378,7 +379,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
               models: newModels
             }
           };
-          
+
           await appSettingsManager.updateSettings(updatedSettings);
         }
 
@@ -388,7 +389,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         } else {
           result.message = `AI模型迁移完成: 成功迁移 ${result.migrated} 个模型, 跳过 ${result.skipped} 个, 错误 ${result.errors} 个`;
         }
-        
+
         result.success = result.errors === 0;
         return result;
 
@@ -430,7 +431,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         // 读取老版本数据
         const fileContent = await fs.promises.readFile(sourcePath, 'utf-8');
         let legacyData: LegacyAgentData;
-        
+
         try {
           legacyData = JSON.parse(fileContent);
         } catch (error) {
@@ -452,7 +453,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
 
         // 获取现有的 Agent 列表（用于重复检查）
         const existingAgents = await workspace.getAllAgents();
-        const existingNames = new Set(existingAgents.map((agent: AgentConfig & { scope?: "global" | "workspace" }) => agent.name));
+        const existingNames = new Set(existingAgents.map((agent: AgentConfig) => agent.name));
 
         if (dryRun) {
           result.message = "试运行模式 - 不会实际创建 Agent";
@@ -463,7 +464,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
           try {
             // 转换为新格式
             const newAgentConfig = convertLegacyAgentToNewFormat(legacyAgent, modelKeyMapping);
-            
+
             // 验证名称
             if (!isValidAgentName(newAgentConfig.name)) {
               result.details.skipped.push({
@@ -526,7 +527,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         } else {
           result.message = `迁移完成: 成功迁移 ${result.migrated} 个 Agent, 跳过 ${result.skipped} 个, 错误 ${result.errors} 个`;
         }
-        
+
         result.success = result.errors === 0;
         return result;
 
@@ -568,7 +569,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         // 读取老版本数据
         const fileContent = await fs.promises.readFile(sourcePath, 'utf-8');
         let legacyData: LegacyMCPData;
-        
+
         try {
           legacyData = JSON.parse(fileContent);
         } catch (error) {
@@ -611,14 +612,15 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
               } else {
                 // 强制模式下删除现有的配置
                 if (!dryRun) {
-                  await workspace.deleteMcpServer(serverName);
+                  await workspace.getMcpManager().deleteServerConfig(serverName);
+                  // await workspace.deleteMcpServer(serverName);
                 }
               }
             }
 
             // 添加新的 MCP 配置
             if (!dryRun) {
-              await workspace.setMcpServer(serverName, serverConfig);
+              await workspace.getMcpManager().setServerConfig(serverName, serverConfig);
               result.details.migrated.push(serverName);
               result.migrated++;
             } else {
@@ -642,7 +644,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         } else {
           result.message = `MCP配置迁移完成: 成功迁移 ${result.migrated} 个服务器, 跳过 ${result.skipped} 个, 错误 ${result.errors} 个`;
         }
-        
+
         result.success = result.errors === 0;
         return result;
 
@@ -702,7 +704,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
       try {
         // 获取迁移命令实例
         const migrationCommands = await createMigrationCommands(workspaceManager);
-        
+
         // 第一步：迁移 AI 模型
         const aiModelResult = await migrationCommands.migrateAIModels({
           sourcePath: modelSourcePath,

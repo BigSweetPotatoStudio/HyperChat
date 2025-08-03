@@ -18,12 +18,11 @@ import {
   Radio,
   InputNumber,
   Tooltip,
-  Popover,
   Slider,
   Row,
   Col,
-  Alert,
-  Divider,
+  Pagination,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -42,12 +41,13 @@ import { useAISettings } from "../contexts/AppSettingsContext";
 import EmojiPicker from 'emoji-picker-react';
 import { HyperChatEditor } from "./HyperChatEditor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared";
+import { AgentConfig, ChatHistoryItem, createDefaultBaseAIConfig, IMCPClient } from "@dadigua/hyperchat-shared";
+import { convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
 const { Title } = Typography;
 
 
 interface Agent {
-  config: AgentConfig & { scope?: "global" | "workspace" };
+  config: AgentConfig; // Removed scope in Agent-centered architecture
   chatLogsCount: number;
   lastChatTime?: number;
 }
@@ -75,9 +75,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [chatHistoryAgent, setChatHistoryAgent] = useState<Agent | null>(null);
   const [chatHistoryList, setChatHistoryList] = useState<ChatHistoryItem[]>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
+  // 分页状态
+  const [chatHistoryPagination, setChatHistoryPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const [form] = Form.useForm();
-  const [scopeFilter, setScopeFilter] = useState<'all' | 'workspace' | 'global'>('all');
-  const [createScope, setCreateScope] = useState<'workspace' | 'global'>('global');
+  // Scope filters removed in Agent-centered architecture
   const refresh = useForceUpdate();
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
@@ -93,6 +98,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   useEffect(() => {
     refresh();
   }, [aiSettings]);
+
 
   // 暴露 createAgent 方法给父组件
   useImperativeHandle(ref, () => ({
@@ -121,18 +127,23 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   // 保存Agent
   const saveAgent = async (values: any) => {
     try {
+      // 使用公共函数转换 TreeSelect 选中值
+      const selectedValues = values.allowMCPs || [];
+      const { allowMCPs, blockMCPTools } = convertTreeSelectionToMCPConfig(selectedValues, mcpClients);
+
       const agentConfig = {
         name: values.name,
         description: values.description,
         prompt: values.prompt,
-        allowMCPs: values.allowMCPs || [],
+        allowMCPs,
+        blockMCPTools,
         isConfirmCallTool: values.isConfirmCallTool ?? false,
         modelKey: values.modelKey,
         temperature: values.temperature,
         maxTokens: values.maxTokens,
-        maxAttachedDialogs: values.maxAttachedDialogs,
-        compressionStrategy: values.compressionStrategy,
+        compressionStrategy: 'tokens',
         maxContextTokens: values.maxContextTokens,
+        
       };
 
       if (editingAgent) {
@@ -144,15 +155,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         }
         await call('updateAgent', {
           agentName: agentKey,
-          updates: agentConfig,
-          scope: editingAgent.config.scope // 使用原有的 scope
+          updates: agentConfig
+          // Scope parameter removed in Agent-centered architecture
         });
         message.success(t`Agent updated successfully`);
       } else {
-        // 创建新Agent
+        // 创建新Agent（Agent-centered架构，无需scope参数）
         await call('createAgent', {
-          config: agentConfig,
-          scope: createScope // 使用用户选择的 scope
+          config: agentConfig
         });
         message.success(t`Agent created successfully`);
       }
@@ -171,8 +181,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const deleteAgent = async (agent: Agent) => {
     try {
       await call('deleteAgent', {
-        agentName: agent.config.name,
-        scope: agent.config.scope // 明确指定要删除的 Agent scope
+        agentName: agent.config.name
+        // Scope parameter removed in Agent-centered architecture
       });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
@@ -183,31 +193,39 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   };
 
 
-  // 查看聊天历史
-  const viewChatHistory = async (agent: Agent) => {
+  // 加载聊天历史（支持分页）
+  const loadChatHistory = async (agent: Agent, page: number = 1, pageSize: number = 10) => {
     try {
       setLoadingChatHistory(true);
-      setChatHistoryAgent(agent);
-      setChatHistoryModal(true);
 
-      // 获取Agent的聊天历史记录
+      // 获取Agent的聊天历史记录（Agent-centered架构，无需scope参数）
       const result = await call('getAgentChatLogs', {
-        agentName: agent.config.name
+        agentName: agent.config.name,
+        page: page - 1, // API使用0-based页码
+        pageSize: pageSize
       });
 
-      // 按时间倒序排列聊天记录
-      const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
-        const timeA = a.dateTime || 0;
-        const timeB = b.dateTime || 0;
-        return timeB - timeA; // 倒序：最新的在前
+      setChatHistoryList(result.chatLogs || []);
+      setChatHistoryPagination({
+        current: page,
+        pageSize: pageSize,
+        total: result.total || 0,
       });
-      setChatHistoryList(sortedChatLogs);
     } catch (error) {
       console.error("Failed to load chat history:", error);
       message.error(t`Failed to load chat history`);
     } finally {
       setLoadingChatHistory(false);
     }
+  };
+
+  // 查看聊天历史
+  const viewChatHistory = async (agent: Agent) => {
+    setChatHistoryAgent(agent);
+    setChatHistoryModal(true);
+
+    // 重置分页状态并加载第一页
+    await loadChatHistory(agent, 1, 10);
   };
 
   // 删除聊天记录
@@ -229,17 +247,12 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           message.success(t`Chat log deleted successfully`);
 
-          // 重新加载聊天历史列表
-          const result = await call('getAgentChatLogs', {
-            agentName: chatHistoryAgent.config.name
-          });
-          // 按时间倒序排列聊天记录
-          const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
-            const timeA = a.dateTime || 0;
-            const timeB = b.dateTime || 0;
-            return timeB - timeA; // 倒序：最新的在前
-          });
-          setChatHistoryList(sortedChatLogs);
+          // 重新加载当前页的聊天历史
+          await loadChatHistory(
+            chatHistoryAgent,
+            chatHistoryPagination.current,
+            chatHistoryPagination.pageSize
+          );
 
           // 刷新Agent列表以更新聊天记录数量
           await onRefresh();
@@ -251,23 +264,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     });
   };
 
-  // 过滤和排序 agents
+  // Agent-centered架构：简单按名称排序
   const filteredAgents = agents
-    .filter(agent => {
-      if (scopeFilter === 'all') return true;
-      return agent.config.scope === scopeFilter;
-    })
-    .sort((a, b) => {
-      // 本地（workspace）Agent 排在前面，全局（global）Agent 排在后面
-      const scopeA = a.config.scope || 'workspace';
-      const scopeB = b.config.scope || 'workspace';
-
-      if (scopeA === 'workspace' && scopeB === 'global') return -1;
-      if (scopeA === 'global' && scopeB === 'workspace') return 1;
-
-      // 相同 scope 内按名称排序
-      return a.config.name.localeCompare(b.config.name);
-    });
+    .sort((a, b) => a.config.name.localeCompare(b.config.name));
 
   return (
     <>
@@ -283,25 +282,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           />
         </div>
 
-        {/* Scope 过滤器 */}
-        <div className="mb-3">
-          <Radio.Group
-            value={scopeFilter}
-            onChange={(e) => setScopeFilter(e.target.value)}
-            size="small"
-          >
-            <Radio.Button value="all">{t`All`}</Radio.Button>
-            <Radio.Button value="workspace">{t`Workspace`}</Radio.Button>
-            <Radio.Button value="global">{t`Global`}</Radio.Button>
-          </Radio.Group>
-        </div>
+        {/* Scope filters removed in Agent-centered architecture */}
 
         {filteredAgents.length > 0 ? (
           <List
             size="small"
             dataSource={filteredAgents}
             renderItem={(agent) => {
-              const isGlobalAgent = agent.config.scope === "global";
+              // Removed isGlobalAgent logic in Agent-centered architecture
               const menuItems = [
                 {
                   key: "chat",
@@ -338,22 +326,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   label: t`Delete`,
                   danger: true,
                   onClick: () => {
-                    const scopeWarning = agent.config.scope === 'global'
-                      ? t`Warning: Deleting a global agent will affect all projects using this agent!`
-                      : t`This will only delete the agent from current workspace.`;
-
+                    // Simplified delete confirmation in Agent-centered architecture
                     Modal.confirm({
                       title: t`Confirm Delete`,
-                      content: (
-                        <div>
-                          <p>{t`Are you sure you want to delete this agent?`}</p>
-                          <Alert
-                            message={scopeWarning}
-                            type={agent.config.scope === 'global' ? 'warning' : 'info'}
-                            style={{ marginTop: 8 }}
-                          />
-                        </div>
-                      ),
+                      content: t`Are you sure you want to delete this agent?`,
                       onOk: () => deleteAgent(agent),
                       okButtonProps: { danger: true },
                     });
@@ -404,11 +380,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                     title={
                       <Space>
                         <span className="text-sm">{agent.config.name}</span>
-                        {agent.config.scope && (
-                          <Tag color={agent.config.scope === "global" ? "orange" : "purple"}>
-                            {agent.config.scope === "global" ? t`Global` : t`Workspace`}
-                          </Tag>
-                        )}
+                        {/* Scope tags removed in Agent-centered architecture */}
 
                         {agent.chatLogsCount !== undefined && (
                           <Tooltip title={t`Chat count`}>
@@ -444,13 +416,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           />
         ) : (
           <Empty
-            description={
-              agents.length === 0
-                ? t`No Agents`
-                : scopeFilter === 'all'
-                  ? t`No Agents`
-                  : `${t`No`} ${scopeFilter} ${t`agents`}`
-            }
+            description={t`No Agents`}
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
             {agents.length === 0 && (
@@ -486,11 +452,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               <Descriptions.Item label={t`Key`}>
                 {selectedAgent.config.name}
               </Descriptions.Item>
-              <Descriptions.Item label={t`Scope`}>
-                <Tag color={selectedAgent.config.scope === "global" ? "orange" : "purple"}>
-                  {selectedAgent.config.scope === "global" ? t`Global` : t`Workspace`}
-                </Tag>
-              </Descriptions.Item>
+              {/* Scope information removed in Agent-centered architecture */}
               <Descriptions.Item label={t`Description`}>
                 {selectedAgent.config.description || t`No description`}
               </Descriptions.Item>
@@ -508,11 +470,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               <Descriptions.Item label={t`Last Chat`}>
                 {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
               </Descriptions.Item>
-              <Descriptions.Item label={t`Context History`}>
-                {selectedAgent.config.maxAttachedDialogs || 5}
-              </Descriptions.Item>
               <Descriptions.Item label={t`Compression Strategy`}>
-                {selectedAgent.config.compressionStrategy || 'tokens'}
+                tokens
               </Descriptions.Item>
               {selectedAgent.config.maxContextTokens && (
                 <Descriptions.Item label={t`Max Context Tokens`}>
@@ -554,12 +513,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 {selectedAgent.config.maxTokens !== undefined && (
                   <div>Max Tokens: {selectedAgent.config.maxTokens}</div>
                 )}
-                {selectedAgent.config.maxAttachedDialogs !== undefined && (
-                  <div>Context History: {selectedAgent.config.maxAttachedDialogs}</div>
-                )}
-                {selectedAgent.config.compressionStrategy && (
-                  <div>Compression Strategy: {selectedAgent.config.compressionStrategy}</div>
-                )}
+                <div>Compression Strategy: tokens</div>
                 {selectedAgent.config.maxContextTokens !== undefined && (
                   <div>Max Context Tokens: {selectedAgent.config.maxContextTokens}</div>
                 )}
@@ -589,6 +543,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           if (open) {
             if (editingAgent) {
               // 编辑模式：设置Agent的现有值
+              // 使用公共函数将 allowMCPs 和 blockMCPTools 转换为 TreeSelect 格式
+              const allowMCPs = editingAgent.config.allowMCPs || [];
+              const blockMCPTools = editingAgent.config.blockMCPTools || [];
+              const combinedAllowMCPs = convertMCPConfigToTreeSelection(allowMCPs, blockMCPTools, mcpClients);
+
               const formValues = {
                 key: editingAgent.config.name,
                 name: editingAgent.config.name,
@@ -597,36 +556,35 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 modelKey: editingAgent.config.modelKey,
                 temperature: editingAgent.config.temperature ?? 1,
                 maxTokens: editingAgent.config.maxTokens,
-                allowMCPs: editingAgent.config.allowMCPs || [],
+                allowMCPs: combinedAllowMCPs,
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
-                maxAttachedDialogs: editingAgent.config.maxAttachedDialogs,
-                compressionStrategy: editingAgent.config.compressionStrategy || 'tokens',
+                compressionStrategy: 'tokens',
                 maxContextTokens: editingAgent.config.maxContextTokens,
               };
               form.resetFields();
               form.setFieldsValue(formValues);
             } else {
               // 创建模式：从工作区设置读取默认值
-              const workspaceAIConfig = workspace?.settings?.aiConfig;
+              const baseConfig = createDefaultBaseAIConfig("你是谁一个超级agent");
               const firstAvailableModel = aiSettings?.models?.[0]?.key || "";
 
               // 只有在 aiSettings 加载完成后才设置默认值
               if (aiSettings && !aiSettingsLoading) {
                 const defaultValues = {
-                  allowMCPs: ["hyper_system", "hyper_browser"],
-                  isConfirmCallTool: workspaceAIConfig?.isConfirmCallTool ?? false,
-                  temperature: workspaceAIConfig?.temperature ?? 1,
-                  maxTokens: workspaceAIConfig?.maxTokens,
-                  maxAttachedDialogs: workspaceAIConfig?.maxAttachedDialogs,
-                  modelKey: workspaceAIConfig?.modelKey || firstAvailableModel,
-                  prompt: workspaceAIConfig?.prompt || "",
+                  ...baseConfig,
+                  allowMCPs: convertMCPConfigToTreeSelection(
+                    ["hyper_system", "hyper_browser"], // 默认允许的MCP
+                    [], // 默认不阻止任何工具
+                    mcpClients
+                  ),
+                  modelKey: baseConfig?.modelKey || firstAvailableModel,
+                  prompt: undefined, // Prompt留空，用户需要输入
                   compressionStrategy: 'tokens',
                 };
 
                 form.setFieldsValue(defaultValues);
               }
-              // 重置 scope 选择为默认值
-              setCreateScope('global');
+              // Scope reset removed in Agent-centered architecture
             }
           }
         }}
@@ -637,55 +595,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           onFinish={saveAgent}
           preserve={false}
         >
-          {/* Scope 选择 - 只在创建模式显示 */}
-          {!editingAgent && (
-            <>
-              <Alert
-                message={
-                  createScope === 'global'
-                    ? t`Creating a global agent that will be available in all workspaces`
-                    : t`Creating a workspace agent that will only be available in current workspace`
-                }
-                type={createScope === 'global' ? 'warning' : 'info'}
-                style={{ marginBottom: 16 }}
-              />
-              <Form.Item label={t`Agent Scope`}>
-                <Radio.Group
-                  value={createScope}
-                  onChange={(e) => setCreateScope(e.target.value)}
-                >
-                  <Radio value="workspace">
-                    <Space>
-                      <Tag color="purple">{t`Workspace`}</Tag>
-                      <span>{t`Current project only`}</span>
-                    </Space>
-                  </Radio>
-                  <Radio value="global">
-                    <Space>
-                      <Tag color="orange">{t`Global`}</Tag>
-                      <span>{t`All projects shared`}</span>
-                    </Space>
-                  </Radio>
-                </Radio.Group>
-              </Form.Item>
-              <Divider />
-            </>
-          )}
+          {/* Scope selection removed in Agent-centered architecture */}
 
-          {/* 编辑模式显示当前 scope */}
-          {editingAgent && (
-            <>
-              <Alert
-                message={
-                  editingAgent.config.scope === 'global'
-                    ? t`Editing a global agent - changes will affect all projects using this agent`
-                    : `${t`Current agent scope:`} ${t`Workspace`}`
-                }
-                type={editingAgent.config.scope === 'global' ? 'warning' : 'info'}
-                style={{ marginBottom: 16 }}
-              />
-            </>
-          )}
+          {/* Scope display removed in Agent-centered architecture */}
 
           <Form.Item
             name="name"
@@ -730,7 +642,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               multiple
               treeCheckable
               placeholder={t`Select tools and capabilities for this agent`}
-              showCheckedStrategy={TreeSelect.SHOW_PARENT}
+              // showCheckedStrategy={TreeSelect.SHOW_PARENT}
               treeData={(Object.values(mcpClients) || []).map((x) => ({
                 title: x.serverName,
                 key: x.serverName,
@@ -773,84 +685,107 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           setChatHistoryModal(false);
           setChatHistoryAgent(null);
           setChatHistoryList([]);
+          setChatHistoryPagination({ current: 1, pageSize: 10, total: 0 });
         }}
         footer={null}
         width={800}
         destroyOnHidden
       >
-        <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-          {loadingChatHistory ? (
-            <div className="text-center py-8">
-              <Space>
-                <span>{t`Loading chat history...`}</span>
-              </Space>
-            </div>
-          ) : chatHistoryList.length > 0 ? (
-            <List
-              dataSource={chatHistoryList}
-              renderItem={(chatLog: ChatHistoryItem, index) => (
-                <List.Item
-                  key={chatLog.key || index}
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => {
-                    // 关闭历史记录模态框
-                    setChatHistoryModal(false);
-                    setChatHistoryAgent(null);
-                    setChatHistoryList([]);
+        <Spin spinning={loadingChatHistory} tip={t`Loading chat history...`}>
+          <div style={{ minHeight: '300px' }}>
+            {chatHistoryList.length > 0 ? (
+              <>
+                <List
+                  dataSource={chatHistoryList}
+                  renderItem={(chatLog: ChatHistoryItem, index) => (
+                    <List.Item
+                      key={chatLog.key || index}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => {
+                        // 关闭历史记录模态框
+                        setChatHistoryModal(false);
+                        setChatHistoryAgent(null);
+                        setChatHistoryList([]);
+                        setChatHistoryPagination({ current: 1, pageSize: 10, total: 0 });
 
-                    // 打开聊天并加载历史记录
-                    if (chatHistoryAgent && onOpenChat) {
-                      onOpenChat(chatHistoryAgent, chatLog);
-                    }
-                  }}
-                  actions={[
-                    <Button
-                      key="delete"
-                      type="text"
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      danger
-                      onClick={(e) => {
-                        e.stopPropagation(); // 阻止事件冒泡
-                        deleteChatLog(chatLog);
+                        // 打开聊天并加载历史记录
+                        if (chatHistoryAgent && onOpenChat) {
+                          onOpenChat(chatHistoryAgent, chatLog);
+                        }
                       }}
-                      title={t`Delete Chat Log`}
+                      actions={[
+                        <Button
+                          key="delete"
+                          type="text"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          danger
+                          onClick={(e) => {
+                            e.stopPropagation(); // 阻止事件冒泡
+                            deleteChatLog(chatLog);
+                          }}
+                          title={t`Delete Chat Log`}
+                        />
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            <span>{chatLog.label || `Chat ${(chatHistoryPagination.current - 1) * chatHistoryPagination.pageSize + index + 1}`}</span>
+                            {chatLog.messages && (
+                              <Tag color="blue">{chatLog.messages.length} messages</Tag>
+                            )}
+                            {chatLog.configOverrides?.modelKey && (
+                              <Tag color="green">{getModelDisplayName(chatLog.configOverrides.modelKey)}</Tag>
+                            )}
+                          </Space>
+                        }
+                        description={
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              {chatLog.dateTime
+                                ? new Date(chatLog.dateTime).toLocaleString()
+                                : 'Unknown time'
+                              }
+                            </div>
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+
+                {/* 分页组件 */}
+                {chatHistoryPagination.total > chatHistoryPagination.pageSize && (
+                  <div style={{ textAlign: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
+                    <Pagination
+                      current={chatHistoryPagination.current}
+                      pageSize={chatHistoryPagination.pageSize}
+                      total={chatHistoryPagination.total}
+                      showSizeChanger
+                      showQuickJumper
+                      showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+                      pageSizeOptions={['5', '10', '20', '50']}
+                      onChange={async (page, pageSize) => {
+                        if (chatHistoryAgent) {
+                          await loadChatHistory(chatHistoryAgent, page, pageSize);
+                        }
+                      }}
+                      disabled={loadingChatHistory}
                     />
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={
-                      <Space>
-                        <span>{chatLog.label || `Chat ${index + 1}`}</span>
-                        {chatLog.messages && (
-                          <Tag color="blue">{chatLog.messages.length} messages</Tag>
-                        )}
-                        {chatLog.configOverrides?.modelKey && (
-                          <Tag color="green">{getModelDisplayName(chatLog.configOverrides.modelKey)}</Tag>
-                        )}
-                      </Space>
-                    }
-                    description={
-                      <div>
-                        <div className="text-xs text-gray-500">
-                          {chatLog.dateTime
-                            ? new Date(chatLog.dateTime).toLocaleString()
-                            : 'Unknown time'
-                          }
-                        </div>
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          ) : (
-            <Empty
-              description={t`No chat history found`}
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          )}
-        </div>
+                  </div>
+                )}
+              </>
+            ) : !loadingChatHistory ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                <Empty
+                  description={t`No chat history found`}
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              </div>
+            ) : null}
+          </div>
+        </Spin>
       </Modal>
     </>
   );
@@ -888,31 +823,19 @@ export const AgentCommonFormItems = (
           max={32000}
           step={100}
           style={{ width: '100%' }}
-          placeholder="4000"
+          placeholder="8096"
         />
       </Form.Item>
     </Col>
-    <Col span={8}>
-      <Form.Item
-        name="compressionStrategy"
-        label={t`Compression Strategy`}
-        tooltip={t`Strategy for memory compression: tokens (token数量), dialogs (轮数)`}
-      >
-        <Select
-          style={{ width: '100%' }}
-          placeholder="Select strategy"
-          options={[
-            { value: 'dialogs', label: t`Dialogs Count` },
-            { value: 'tokens', label: t`Token Count` },
-          ]}
-        />
-      </Form.Item>
-    </Col>
+    {/* compressionStrategy is now fixed to 'tokens' */}
+    <Form.Item name="compressionStrategy" initialValue="tokens" hidden>
+      <Input />
+    </Form.Item>
     <Col span={8}>
       <Form.Item
         name="maxContextTokens"
         label={t`Max Context Tokens`}
-        tooltip={t`Maximum context tokens before compression (1000-128000). Only effective when compression strategy is 'tokens' or 'auto'`}
+        tooltip={t`Maximum context tokens before compression (1000-128000)`}
       >
         <InputNumber
           min={1000}
@@ -920,21 +843,6 @@ export const AgentCommonFormItems = (
           step={1000}
           style={{ width: '100%' }}
           placeholder="Max Context Tokens"
-        />
-      </Form.Item>
-    </Col>
-    <Col span={8}>
-      <Form.Item
-        name="maxAttachedDialogs"
-        label={t`Max Attached Dialogs`}
-        tooltip={t`Maximum number of attached dialog histories (0-100)`}
-      >
-        <InputNumber
-          min={0}
-          max={100}
-          step={1}
-          style={{ width: '100%' }}
-          placeholder="Maximum number of attached dialog histories (0-100)"
         />
       </Form.Item>
     </Col>

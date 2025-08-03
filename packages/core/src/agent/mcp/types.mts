@@ -19,39 +19,22 @@ export interface WorkspaceMCPConfig {
    */
   workspacePath: string;
 
-  /**
-   * 配置创建时间
-   */
-  created?: number;
-
-  /**
-   * 最后修改时间
-   */
-  lastModified?: number;
 }
 
 export type WorkspaceMCPClient = IMCPClient;
 
 export interface MCPManagerOptions {
   /**
-   * 是否启用自动重连
-   */
-  autoReconnect?: boolean;
-
-  /**
-   * 重连间隔（毫秒）
-   */
-  reconnectInterval?: number;
-
-  /**
-   * 最大重连次数
-   */
-  maxReconnectAttempts?: number;
-
-  /**
    * 是否启用日志记录
    */
   enableLogging?: boolean;
+  
+  /**
+   * 允许启动的MCP服务器名称列表
+   * 如果为空或未设置，则启动所有配置的服务器
+   * Agent专属：只启动Agent允许的MCP服务器
+   */
+  allowMCPs?: string[];
 }
 
 export interface MCPManagerEvents {

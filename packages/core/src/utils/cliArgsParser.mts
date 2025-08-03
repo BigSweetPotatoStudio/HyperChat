@@ -193,7 +193,7 @@ Configuration Priority (highest to lowest):
 Examples:
   hyperchat serve --port 8080 --verbose --env development
   hyperchat chat --ai-provider openai --ai-model gpt-4
-  hyperchat run --data-dir /custom/path --quiet`;
+  hyperchat chat --data-dir /custom/path --quiet`;
   }
 }
 
@@ -209,4 +209,61 @@ export function parseCurrentArgs(): Partial<EnvConfig> {
  */
 export function parseOptionsToEnv(options: Record<string, any>): Partial<EnvConfig> {
   return CliArgsParser.parseOptions(options);
+}
+
+/**
+ * CLI选项定义接口
+ */
+export interface CliOptionDefinition {
+  long: string;    // 长选项名，如 'agent'
+  short?: string;  // 短选项名，如 'a'  
+  hasValue: boolean; // 是否需要值
+}
+
+/**
+ * 通用CLI参数解析器
+ * 用于解析特定命令的选项
+ */
+export class GenericCliParser {
+  /**
+   * 解析指定的CLI选项
+   * @param args 完整的命令行参数数组
+   * @param options 要解析的选项定义
+   * @returns 解析结果对象
+   */
+  static parseArgs(args: string[], options: CliOptionDefinition[]): Record<string, string | boolean> {
+    const result: Record<string, string | boolean> = {};
+    
+    // 创建选项映射
+    const optionMap = new Map<string, CliOptionDefinition>();
+    for (const option of options) {
+      optionMap.set(`--${option.long}`, option);
+      if (option.short) {
+        optionMap.set(`-${option.short}`, option);
+      }
+    }
+    
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      const optionDef = optionMap.get(arg);
+      
+      if (!optionDef) {
+        continue;
+      }
+      
+      if (optionDef.hasValue) {
+        // 需要值的选项
+        const nextArg = args[i + 1];
+        if (nextArg && !nextArg.startsWith('-')) {
+          result[optionDef.long] = nextArg;
+          i++; // 跳过值参数
+        }
+      } else {
+        // 布尔标志选项
+        result[optionDef.long] = true;
+      }
+    }
+    
+    return result;
+  }
 }

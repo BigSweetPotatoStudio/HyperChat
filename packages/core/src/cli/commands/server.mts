@@ -13,6 +13,8 @@ import { Logger } from '../utils/logger.mjs';
 import "../../first.mjs";
 import { initHttp } from "../../http.mjs";
 import { getWorkspaceManager } from "../../workspace/index.mjs";
+
+import { findAgent, DEFAULT_AGENT_NAME } from "../utils/agentDiscovery.mjs";
 import { t } from '../../i18n.mjs';
 import { EnvManager } from '../../data/managers/envManager.mjs';
 import { parseOptionsToEnv } from '../../utils/cliArgsParser.mjs';
@@ -39,7 +41,8 @@ export async function startServer(options: ServerOptions = {}) {
   const cliArgs = parseOptionsToEnv(options);
   
   // 获取环境管理器（包含 CLI 参数覆盖）
-  const envManager = EnvManager.getInstance(process.cwd(), cliArgs);
+  const envManager = EnvManager.getInstance();
+  envManager.initBase(process.cwd(), cliArgs);
   const config = envManager.getConfig();
   
   const port = config.HyperChat_HTTP_PORT;
@@ -48,59 +51,24 @@ export async function startServer(options: ServerOptions = {}) {
   try {
     logger.info(`🚀 ${t`Starting HyperChat server...`}`);
 
-    // // 检查服务器是否已经在运行
-    // const isRunning = await checkServerHealth(host, port);
-    // if (isRunning) {
-    //   logger.warn(`服务器已在 ${host}:${port} 上运行`);
-    //   logger.info(`🌐 Web 界面: http://${host}:${port}`);
-    //   return;
-    // }
 
     logger.info(`⏳ ${t`Waiting for server to start...`}`);
-    // HTTP 服务器只需要基本配置，不需要完整服务
+    
+    // 1. 初始化工作区管理器
     const currentWorkingDirectory = process.cwd();
+
     await getWorkspaceManager().initialize(currentWorkingDirectory);
-    await getWorkspaceManager().start();
-    // 启动 HTTP 服务，捕获并记录异常
+    let workspace = getWorkspaceManager().getCurrentWorkspace();
+    await workspace.start();
+
+    
+    // 2. 启动 HTTP 服务
     await initHttp();
 
     logger.info(`🚀 ${t`Server started successfully...`}`);
-
-
 
   } catch (error) {
     logger.error(`${t`Startup failed:`} ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
-}
-
-/**
- * 检查服务器健康状态
- */
-async function checkServerHealth(host: string, port: number): Promise<boolean> {
-  const http = await import('http');
-
-  return new Promise((resolve) => {
-    const req = http.request({
-      hostname: host,
-      port: port,
-      path: '/',
-      method: 'GET',
-      timeout: 2000
-    }, (res) => {
-      // 任何响应都表示服务器在运行
-      resolve(true);
-    });
-
-    req.on('error', () => {
-      resolve(false);
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      resolve(false);
-    });
-
-    req.end();
-  });
 }

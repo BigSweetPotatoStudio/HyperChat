@@ -8,9 +8,9 @@ import {
   readFileContent,
   withTimeout
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 
-const replaceSchema = z.object({
+const replaceSchema = createToolSchema({
   absolute_path: z.string().describe('The absolute path to the file to edit'),
   old_text: z.string().describe('The text to search for and replace'),
   new_text: z.string().describe('The text to replace with'),
@@ -22,7 +22,7 @@ export function registerReplaceTool(server: McpServer): void {
     'replace',
     'Replaces text in a specified file. Can replace first occurrence or all occurrences.',
     replaceSchema.shape,
-    async ({ absolute_path, old_text, new_text, replace_all }) => {
+    async ({ reason, absolute_path, old_text, new_text, replace_all }) => {
       const config = getConfig();
       
       try {

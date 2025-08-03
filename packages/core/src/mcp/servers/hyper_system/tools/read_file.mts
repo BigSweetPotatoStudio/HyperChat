@@ -9,9 +9,9 @@ import {
   limitOutputLines,
   withTimeout
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 
-const readFileSchema = z.object({
+const readFileSchema = createToolSchema({
   absolute_path: z.string().describe('The absolute path to the file to read'),
   offset: z.number().int().min(0).optional().describe('Optional: The 0-based line number to start reading from'),
   limit: z.number().int().min(1).optional().describe('Optional: Maximum number of lines to read'),
@@ -22,7 +22,7 @@ export function registerReadFileTool(server: McpServer): void {
     'read_file',
     'Reads and returns the content of a specified file from the local filesystem. Supports text files with optional line range specification.',
     readFileSchema.shape,
-    async ({ absolute_path, offset, limit }) => {
+    async ({ reason, absolute_path, offset, limit }) => {
       const config = getConfig();
       
       try {
@@ -57,7 +57,7 @@ export function registerReadFileTool(server: McpServer): void {
         // 生成显示信息
         const stats = fs.statSync(normalizedPath);
         
-        let summary = `Read file: ${absolute_path}`;
+        let summary = `Read file: ${absolute_path} (Reason: ${reason})`;
         if (offset !== undefined || limit !== undefined) {
           const endLine = limit ? (offset || 0) + limit : 'end';
           summary += ` (lines ${offset || 0}-${endLine})`;

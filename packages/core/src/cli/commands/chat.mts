@@ -5,26 +5,132 @@
  */
 
 import process from 'process';
-import path from 'path';
+import * as path from 'path';
 import chalk from 'chalk';
 import { Logger } from '../utils/logger.mjs';
-import { Logger as LoggerClass } from '../../log.mjs';
 import { Command } from '../../command.mjs';
 import { AiChannel } from '../../ai/ai.mjs';
 import type { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { createReadline } from '../utils/readline.mjs';
-import { workspaceManager } from '../../workspace/index.mjs';
+import { AgentInstance } from '../../workspace/index.mjs';
 import {
-  initializeAIEnvironment,
-  createAIChannel,
-  // addSystemMessage,
-  logAIConfig
+  createAIChannel
 } from '../../utils/aiConfigHelper.mjs';
+import {
+  DEFAULT_AGENT_NAME
+} from '../utils/agentDiscovery.mjs';
+import { getAgent } from '../agentManager.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import { getMyUuid } from '../utils/util.mjs';
 import { CONST } from '../../const.mjs';
+import type { Logger as CLILogger } from '../utils/logger.mjs';
+import { TaskQueue } from '../../utils/taskQueue.mjs';
 
+// 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
+const chatLogQueue = new TaskQueue({ concurrency: 1 });
+
+/**
+ * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
+ * 优先级：agentPath > workspace + agentName > 默认Agent发现（本地 > 全局 > 创建）
+ */
+async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
+  // 使用新的CliAgentManager来获取Agent
+  try {
+    const agent = await getAgent({
+      agentName: options.agent,
+      agentPath: options.agentPath,
+      workspace: options.workspace,
+    });
+    return agent;
+  } catch (error) {
+    // 如果Agent未找到，提供友好的错误信息
+    const agentName = options.agent || DEFAULT_AGENT_NAME;
+
+    // 获取所有可用的Agent列表
+    const { discoverAgents } = await import('../utils/agentDiscovery.mjs');
+    const availableAgents = await discoverAgents({
+      workspace: options.workspace
+    });
+
+    if (availableAgents.length === 0) {
+      throw new Error(`${t`No agents found in the system`}\n${t`Create an agent first using:`} hyperchat agent create ${agentName}`);
+    } else {
+      const availableNames = availableAgents.map(a => a.name).join(', ');
+      throw new Error(`${t`Agent not found:`} ${agentName}\n${t`Available agents:`} ${availableNames}\n${t`Use:`} hyperchat agent <name> chat`);
+    }
+  }
+}
+
+/**
+ * 显示Agent启动详细信息
+ */
+async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Promise<void> {
+  const config = agent.getConfig();
+
+  // 显示Agent基本配置信息
+  logger.info(`  📋 ${t`Agent configuration:`}`);
+  logger.info(`    ├─ ${t`Model:`} ${config.modelKey || t`inherit from workspace`}`);
+  logger.info(`    ├─ ${t`Temperature:`} ${config.temperature !== undefined ? config.temperature : t`default`}`);
+  logger.info(`    ├─ ${t`Max tokens:`} ${config.maxTokens || t`default`}`);
+  logger.info(`    └─ ${t`Prompt length:`} ${config.prompt ? config.prompt.length : 0} ${t`characters`}`);
+
+  // 显示MCP客户端状态（已由CliAgentManager启动）
+  logger.info(`  🔧 ${t`MCP clients status:`}`);
+  try {
+    const clients = agent.getMCPClients();
+
+    if (clients.length === 0) {
+      logger.info(`    └─ ${t`No MCP clients configured`}`);
+    } else {
+      logger.info(`    ├─ ${t`Total clients:`} ${clients.length}`);
+
+      // 显示每个MCP客户端的详细状态
+      for (let i = 0; i < clients.length; i++) {
+        const client = clients[i];
+        const isLast = i === clients.length - 1;
+        const prefix = isLast ? '    └─' : '    ├─';
+
+        const statusEmoji = client.status === 'connected' ? '✅' :
+          client.status === 'connecting' ? '🔄' :
+            client.status === 'disabled' ? '⏸️' : '❌';
+
+        const toolCount = client.tools?.length || 0;
+
+        // 显示具体的配置来源路径
+        let sourceLabel = '';
+        const config = (client as any).config;
+        if (config && config._sourcePath) {
+          sourceLabel = ` (${config._sourcePath})`;
+        }
+
+        logger.info(`${prefix} ${statusEmoji} ${client.serverName}: ${client.status} (${toolCount} ${t`tools`})${sourceLabel}`);
+
+        // 显示版本信息（如果已连接）
+        if (client.status === 'connected' && client.version) {
+          logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Version:`} ${client.version}`);
+        }
+
+        // 显示错误信息（如果连接失败）
+        if (client.status === 'disconnected' && (client as any).lastError) {
+          logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Error:`} ${(client as any).lastError}`);
+        }
+      }
+    }
+  } catch (error) {
+    logger.warn(`    └─ ${t`MCP status error:`} ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  // 显示聊天记录统计
+  try {
+    const summary = await agent.getSummary();
+    if (summary.chatLogsCount > 0) {
+      logger.info(`  💬 ${t`Chat history:`} ${summary.chatLogsCount} ${t`conversations`}`);
+    }
+  } catch (error) {
+    // 静默处理聊天记录统计错误
+  }
+}
 
 // 获取聊天标签（基于第一个用户消息）
 function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
@@ -80,22 +186,20 @@ class StreamChatHandler {
   }
 
   async handleUpdate(aiChannel: AiChannel, env: any, chatKey: string) {
-    // 保存聊天历史
+    // 保存聊天历史（使用队列确保顺序写入）
     try {
       if (env.agent) {
-        const saveAction = env.agent.setChatLog({
-          key: chatKey,
-          label: getLabelByFirstUserContent(aiChannel.messages),
-          messages: aiChannel.messages,
-          agentName: env.agent.getConfig().name || 'default',
-          dateTime: Date.now(),
-          chatType: "user",
-          configOverrides: env.effectiveConfig,
+        chatLogQueue.add(async () => {
+          await env.agent.setChatLog({
+            key: chatKey,
+            label: getLabelByFirstUserContent(aiChannel.messages),
+            messages: aiChannel.messages,
+            agentName: env.agent.getConfig().name || 'default',
+            dateTime: Date.now(),
+            chatType: "user",
+            configOverrides: env.effectiveConfig,
+          });
         });
-        // 非交互式模式使用await，交互式模式不await
-        if (!this.isInteractive) {
-          await saveAction;
-        }
       }
     } catch (error) {
       // 静默处理聊天历史保存错误
@@ -108,6 +212,7 @@ class StreamChatHandler {
     this.handleAssistantMessage(aiChannel);
   }
 
+  toolName2DisplayNameMap: { [name: string]: string } = {};
   private handleToolUpdates(aiChannel: AiChannel) {
     const lastMsg = aiChannel.lastMessage;
 
@@ -120,15 +225,26 @@ class StreamChatHandler {
       if (pendingToolCalls.length > this.lastDisplayedToolCallsCount) {
         for (let i = this.lastDisplayedToolCallsCount; i < pendingToolCalls.length; i++) {
           const tool = pendingToolCalls[i];
+          const toolResult = aiChannel.messages.find(m => m.role === 'tool' && m.tool_call_id === tool.id);
+          this.toolName2DisplayNameMap[tool.function.name] = tool.displayName || tool.originalName || tool.function.name;
           if (tool) {
-            process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
+            // 分离 reason 和其他参数
+            const { reason, ...argsShow } = (tool.function.args || {}) as any;
+
+            // 显示工具调用和 reason
+            let toolDisplay = `🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`;
+            if (reason) {
+              toolDisplay += ` ${chalk.greenBright(reason)}`;
+            }
+            process.stdout.write('\n' + chalk.cyan(toolDisplay));
             process.stdout.write('\n');
-            // 显示工具参数
-            const args = tool.function.args;
-            if (args && Object.keys(args).length > 0) {
-              const argsStr = JSON.stringify(args, null, 2);
-              // const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
-              process.stdout.write(chalk.gray(`${argsStr}`));
+
+            // 显示其他工具参数（排除 reason）
+            if (Object.keys(argsShow).length > 0) {
+              const argsStr = JSON.stringify(argsShow, null, 0).replace(/\n\s*/g, ' ');
+              // 如果参数太长，截断显示
+              const shortArgsStr = argsStr.length > 200 ? argsStr.substring(0, 200) + '...' : argsStr;
+              process.stdout.write(chalk.gray(`  ${shortArgsStr}`));
             }
             process.stdout.write('\n');
           }
@@ -158,17 +274,7 @@ class StreamChatHandler {
         for (let i = this.lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
           const toolMsg = completedToolMessages[i];
 
-          // 找到对应的工具调用信息
-          const currentToolCalls = lastMsg.role === 'assistant' ? (lastMsg.content_tool_calls || []) : [];
-          const correspondingTool = currentToolCalls.find(tool =>
-            tool.id === toolMsg.tool_call_id ||
-            tool.function?.name === toolMsg.tool_call_name
-          );
-
-          const toolName = correspondingTool?.displayName ||
-            correspondingTool?.originalName ||
-            toolMsg.tool_call_name ||
-            'Unknown Tool';
+          const toolName = this.toolName2DisplayNameMap[toolMsg.tool_call_name!] || 'Unknown Tool';
 
           if ((toolMsg as any).content_status === 'error') {
             process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
@@ -194,8 +300,8 @@ class StreamChatHandler {
           }
 
           if (contentStr && contentStr.length > 0) {
-            // const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
-            process.stdout.write(chalk.gray(contentStr) + '\n');
+            const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
+            process.stdout.write(chalk.gray(shortContent) + '\n');
           }
         }
         this.lastDisplayedToolResultsCount = completedToolMessages.length;
@@ -255,6 +361,7 @@ class StreamChatHandler {
 export interface ChatOptions {
   agent?: string;
   workspace?: string;
+  agentPath?: string;  // Agent路径，最高优先级
   model?: string;
   verbose?: boolean;
   quiet?: boolean;
@@ -270,89 +377,77 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 初始化CLI聊天环境
     logger.info(`🔍 ${t`Initializing HyperChat CLI...`} ${CONST.getVersion}`);
 
-    // Chat需要完整服务（MCP工具、AI聊天）
+    // Agent-centered架构：智能选择和启动Agent
+    logger.info(`🚀 ${t`Initializing Agent-centered chat environment...`}`);
+
     const currentWorkingDirectory = options.workspace ? path.resolve(options.workspace) : process.cwd();
-    await workspaceManager.initialize(currentWorkingDirectory);
-
-    const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
-
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
 
-    if (currentWorkingDirectory !== currentWorkspacePath) {
-      logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
-    }
+    // 智能选择Agent
+    const agent = await selectAgent(options);
+    const agentConfig = agent.getConfig();
 
-    await workspaceManager.start();
-    logger.info(`✅ ${t`Workspace services started`}`);
+    logger.info(`✅ ${t`Agent selected:`} ${agentConfig.name}`);
 
-    // 初始化 AI 环境
-    const env = await initializeAIEnvironment({
-      agentName: options.agent,
-      workspacePath: workspaceManager.getCurrentWorkspacePath(),
-    });
+    // 显示Agent启动详细信息
+    await showAgentStartupInfo(agent, logger);
+
+    // 创建AI环境对象（Agent-centered版本）
+    const appSettings = await Command.getAppSettings();
+    const aiSettings = appSettings.ai;
+
+    // 构建有效配置
+    let effectiveConfig = {
+      modelKey: agentConfig.modelKey || aiSettings?.models?.[0]?.key || 'default-model',
+      allowMCPs: agentConfig.allowMCPs || [],
+      blockMCPTools: agentConfig.blockMCPTools || [],
+      isConfirmCallTool: agentConfig.isConfirmCallTool ?? false,
+      temperature: agentConfig.temperature,
+      maxTokens: agentConfig.maxTokens ?? 4000,
+      prompt: agentConfig.prompt || '',
+      maxContextTokens: agentConfig.maxContextTokens,
+    };
 
     // 如果命令行指定了模型，覆盖配置
     if (options.model) {
-      const appSettings = await Command.getAppSettings();
-      const availableModels = appSettings.ai?.models || [];
+      const availableModels = aiSettings?.models || [];
       const isModelAvailable = availableModels.some((m: any) => m.key === options.model);
 
       if (isModelAvailable) {
-        env.effectiveConfig.modelKey = options.model;
+        effectiveConfig.modelKey = options.model;
         logger.info(`📋 ${t`Using AI model specified from command line:`} ${options.model}`);
       } else {
         logger.warn(`⚠️  ${t`Specified model`} '${options.model}' ${t`is not available, using default model`}`);
       }
     }
 
-    // 记录配置信息  
-    logAIConfig(LoggerClass, env);
+    // 显示最终使用的模型信息
+    logger.info(`🤖 ${t`Model:`} ${effectiveConfig.modelKey}${agentConfig.modelKey && agentConfig.modelKey !== effectiveConfig.modelKey ? ` (${t`agent default:`} ${agentConfig.modelKey})` : ''}`);
 
-    // 获取工作区的Agent数量
-    const agentsSummary = await env.workspace.getAllAgentsSummary();
+    // 获取Agent的MCP客户端
+    const mcpClients = agent.getMCPClients();
 
-    logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
+    // 显示 Agent 允许的 MCP 工具（使用封装的方法）
+    const mcpToolsInfo = agent.getMCPTools();
 
-    // 显示详细的 MCP 工具统计
-    const mcpClients = env.workspace.getMcpClients();
-    logger.info(`🔧 ${t`Current workspace available MCP clients:`} ${mcpClients.length}`);
+    logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.availableTools.length} ${t`available`} (${mcpToolsInfo.allowedMCPsCount} ${t`mcp`})`);
+    if (mcpToolsInfo.availableTools.length > 0) {
+      const toolNames = mcpToolsInfo.availableTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
+      const more = mcpToolsInfo.availableTools.length > 3 ? ` (+${mcpToolsInfo.availableTools.length - 3} more)` : '';
+      logger.info(`    📋 ${toolNames.join(', ')}${more}`);
 
-    const agentConfig = env.agent.getConfig();
-
-    // 显示详细的 Agent 信息
-    logger.info(`🌐 ${t`Current Agent:`} ${agentConfig.name}`);
-
-    // 显示 Agent 使用的模型（区分是 Agent 配置的还是继承的）
-    if (agentConfig.modelKey && agentConfig.modelKey === env.effectiveConfig.modelKey) {
-      logger.info(`🤖 ${t`Model:`} ${env.effectiveConfig.modelKey} (${t`from agent config`})`);
-    } else {
-      logger.info(`🤖 ${t`Model:`} ${env.effectiveConfig.modelKey}${agentConfig.modelKey ? ` (${t`agent default:`} ${agentConfig.modelKey})` : ''}`);
     }
 
-    // 显示 Agent 允许的 MCP 工具
-    let agentAllowedMCPs = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
-    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      const allowedMCPs = agentConfig.allowMCPs;
-      const availableTools = env.mcpClients.flatMap((client: any) => client.tools || []);
-      const matchedTools = availableTools.filter((tool: any) =>
-        allowedMCPs.some(allowed =>
-          tool.name === allowed ||
-          tool.displayName === allowed ||
-          tool.originalName === allowed ||
-          tool.clientName === allowed
-        )
-      );
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${agentAllowedMCPs} ${t`configured`}, ${matchedTools.length} ${t`available`}`);
-      if (matchedTools.length > 0) {
-        const toolNames = matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
-        const more = matchedTools.length > 3 ? ` (+${matchedTools.length - 3} more)` : '';
-        logger.info(`    📋 ${toolNames.join(', ')}${more}`);
-      }
-    } else {
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${env.mcpClients.flatMap((client: any) => client.tools || []).length})`);
-    }
     // 创建AI通道
     const aiChannel = createAIChannel();
+
+    // 创建环境对象（模拟AIEnvironment）
+    const env = {
+      agent,
+      mcpClients: mcpClients.map(client => client.toJSON()),
+      effectiveConfig,
+      workspace: undefined // Agent-centered架构不依赖workspace
+    };
 
 
 
@@ -374,25 +469,26 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
 
       // 构建系统提示词
-      const agentName = env.agent.getConfig().name || "";
+      const workspacePath = process.cwd();
       const systemPrompt = getBuiltinPrompts(
-        env.workspace.workspacePath,
         env.effectiveConfig.prompt,
-        agentName,
-        env.workspace.getAgentScope(agentName) || "workspace",
+        workspacePath,
+        env.agent.getAgentPath()
       ).prompt;
 
       // 创建流式聊天处理器
       const chatHandler = new StreamChatHandler(false); // 非交互式模式
 
       await aiChannel.completion({
+        maxContextTokens: env.effectiveConfig.maxContextTokens,
         modelKey: env.effectiveConfig.modelKey,
         prompt: systemPrompt,
         allowMCPs: env.effectiveConfig.allowMCPs,
+        blockMCPTools: env.effectiveConfig.blockMCPTools,
         isConfirmCallTool: env.effectiveConfig.isConfirmCallTool,
         temperature: env.effectiveConfig.temperature,
-        maxAttachedDialogs: env.effectiveConfig.maxAttachedDialogs,
         maxTokens: env.effectiveConfig.maxTokens,
+        agentInstance: env.agent, // 直接传递AgentInstance对象
         onUpdate: () => {
           chatHandler.handleUpdate(aiChannel, env, chatKey);
         }
@@ -456,7 +552,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         }
 
         if (input.trim() === '/tools') {
-          const mcpTools = env.mcpClients.flatMap((client: any) => client.tools || []);
+          const mcpTools = mcpClients.flatMap((client: any) => client.tools || []);
           console.log(`\n🔧 ${t`Available tools`} (${mcpTools.length} ${t`items`}):`);
 
           if (mcpTools.length === 0) {
@@ -504,7 +600,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
           const toolName = parts[1];
 
-          const mcpTools = env.mcpClients.flatMap((client) => client.tools || []);
+          const mcpTools = mcpClients.flatMap((client) => client.tools || []);
           const tool = mcpTools.find((t: any) =>
             t.name === toolName ||
             t.displayName === toolName ||
@@ -561,12 +657,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
         try {
           // 构建系统提示词
-          const agentName = env.agent.getConfig().name || "";
+          const workspacePath = process.cwd();
           const systemPrompt = getBuiltinPrompts(
-            env.workspace.workspacePath,
             env.effectiveConfig.prompt,
-            agentName,
-            env.workspace.getAgentScope(agentName) || "workspace"
+            workspacePath,
+            env.agent.getAgentPath()
           ).prompt;
 
           // 创建交互式聊天处理器
@@ -575,6 +670,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
           await aiChannel.completion({
             ...env.effectiveConfig,
             prompt: systemPrompt,
+            agentInstance: env.agent, // 直接传递AgentInstance对象
             onUpdate: () => {
               chatHandler.handleUpdate(aiChannel, env, interactiveChatKey);
             }

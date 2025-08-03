@@ -27,7 +27,7 @@ export function getLayoutRoute() {
         name: t`Workspace`,
         icon: <FolderOpenOutlined />,
         component: <Workspace />,
-      }
+      },
     ]
   };
 

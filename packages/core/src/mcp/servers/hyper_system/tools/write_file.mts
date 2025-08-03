@@ -7,9 +7,9 @@ import {
   validateFileExtension, 
   withTimeout
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 
-const writeFileSchema = z.object({
+const writeFileSchema = createToolSchema({
   absolute_path: z.string().describe('The absolute path to the file to write'),
   content: z.string().describe('The content to write to the file'),
   create_directories: z.boolean().default(true).describe('Whether to create parent directories if they don\'t exist'),
@@ -20,7 +20,7 @@ export function registerWriteFileTool(server: McpServer): void {
     'write_file',
     'Writes content to a specified file in the local filesystem. Can create parent directories if needed.',
     writeFileSchema.shape,
-    async ({ absolute_path, content, create_directories }) => {
+    async ({ reason, absolute_path, content, create_directories }) => {
       const config = getConfig();
       
       try {
@@ -64,7 +64,7 @@ export function registerWriteFileTool(server: McpServer): void {
         const stats = fs.statSync(normalizedPath);
         const action = fileExists ? 'Updated' : 'Created';
         
-        const summary = `${action} file: ${absolute_path} (${stats.size} bytes, ${content.split('\n').length} lines)`;
+        const summary = `${action} file: ${absolute_path} (${stats.size} bytes, ${content.split('\n').length} lines) (Reason: ${reason})`;
         
         return {
           content: [

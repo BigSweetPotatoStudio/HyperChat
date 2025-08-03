@@ -402,13 +402,8 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
             <ReloadOutlined
               className="hover:text-cyan-400 cursor-pointer"
               onClick={() => {
-                // if (message.role === 'user') {
-                //   message.content_date = Date.now();
-                //   onSumbit(messages.filter((_, i) => i <= index));
-                // } else if (message.role === 'assistant') {
-                let lastUserToolIndex = messages.findLastIndex((msg) => msg.role === 'user' || msg.role === 'tool');
+                let lastUserToolIndex = messages.findLastIndex((msg, i) => i <= index && (msg.role === 'user' || msg.role === 'tool'));
                 onSumbit(messages.filter((_, i) => i <= lastUserToolIndex));
-                // }
               }}
             />
           </Tooltip>
@@ -531,11 +526,11 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
     // 将消息数组转换为收集的消息数据
     const messages2collectMessages = (messageList: MyMessage[]): CollectedMessageData[] => {
       if (!messageList?.length) return [];
-      
+
       const result: CollectedMessageData[] = [];
       const isUserLikeRole = (role: string) => role === "user" || role === "system" || role === "hyper_memory";
       const isAssistantLikeRole = (role: string) => role === "assistant" || role === "tool";
-      
+
       for (let i = 0; i < messageList.length; i++) {
         const message = messageList[i];
         // 确保 content_attached 有默认值
@@ -567,7 +562,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
             if (msg.content_usage) {
               return {
                 prompt_tokens: msg.content_usage.prompt_tokens || acc.prompt_tokens,
-                completion_tokens: msg.content_usage.completion_tokens || acc.completion_tokens, 
+                completion_tokens: msg.content_usage.completion_tokens || acc.completion_tokens,
                 total_tokens: msg.content_usage.total_tokens || acc.total_tokens,
               };
             }
@@ -582,7 +577,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           });
         }
       }
-      
+
       return result;
     };
 
@@ -593,7 +588,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
 
     // 第二步：格式化并渲染所有UI消息
     const renderedMessages = useMemo(() => {
-      console.log(collectedMessagesData, 'collectedMessagesData');
+      // console.log(collectedMessagesData, 'collectedMessagesData');
       return collectedMessagesData.map((collectedData) =>
         formatAndRenderUIMessage(collectedData)
       ).filter(Boolean);

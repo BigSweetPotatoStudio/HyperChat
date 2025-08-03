@@ -17,13 +17,14 @@ import type {
 } from '@dadigua/hyperchat-shared';
 
 /**
- * AI 环境配置
+ * AI 环境配置 - Agent-centered版本
+ * 现在以Agent为中心，workspace仅作为可选的上下文信息
  */
 export interface AIEnvironment {
-  workspace: Workspace;
-  agent: AgentInstance; // 现在总是有默认 agent，不需要 optional
-  mcpClients: IMCPClient[];
+  agent: AgentInstance; // Agent是核心，包含所有必要的配置和功能
+  mcpClients: IMCPClient[]; // 从Agent获取的MCP客户端
   effectiveConfig: BaseAIConfig & { modelKey: string };
+  workspace?: Workspace; // 可选的workspace上下文，主要用于向后兼容
 }
 
 /**
@@ -78,9 +79,9 @@ export function buildEffectiveConfig(
   return {
     modelKey: findValidModelKey(),
     allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
+    blockMCPTools: overrides.blockMCPTools || agentConfig?.blockMCPTools || [],
     isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
     temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
-    maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
     maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
     prompt: overrides.prompt || agentConfig?.prompt || workspaceAIConfig?.prompt || '',
     maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceAIConfig?.maxContextTokens,
@@ -93,7 +94,6 @@ export function buildEffectiveConfig(
  */
 export async function initializeAIEnvironment(options: {
   agentName?: string;
-  workspacePath?: string;
   configOverrides?: Partial<BaseAIConfig>;  // 配置覆盖
 }): Promise<AIEnvironment> {
   // 获取工作区
@@ -106,12 +106,17 @@ export async function initializeAIEnvironment(options: {
   let agent: AgentInstance;
 
   if (options.agentName) {
-    // 使用指定的 agent
-    const foundAgent = workspace.getAgentInstance(options.agentName);
+    // 使用Agent发现机制获取指定的agent
+    const { findAgent } = await import('../cli/utils/agentDiscovery.mjs');
+    const foundAgent = await findAgent(options.agentName, {
+      workspace: workspace?.workspacePath
+    });
     if (!foundAgent) {
       throw new Error(`未找到Agent: ${options.agentName}`);
     }
-    agent = foundAgent;
+    // 直接从Agent路径创建实例
+    agent = new AgentInstance(foundAgent.path);
+    await agent.init();
   } else {
     // 没有指定 agent 时，使用全局 getDefaultAgent 函数
     const defaultAgentInfo = await getDefaultAgent();
@@ -125,25 +130,28 @@ export async function initializeAIEnvironment(options: {
   const appSettings = await Command.getAppSettings();
   const aiSettings = appSettings.ai;
 
-  const workspaceSettings = workspace.getSettings();
-  const workspaceAIConfig = workspaceSettings?.aiConfig;
+  // 工作区设置已移除，现在使用envManage进行环境变量管理
   const agentConfig = agent.getConfig();
 
-  // 构建有效配置
-  const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, workspaceAIConfig, aiSettings);
+  // 构建有效配置（移除工作区AI配置）
+  const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, undefined, aiSettings);
 
 
-  // 获取 MCP 工具（如果需要的话）
+  // 获取 MCP 工具（如果需要的话） - Agent-centered版本
   let mcpClients: IMCPClient[] = [];
 
-    mcpClients = workspace.getMcpClients();
+  // 从对应的Agent获取MCP客户端，而不是从workspace
+  if (agent) {
+    const agentMcpClients = agent.getMCPClients();
+    mcpClients = agentMcpClients.map(client => client.toJSON() as IMCPClient);
+  }
   
 
   return {
-    workspace,
     agent,
     mcpClients,
-    effectiveConfig
+    effectiveConfig,
+    workspace // 保留workspace作为可选的上下文信息
   };
 }
 
@@ -173,21 +181,19 @@ export async function executeAICompletion(
     agentScope?: "global" | "workspace";
   }
 ): Promise<MyMessage> {
-  const agentName = options?.agentName || env.agent.getConfig().name || "";
-  const agentScope = options?.agentScope || "workspace";
-  
   // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
+  const workspacePath = env.workspace?.workspacePath || '';
   const systemPrompt = getBuiltinPrompts(
-    env.workspace.workspacePath,
     env.effectiveConfig.prompt,
-    agentName,
-    agentScope
+    workspacePath,
+    env.agent.getAgentPath()
   ).prompt;
 
   await aiChannel.completion({
     ...env.effectiveConfig,
     prompt: systemPrompt,
-    onUpdate: options?.onUpdate
+    onUpdate: options?.onUpdate,
+    agentInstance: env.agent // 直接传递AgentInstance对象
   });
 
   return aiChannel.lastMessage;
@@ -201,8 +207,6 @@ export function logAIConfig(logger: typeof Logger, env: AIEnvironment): void {
   
   if (agentConfig && env.effectiveConfig.modelKey === agentConfig.modelKey) {
     logger.info(`📋 使用Agent配置的AI模型: ${env.effectiveConfig.modelKey}`);
-  } else if (env.workspace.getSettings()?.aiConfig?.modelKey === env.effectiveConfig.modelKey) {
-    logger.info(`📋 使用工作区配置的AI模型: ${env.effectiveConfig.modelKey}`);
   } else {
     logger.info(`📋 使用默认AI模型: ${env.effectiveConfig.modelKey}`);
   }

@@ -24,6 +24,8 @@ import {
 import { t } from '../i18n';
 import { getURL_PRE } from '../common/call';
 import { setClipboardText } from '../common/util';
+import { convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
+import { IMCPClient } from '@dadigua/hyperchat-shared';
 
 /**
  * MCP Gateway 数据类型
@@ -35,6 +37,8 @@ interface MCPGateway {
   description?: string;
   /** 允许的 MCP 服务列表 */
   allowMCPs: string[];
+  /** 阻止的 MCP 工具列表 */
+  blockMCPTools: string[];
 }
 
 /**
@@ -47,28 +51,13 @@ interface GatewayFormValues {
   description?: string;
   /** 允许的 MCP 服务列表 */
   allowMCPs: string[];
+  /** 阻止的 MCP 工具列表 */
+  blockMCPTools: string[];
   /** 用于编辑时标识的键值（可选） */
   key?: string;
 }
 
-/**
- * MCP 客户端工具类型
- */
-interface MCPTool {
-  name: string;
-  originalName?: string;
-  displayName: string;
-  description?: string;
-}
-
-/**
- * MCP 客户端类型
- */
-interface MCPClient {
-  serverName: string;
-  status: string;
-  tools: MCPTool[];
-}
+// 移除本地定义的接口，使用shared包中的IMCPClient
 
 /**
  * MCP Gateways 设置组件属性
@@ -81,7 +70,7 @@ interface MCPGatewaysSettingsProps {
   /** 可用的 MCP 服务列表 */
   availableMCPs?: string[];
   /** MCP 客户端列表 */
-  mcpClients?: MCPClient[];
+  mcpClients?: IMCPClient[];
 }
 
 /**
@@ -169,6 +158,7 @@ export function MCPGatewaysSettings({
             name: values.name,
             description: values.description,
             allowMCPs: values.allowMCPs,
+            blockMCPTools: values.blockMCPTools,
           };
         }
       } else {
@@ -182,6 +172,7 @@ export function MCPGatewaysSettings({
           name: values.name,
           description: values.description,
           allowMCPs: values.allowMCPs,
+          blockMCPTools: values.blockMCPTools,
         });
       }
 
@@ -365,7 +356,7 @@ interface GatewayModalProps {
   /** 可用的 MCP 服务列表 */
   availableMCPs: string[];
   /** MCP 客户端列表 */
-  mcpClients: MCPClient[];
+  mcpClients: IMCPClient[];
   /** 保存网关的回调函数 */
   onSave: (values: GatewayFormValues) => Promise<void>;
   /** 取消操作的回调函数 */
@@ -398,10 +389,15 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
   useEffect(() => {
     if (open) {
       if (gateway) {
+        // 编辑模式：使用转换函数将 allowMCPs 和 blockMCPTools 转换为 TreeSelect 格式
+        const allowMCPs = gateway.allowMCPs || [];
+        const blockMCPTools = gateway.blockMCPTools || [];
+        const combinedSelection = convertMCPConfigToTreeSelection(allowMCPs, blockMCPTools, mcpClients);
+        
         const initialValues = {
           name: gateway.name,
           description: gateway.description || '',
-          allowMCPs: gateway.allowMCPs || [],
+          allowMCPs: combinedSelection,
         };
         form.setFieldsValue(initialValues);
         setCurrentGatewayName(gateway.name);
@@ -410,7 +406,7 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
         setCurrentGatewayName('');
       }
     }
-  }, [open, gateway, form]);
+  }, [open, gateway, form, mcpClients]);
 
   /**
    * 处理表单提交
@@ -418,7 +414,18 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      await onSave(values);
+      
+      // 使用转换函数将 TreeSelect 选中值转换为 allowMCPs 和 blockMCPTools
+      const selectedValues = values.allowMCPs || [];
+      const { allowMCPs, blockMCPTools } = convertTreeSelectionToMCPConfig(selectedValues, mcpClients);
+      
+      const gatewayValues = {
+        ...values,
+        allowMCPs,
+        blockMCPTools,
+      };
+      
+      await onSave(gatewayValues);
     } catch (error) {
       console.log('Form validation failed:', error);
     }
@@ -480,7 +487,7 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
             multiple
             treeCheckable
             placeholder={t`Please select allowed MCP`}
-            showCheckedStrategy={TreeSelect.SHOW_PARENT}
+            // showCheckedStrategy={TreeSelect.SHOW_PARENT}
             treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
               return {
                 title: x.serverName,

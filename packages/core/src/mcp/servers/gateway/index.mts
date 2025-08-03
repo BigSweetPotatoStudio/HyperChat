@@ -1,23 +1,10 @@
 
-
-// import { store } from "../../../rag/vectorStore.mjs";
-// import dayjs from "dayjs";
-import { IMCPClient } from "@dadigua/hyperchat-shared/types";
-import {
-    Server,
-    SSEServerTransport as _SSEServerTransport,
-    zx,
-    ListToolsRequestSchema,
-    CallToolRequestSchema,
-} from "../../../es6.mjs";
+import dayjs from "dayjs";
+import { CallToolRequestSchema, ListToolsRequestSchema, Server } from "../../../es6.mjs";
 import { CONST } from "../../../const.mjs";
-
+import { IMCPClient } from "@dadigua/hyperchat-shared";
 import { Command } from "../../../command.mjs";
-import { Logger } from "../../../log.mjs";
-
-import { workspaceManager } from "../../../workspace/index.mjs";
-
-const { fs: _fs, path: _path, sleep: _sleep } = zx;
+import { workspaceManager } from "../../../lib.mjs";
 
 
 
@@ -25,7 +12,9 @@ const { fs: _fs, path: _path, sleep: _sleep } = zx;
 
 
 
-async function createServer(name: string, description: string, allowMCPs: string[]) {
+
+
+async function createServer(name: string, description: string, allowMCPs: string[], blockMCPTools: string[] = []) {
     const NAME = name;
 
     /**
@@ -52,25 +41,38 @@ async function createServer(name: string, description: string, allowMCPs: string
      * Exposes a single "create_note" tool that lets clients create new notes.
      */
     server.setRequestHandler(ListToolsRequestSchema, async () => {
-        // Logger.debug("gateway allowMCPs", allowMCPs);
-        let getTools =  (allowMCPs: any) => {
+        // console.log("gateway allowMCPs", allowMCPs);
+        let workspace = workspaceManager.getCurrentWorkspace();
+        let mcpClients = workspace.getMcpClients();
+
+        let getTools = (allowMCPs: string[], blockMCPTools: string[]) => {
             let tools: IMCPClient["tools"] = [];
-            workspaceManager.getCurrentWorkspace().getMcpClients().forEach((v) => {
+
+            mcpClients.forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
-                        if (!allowMCPs) return true;
-                        return (
-                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
-                        );
+                        // 检查 MCP 客户端名称（白名单模式）
+                        const mcpAllowed = !allowMCPs || allowMCPs.length === 0 || allowMCPs.includes(t.clientName);
+                        
+                        // 检查工具是否被阻止（黑名单模式）
+                        const toolBlocked = blockMCPTools && blockMCPTools.length > 0 && blockMCPTools.includes(t.displayName);
+                        
+                        // MCP 允许且工具未被阻止
+                        return mcpAllowed && !toolBlocked;
                     }),
                 );
             });
-            Logger.debug("gateway tools", allowMCPs, tools.length);
             return tools;
         }
         return {
             tools: [
-                ...(getTools(allowMCPs)),
+                ...getTools(allowMCPs, blockMCPTools).map((tool) => {
+                    return {
+                        name: tool.name,
+                        description: tool.description,
+                        inputSchema: tool.inputSchema,
+                    };
+                }),
             ].filter(x => x),
         };
     });
@@ -79,44 +81,50 @@ async function createServer(name: string, description: string, allowMCPs: string
      * Handler for the create_note tool.
      * Creates a new note with the provided title and content, and returns success message.
      */
-    server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
         try {
-        let getTools = (allowMCPs: any) => {
-            let tools: IMCPClient["tools"] = [];
+            let workspace = workspaceManager.getCurrentWorkspace();
+            let mcpClients = workspace.getMcpClients();
 
-            workspaceManager.getCurrentWorkspace().getMcpClients().forEach((v) => {
-                tools = tools.concat(
-                    v.tools.filter((t) => {
-                        if (!allowMCPs) return true;
-                        return (
-                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
-                        );
-                    }),
-                );
-            });
-            Logger.debug("gateway tools", allowMCPs, tools.length);
-            return tools;
-        }
+            let getTools = (allowMCPs: string[], blockMCPTools: string[]) => {
+                let tools: IMCPClient["tools"] = [];
 
-            let find = (getTools(allowMCPs)).find((tool) => {
+                mcpClients.forEach((v) => {
+                    tools = tools.concat(
+                        v.tools.filter((t) => {
+                            // 检查 MCP 客户端名称（白名单模式）
+                            const mcpAllowed = !allowMCPs || allowMCPs.length === 0 || allowMCPs.includes(t.clientName);
+                            
+                            // 检查工具是否被阻止（黑名单模式）
+                            const toolBlocked = blockMCPTools && blockMCPTools.length > 0 && blockMCPTools.includes(t.displayName);
+                            
+                            // MCP 允许且工具未被阻止
+                            return mcpAllowed && !toolBlocked;
+                        }),
+                    );
+                });
+                return tools;
+            }
+
+            let find = getTools(allowMCPs, blockMCPTools).find((tool) => {
                 return tool.name === request.params.name;
             });
-
+            console.log("gateway allowMCPs/blockTools", getTools(allowMCPs, blockMCPTools), request, find);
             if (!find) {
-                throw new Error(`Tool not found: ${request.params.name}`);
+                throw new Error(`Tool ${request.params.name} not found`);
             }
 
             return await Command.mcpCallTool({
-                name: find.clientName || '',
-                functionName: find.originalName || '',
-                args: request.params.arguments || {}
+                name: find.clientName,
+                functionName: find.originalName,
+                args: request.params.arguments || {},
             });
-        } catch (error) {
+        } catch (error: any) {
             return {
                 content: [
                     {
                         type: "text",
-                        text: `error: ${error instanceof Error ? error.message : String(error)}`,
+                        text: `error: ${error.message}`,
                     },
                 ],
             };

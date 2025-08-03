@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { CONSTANTS } from "./constants.mjs";
+import { CONSTANTS } from "../agent/constants.mjs";
 import type { DataOptions } from "@dadigua/hyperchat-shared/types";
 
 // 简单的配置数据管理类

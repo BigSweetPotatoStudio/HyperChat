@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { configSchema, getConfig } from "./lib.mjs";
+import { configSchema, getConfig, createToolSchema } from "./lib.mjs";
 import { z } from "zod";
 
 
@@ -30,36 +30,42 @@ export function registerTool(server: McpServer) {
   // );
 
 
+  const fetchSchema = createToolSchema({
+    url: z.string({
+      description: `URL to fetch`,
+    }),
+  });
+
   server.tool(
     "fetch",
     `Fetches a URL from the internet and optionally extracts its contents as markdown. Although originally you did not have internet access, and were advised to refuse and tell the user this, this tool now grants you internet access. Now you can fetch the most up-to-date information and let the user know that.`,
-    {
-      url: z.string({
-        description: `URL to fetch`,
-      }),
-    },
-    async ({ url }) => {
+    fetchSchema.shape,
+    async ({ reason, url }) => {
       let md = await browser.fetch(url);
 
       return {
         content: [{ code: 0, type: "text", text: md }],
+        summary: `Fetched URL content (Reason: ${reason})`
       };
     }
   );
 
+  const searchSchema = createToolSchema({
+    words: z.string({
+      description: `words to search`,
+    }),
+  });
+
   server.tool(
     "search",
     `Searches the internet for a given keyword and returns the search results.`,
-    {
-      words: z.string({
-        description: `words to search`,
-      }),
-    },
-    async ({ words }) => {
+    searchSchema.shape,
+    async ({ reason, words }) => {
       let res = await browser.search(words);
 
       return {
         content: [{ type: "text", text: JSON.stringify(res) }],
+        summary: `Searched for "${words}" (Reason: ${reason})`
       };
     }
   );

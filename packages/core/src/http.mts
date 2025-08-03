@@ -120,7 +120,7 @@ export async function initHttp(): Promise<void> {
   // 静态资源路由
   app.use(urlPrefix, express.static(staticPath, staticOptions));
   app.use(urlPrefix + "/temp", express.static(path.join(appDataDir, "temp")));
-  const mcpRouterPrefix = urlPrefix + "/mcpGateWay";
+  const mcpRouterPrefix = urlPrefix + "/mcp";
   // MCP 路由注册
   let mcpRouter = await registers(mcpRouterPrefix);
   app.use(mcpRouterPrefix, mcpRouter);
@@ -173,7 +173,7 @@ export async function initHttp(): Promise<void> {
     server.listen(Config.port, () => {
       Logger.info(`HTTP server listening on port: ${Config.port}`);
     });
-    console.log(`url: http://localhost:${Config.port}${urlPrefix}/`);
+    console.log(`🌐 Web Interface: http://localhost:${Config.port}${urlPrefix}/`);
   } else {
     // 启动服务器
     const PORT = await execFallback(Config.port, (port) => {

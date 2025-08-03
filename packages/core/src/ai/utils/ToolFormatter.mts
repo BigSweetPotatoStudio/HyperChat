@@ -18,7 +18,7 @@ export class ToolFormatter {
     for (const tool of tools) {
       result[tool.name] = {
         description: tool.description || '',
-        parameters: this.convertSchema(tool),
+        inputSchema: this.convertSchema(tool),
       };
     }
 
