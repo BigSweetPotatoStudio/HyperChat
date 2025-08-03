@@ -333,7 +333,7 @@ export function useChatStream(params: ChatStreamParams) {
 
 
   // 取消聊天流
-  const cancelChatStream = useCallback(async (sessionId: string) => {
+  const cancelChatStream = useCallback(async (chatKey: string) => {
     try {
       const urlPrefix = getURL_PRE();
       await fetch(`${urlPrefix}/api/chat/cancel`, {
@@ -341,7 +341,7 @@ export function useChatStream(params: ChatStreamParams) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ chatKey, sessionId }),
       });
     } catch (error) {
       console.error('Failed to cancel chat stream:', error);
@@ -349,7 +349,7 @@ export function useChatStream(params: ChatStreamParams) {
 
     stateRef.current.loading = false;
     useForceUpdate();
-  }, [useForceUpdate]);
+  }, [useForceUpdate, sessionId]);
 
   // 重置聊天状态
   const resetChatStream = useCallback(() => {

@@ -1,5 +1,5 @@
 name: '222'
-prompt: 天气预报
+prompt: 你是一个超级AI。
 allowMCPs:
   - hyper_system
   - hyper_browser
@@ -8,11 +8,11 @@ allowMCPs:
 blockMCPTools: []
 isConfirmCallTool: false
 maxTokens: null
+maxContextTokens: 1000
 tags: []
 subAgents: []
 version: 1
-modelKey: unknown:moonshot-v2
+modelKey: gemini:gemini-2.5-flash
 temperature: 1
 maxAttachedDialogs: 5
 compressionStrategy: tokens
-maxContextTokens: 1000

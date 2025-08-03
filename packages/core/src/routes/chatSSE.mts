@@ -47,15 +47,15 @@ router.get('/stream/:sessionId', async (req: Request, res: Response) => {
     if (sseWriter) {
       activeSseWriters.delete(sessionId);
     }
-    // 如果有 chatKey，清理对应的 AI 通道
-    if (chatKey && typeof chatKey === 'string') {
-      const aiChannel = activeAiChannels.get(chatKey);
-      if (aiChannel) {
-        aiChannel.cancel(); // 取消可能正在进行的请求
-        activeAiChannels.delete(chatKey);
-        Logger.debug(`AI channel cleaned up for chatKey: ${chatKey}`);
-      }
-    }
+    // // 如果有 chatKey，清理对应的 AI 通道
+    // if (chatKey && typeof chatKey === 'string') {
+    //   const aiChannel = activeAiChannels.get(chatKey);
+    //   if (aiChannel) {
+    //     aiChannel.cancel(); // 取消可能正在进行的请求
+    //     activeAiChannels.delete(chatKey);
+    //     Logger.debug(`AI channel cleaned up for chatKey: ${chatKey}`);
+    //   }
+    // }
     sseWriter?.close();
   });
 
@@ -178,21 +178,16 @@ router.post('/stream', async (req: Request, res: Response) => {
  */
 router.post('/cancel', async (req: Request, res: Response) => {
   try {
-    const { sessionId } = req.body;
+    const { chatKey, sessionId } = req.body;
 
-    if (!sessionId) {
-      res.status(400).json({ error: 'sessionId is required' });
+    if (!chatKey) {
+      res.status(400).json({ error: 'chatKey is required' });
       return;
     }
 
-    const sseWriter = activeSseWriters.get(sessionId);
-    if (sseWriter && !sseWriter.isClosed()) {
-      sseWriter.write({
-        type: 'chat_message_error',
-        data: {
-          error: 'Chat cancelled by user',
-        },
-      });
+    const aiChannel = activeAiChannels.get(chatKey);
+    if (aiChannel) {
+      aiChannel.cancel();
     }
 
     res.json({ success: true });

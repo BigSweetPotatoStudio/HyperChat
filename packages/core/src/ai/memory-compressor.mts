@@ -8,43 +8,10 @@ import { Command } from "../command.mjs";
  * Token 计算工具类
  */
 export class TokenCalculator {
-  private static tokenCache = new Map<string, number>();
-  private static readonly CACHE_MAX_SIZE = 1000;
-
-  // 清空缓存
-  static clearCache(): void {
-    this.tokenCache.clear();
-  }
-
-  // 获取缓存大小
-  static getCacheSize(): number {
-    return this.tokenCache.size;
-  }
-
-  // 生成消息的缓存键
-  private static generateCacheKey(message: MyMessage): string {
-    let content = '';
-    if (typeof message.content === 'string') {
-      content = message.content;
-    } else if (Array.isArray(message.content)) {
-      content = JSON.stringify(message.content);
-    }
-    return `${message.role}:${content.substring(0, 100)}:${message.content_usage?.total_tokens || 0}`;
-  }
 
   // 估算消息token数量
   static estimateTokenCount(message: MyMessage): number {
     // 如果消息有实际的token使用统计，优先使用
-    if (message.content_usage?.total_tokens) {
-      return message.content_usage.total_tokens;
-    }
-
-    // 检查缓存
-    const cacheKey = this.generateCacheKey(message);
-    const cachedCount = this.tokenCache.get(cacheKey);
-    if (cachedCount !== undefined) {
-      return cachedCount;
-    }
 
     let content = '';
     if (typeof message.content === 'string') {
@@ -57,33 +24,10 @@ export class TokenCalculator {
       }).join('');
     }
 
-    // 简单估算：1 token ≈ 4 字符（对英文），1 token ≈ 1.5 字符（对中文）
-    // 取平均值：1 token ≈ 2.5 字符
-    const tokenCount = Math.ceil(content.length / 2.5);
-
-    // 缓存结果，但限制缓存大小
-    if (this.tokenCache.size >= this.CACHE_MAX_SIZE) {
-      // 删除最早的缓存条目（简单的LRU策略）
-      const firstKey = this.tokenCache.keys().next().value;
-      if (firstKey) {
-        this.tokenCache.delete(firstKey);
-      }
-    }
-    this.tokenCache.set(cacheKey, tokenCount);
-
-    return tokenCount;
+    // 简单估算：1 token ≈ 3 字符
+    return Math.ceil(content.length / 3);
   }
 
-  // 计算从指定索引到最后的消息token总数
-  static calculateMessagesTokenCount(messages: MyMessage[], prompt: string, fromIndex: number = 0): number {
-    let totalTokens = 0;
-    const promptTokens = TokenCalculator.estimatePromptTokenCount(prompt || '');
-    for (let i = fromIndex; i < messages.length; i++) {
-      const message = messages[i]!;
-      totalTokens += this.estimateTokenCount(message);
-    }
-    return promptTokens + totalTokens;
-  }
 
   // 计算消息token总数并返回是否包含真实数据
   static calculateMessagesTokenCountWithType(messages: MyMessage[], prompt: string, fromIndex: number = 0): { totalTokens: number; hasActualTokens: boolean } {
@@ -91,38 +35,22 @@ export class TokenCalculator {
     let hasActualTokens = false;
 
 
-    const message = messages[messages.length - 1];
-    // 检查消息是否有真实token统计
-    if (message && message.content_usage?.total_tokens) {
-      totalTokens = message.content_usage.total_tokens;
-      hasActualTokens = true;
-    } else {
-      totalTokens = this.calculateMessagesTokenCount(messages, prompt, fromIndex);
+    for (let i = fromIndex; i < messages.length; i++) {
+      const message = messages[i];
+      if (message.content_usage?.total_tokens) {
+        totalTokens = message.content_usage.total_tokens;
+        hasActualTokens = true; // 如果有实际的token使用统计，则标记为true
+      } else {
+        totalTokens += this.estimateTokenCount(message);
+      }
     }
-
-    return { totalTokens, hasActualTokens };
+    const promptTokens = hasActualTokens ? 0 : TokenCalculator.estimatePromptTokenCount(prompt || '');
+    return { totalTokens: promptTokens + totalTokens, hasActualTokens };
   }
 
   // 估算prompt的token数量
   static estimatePromptTokenCount(prompt: string): number {
-    const cacheKey = `prompt:${prompt.substring(0, 100)}`;
-    const cachedCount = this.tokenCache.get(cacheKey);
-    if (cachedCount !== undefined) {
-      return cachedCount;
-    }
-
-    const tokenCount = Math.ceil(prompt.length / 2.5);
-
-    // 缓存结果
-    if (this.tokenCache.size >= this.CACHE_MAX_SIZE) {
-      const firstKey = this.tokenCache.keys().next().value;
-      if (firstKey) {
-        this.tokenCache.delete(firstKey);
-      }
-    }
-    this.tokenCache.set(cacheKey, tokenCount);
-
-    return tokenCount;
+    return Math.ceil(prompt.length / 3);
   }
 }
 

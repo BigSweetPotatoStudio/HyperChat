@@ -136,15 +136,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
             });
           });
 
-          // 发送token使用信息更新事件
-          if (sseWriter && aiChannel.tokenUsage) {
-            sseWriter.write({
-              type: 'token_usage_update',
-              data: {
-                tokenUsage: aiChannel.tokenUsage
-              }
-            });
-          }
         },
       },
       {

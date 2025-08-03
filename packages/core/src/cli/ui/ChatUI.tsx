@@ -734,6 +734,11 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
               {aiChannel.tokenUsage.strategy === 'tokens' ? (
                 <>
                   📊 Token Usage: {aiChannel.tokenUsage.current.toLocaleString()} / {aiChannel.tokenUsage.max.toLocaleString()} ({aiChannel.tokenUsage.percentage}%) [{generateProgressBar(aiChannel.tokenUsage.percentage)}]
+                  {aiChannel.tokenUsage.type && (
+                    <Text color={aiChannel.tokenUsage.type === 'actual' ? 'green' : 'yellow'}>
+                      {' '}({aiChannel.tokenUsage.type === 'actual' ? t`Actual` : t`Estimated`})
+                    </Text>
+                  )}
                 </>
               ) : null}
               {aiChannel.tokenUsage.percentage >= 80 && (
