@@ -40,7 +40,6 @@ export { Data } from "./data.mjs";
 import { WorkspaceManager } from "./workspaceManager.mjs";
 import { Data } from "./data.mjs";
 import { WorkspaceConfig } from "./types.mjs";
-import { Command } from "../command.mjs";
 
 // 全局工作区管理器实例
 export const workspaceManager = new WorkspaceManager();
@@ -124,10 +123,8 @@ async function createDefaultAgent(workspace: any): Promise<void> {
     tags: ['default', 'auto-created']
   };
 
-  // 使用 Command API 创建 Agent
-  await Command.createAgent({
-    config: agentConfig,
-  });
+  // 直接使用 workspace 创建 Agent
+  await workspace.createAgent(agentConfig);
 }
 
 

@@ -38,13 +38,13 @@ export class Workspace {
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
-
+  private name = "";
   // 工作区状态管理
   private state: WorkspaceState = WorkspaceState.UNINITIALIZED;
 
   constructor(public workspacePath: string) {
     const hyperChatPath = path.join(this.workspacePath, this.HYPERCHAT_DIR);
-
+    this.name = path.basename(this.workspacePath);
     this.config = {
       name: path.basename(workspacePath),
       created: Date.now(),

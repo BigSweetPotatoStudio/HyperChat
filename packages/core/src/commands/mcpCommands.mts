@@ -91,14 +91,36 @@ export const mcpCommands = {
   async manageWorkspaceMcpClient({
     clientName,
     action,
-    agentName
+    agentName,
+    workspacePath
   }: {
     clientName: string;
     action: 'restart' | 'disable' | 'enable' | 'delete';
     agentName?: string;
+    workspacePath?: string;
   }) {
     try {
-      const workspace = workspaceManager.getCurrentWorkspace();
+      const workspaceManager = getWorkspaceManager();
+      let workspace;
+      
+      if (workspacePath) {
+        workspace = await workspaceManager.get(workspacePath, true);
+        if (!workspace) {
+          throw new Error(`工作区不存在: ${workspacePath}`);
+        }
+        if (!workspace.isInitialized()) {
+          await workspace.initialize();
+        }
+        if (!workspace.isStarted()) {
+          await workspace.start();
+        }
+      } else {
+        workspace = workspaceManager.getCurrentWorkspace();
+        if (!workspace) {
+          throw new Error('当前没有可用的工作区');
+        }
+      }
+      
       const mcpManager = workspace.getMcpManager();
       
       if (!mcpManager) {
@@ -312,12 +334,34 @@ export const mcpCommands = {
    */
   async setWorkspaceMcpServerConfig({
     serverName,
-    serverConfig
+    serverConfig,
+    workspacePath
   }: {
     serverName: string;
     serverConfig: MCPServerConfig;
+    workspacePath?: string;
   }): Promise<void> {
-    const workspace = workspaceManager.getCurrentWorkspace();
+    const workspaceManager = getWorkspaceManager();
+    let workspace;
+    
+    if (workspacePath) {
+      workspace = await workspaceManager.get(workspacePath, true);
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
+      if (!workspace.isStarted()) {
+        await workspace.start();
+      }
+    } else {
+      workspace = workspaceManager.getCurrentWorkspace();
+      if (!workspace) {
+        throw new Error('当前没有可用的工作区');
+      }
+    }
+    
     const mcpManager = workspace.getMcpManager();
     
     if (!mcpManager) {
@@ -331,11 +375,33 @@ export const mcpCommands = {
    * 删除 MCP 服务器配置 - 工作区级别
    */
   async deleteWorkspaceMcpServerConfig({
-    serverName
+    serverName,
+    workspacePath
   }: {
     serverName: string;
+    workspacePath?: string;
   }): Promise<void> {
-    const workspace = workspaceManager.getCurrentWorkspace();
+    const workspaceManager = getWorkspaceManager();
+    let workspace;
+    
+    if (workspacePath) {
+      workspace = await workspaceManager.get(workspacePath, true);
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
+      if (!workspace.isStarted()) {
+        await workspace.start();
+      }
+    } else {
+      workspace = workspaceManager.getCurrentWorkspace();
+      if (!workspace) {
+        throw new Error('当前没有可用的工作区');
+      }
+    }
+    
     const mcpManager = workspace.getMcpManager();
     
     if (!mcpManager) {

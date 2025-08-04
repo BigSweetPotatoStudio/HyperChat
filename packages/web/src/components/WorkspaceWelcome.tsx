@@ -42,7 +42,6 @@ interface WorkspaceWelcomeProps {
   workspace: {
     path: string;
     name: string;
-    isGlobal?: boolean;
   };
   agents: {
     config: AgentConfig & { scope?: "global" | "workspace" };
@@ -80,77 +79,6 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     setRecentAgents(matchedRecentAgents);
   }, [workspace.path, agents]);
 
-  // 加载最近使用的对话
-  useEffect(() => {
-    const loadRecentChats = async () => {
-      const recentChatUsage = getChatRecentUsage(workspace.path);
-
-      // 限制并发请求数量，只获取最近 8 个对话
-      const limitedRecentUsage = recentChatUsage.slice(0, 8);
-
-      // 准备批量请求的数据
-      const requests = limitedRecentUsage
-        .map(recentItem => {
-          const agent = agents.find(a => a.config.name === recentItem.agentName);
-          if (!agent) return null;
-
-          return {
-            agentName: recentItem.agentName,
-            chatLogKey: recentItem.chatKey,
-            scope: agent.config.scope as "global" | "workspace"
-          };
-        })
-        .filter(Boolean) as Array<{
-          agentName: string;
-          chatLogKey: string;
-          scope: "global" | "workspace";
-        }>;
-
-      if (requests.length === 0) {
-        setRecentChats([]);
-        return;
-      }
-
-      try {
-        // 使用批量接口获取所有聊天记录
-        const result = await call("getBatchChatLogs", { requests });
-
-        const matchedRecentChats = result.results
-          .map(chatResult => {
-            if (!chatResult.chatLog || chatResult.error) {
-              console.warn(`Failed to load chat log ${chatResult.chatLogKey} for agent ${chatResult.agentName}:`, chatResult.error);
-              return null;
-            }
-
-            const recentItem = limitedRecentUsage.find(
-              item => item.agentName === chatResult.agentName && item.chatKey === chatResult.chatLogKey
-            );
-            const agent = agents.find(a => a.config.name === chatResult.agentName);
-
-            if (!recentItem || !agent) return null;
-
-            return {
-              workspacePath: recentItem.workspacePath,
-              agentName: recentItem.agentName,
-              chatKey: recentItem.chatKey,
-              chatLabel: recentItem.chatLabel,
-              lastUsed: recentItem.lastUsed,
-              usageCount: recentItem.usageCount,
-              agent,
-              chatLog: chatResult.chatLog
-            };
-          })
-          .filter(Boolean);
-
-        setRecentChats(matchedRecentChats);
-      } catch (error) {
-        console.error('Failed to load recent chats:', error);
-        setRecentChats([]);
-      }
-    };
-
-    loadRecentChats();
-  }, [workspace.path, agents]);
 
   // 处理 agent 点击
   const handleAgentClick = (agent: any) => {
@@ -226,7 +154,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     const description = agent.config.description || t`No description`;
     const lastChatTime = agent.lastChatTime || agent.lastUsed;
     const chatCount = agent.chatLogsCount || 0;
-    const toolsCount = agent.config.allowMCPs?.length || 0;
+    const mcpCount = agent.config.allowMCPs?.length || 0;
 
     return (
       <Card
@@ -272,9 +200,9 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
                   <Tag color="blue">{chatCount} 💬</Tag>
                 </Tooltip>
               )}
-              {toolsCount > 0 && (
-                <Tooltip title={t`Tools count`}>
-                  <Tag color="cyan">{toolsCount} 🔧</Tag>
+              {mcpCount > 0 && (
+                <Tooltip title={t`MCP count`}>
+                  <Tag color="cyan">{mcpCount} 🔧</Tag>
                 </Tooltip>
               )}
             </Space>
@@ -382,7 +310,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <Icon name="bx-bot" style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
           <Title level={2} style={{ margin: 0 }}>
-            {workspace.isGlobal ? t`Welcome to Global Workspace` : `${t`Welcome to`} ${workspace.name}`}
+            {`${t`Welcome to`} ${workspace.name}`}
           </Title>
           <Paragraph type="secondary" style={{ fontSize: '16px', marginTop: '8px' }}>
             {t`Select an agent to start a conversation`}

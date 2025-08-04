@@ -194,7 +194,7 @@ export function DataMigration({ visible, onClose }: DataMigrationProps) {
                 onChange={setTargetScope}
                 style={{ marginLeft: 16, width: 150 }}
               >
-                <Option value="global">{t`Global`}</Option>
+                <Option value="global">{t`Default`}</Option>
                 <Option value="workspace">{t`Workspace`}</Option>
               </Select>
             </div>

@@ -75,8 +75,6 @@ interface WorkspaceChatProps {
   workspace: WorkspaceInfo;
   /** 指定的Agent Key，用于Agent聊天 */
   agentName: string;
-  /** Agent的作用域 */
-  agentScope: "global" | "workspace";
   workspaceDetails: CurrentWorkspaceDetails;
   mcpClients: IMCPClient[];
   /** 要加载的特定聊天记录 */
@@ -86,7 +84,7 @@ interface WorkspaceChatProps {
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -236,7 +234,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   // 使用新的聊天流 Hook
   const chatStream = useChatStream({
     agentName,
-    agentScope,
+    workspacePath: workspace.path,
     onToolConfirm: confirm_call_tool_cb,
   });
 

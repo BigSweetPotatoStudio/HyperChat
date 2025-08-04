@@ -23,17 +23,42 @@ HyperChat 是一个革命性的**本地 AI Agent 平台**，通过**配置文件
 
 **HyperChat 2.0** 大家一起 **Vibe Coding**，欢迎使用 Claude Code 和 GitHub Copilot 等 AI 工具一起开发。
 
-### 🖥️ 界面功能对比
+## 🎯 双层架构设计
 
-| 功能特性 | CLI Legacy 模式 | CLI Ink 模式 | Web 界面 |
-|---------|----------------|-------------|---------|
-| **UI 样式** |
-| 界面风格 | 📟 传统命令行 | 🎨 现代化 TUI | 🖥️ 图形界面 |
-| 交互体验 | 简单文本输出 | 丰富组件渲染 | 完整 Web 体验 |
-| 实时更新 | ✅ 流式输出 | ✅ 流式输出 | ✅ 流式输出 |
+> **创新的双模式架构** - 根据不同使用场景优化用户体验
+
+### 🌐 Web 前端：多工作区协作中心
+**设计理念**：项目级协作，统一资源管理
+
+- **🗂️ 多工作区标签页管理**：同时打开多个项目工作区，一键切换
+- **👥 团队协作优化**：工作区级别的 Agent 集合、MCP 服务池
+- **📊 可视化管理界面**：图形化配置、实时监控、数据统计
+- **💼 适用场景**：项目开发、团队协作、工作区管理、可视化操作
+
+### 💻 CLI 前端：Agent 优先快速交互
+**设计理念**：Agent 中心化，极速启动单个智能体
+
+- **⚡ 快速启动**：直接选择 Agent，从工作区按需加载 MCP 工具
+- **🎯 专注对话**：Agent 专属记忆、上下文、聊天历史
+- **🔧 灵活工具链**：Agent 内置 MCP 工具，回退到工作区共享资源
+- **🚀 适用场景**：快速对话、自动化脚本、命令行工作流、CI/CD 集成
+
+### 📋 架构对比
+
+| 功能特性 | 🌐 Web 多工作区模式 | 💻 CLI Agent 优先模式 |
+|---------|---------------------|----------------------|
+| **核心理念** |
+| 设计中心 | 🗂️ 工作区协作中心 | 🤖 Agent 直接交互 |
+| 资源管理 | 工作区统一 MCP 池 | Agent按需启动MCP |
+| 使用方式 | 多标签页并发管理 | 单 Agent 快速启动 |
+| **界面体验** |
+| 界面风格 | 🖥️ 现代 Web 界面 | 📟 命令行 + 🎨 TUI |
+| 交互模式 | 鼠标点击 + 表单操作 | 键盘输入 + 命令参数 |
+| 实时更新 | ✅ SSE 流式推送 | ✅ 终端流式输出 |
 | **适用场景** |
-| 主要用途 | 脚本集成、CI/CD | 开发调试、交互操作 | 项目管理、团队协作 |
-| 使用环境 | 服务器、自动化脚本 | 开发终端、日常使用 | 桌面浏览器 |
+| 主要用途 | 项目开发、团队协作 | 快速对话、脚本集成 |
+| 使用环境 | 桌面浏览器、开发 IDE | 终端、服务器、CI/CD |
+| 工作流程 | 长期项目管理 | 临时对话处理 |
 
 ## 🚀 快速体验
 
@@ -58,44 +83,60 @@ export HyperChat_AI_Model=gpt-4o                # 默认模型名称
 hyperchat "你好，世界！"                        # 使用配置的默认模型
 ```
 
-#### CLI 使用示例
+### 🌐 Web 多工作区模式使用示例
 ```bash
-# 启动 Web 界面
+# 启动多工作区 Web 界面
 hyperchat serve                        # 访问: http://localhost:16100
 
-# 运行核心服务（后台）
-hyperchat run                          # 不包含 Web 界面运行
+# Web 界面功能特色：
+# ✅ 多工作区标签页管理
+# ✅ 每个标签页独立的 Agent 集合、MCP 服务、聊天记录
+# ✅ 可视化配置和实时监控
+# ✅ 团队协作和项目管理
+```
 
-# 快速 AI 聊天
+### 💻 CLI Agent 优先模式使用示例
+```bash
+# 🚀 Agent 优先快速启动 - 核心特色
+hyperchat agent list                   # 发现可用 Agent（全局 + 工作区）
+hyperchat agent mybot "你好"           # 🎯 直接启动 Agent，按需加载 MCP
+hyperchat agent mybot chat             # 🎯 Agent 专属对话会话
+
+# 快速 AI 聊天（使用默认 Agent）
 hyperchat "你好，今天怎么样？"           # 直接与默认模型聊天
 hyperchat chat "写一个 Python 脚本"     # 聊天命令
 hyperchat chat                         # 交互式聊天模式
 
-# Agent 管理和聊天
-hyperchat agent list                   # 列出所有代理
-hyperchat agent create mybot           # 创建新代理
-hyperchat agent delete mybot           # 删除代理
-hyperchat agent mybot "你好"           # 与特定代理快速聊天
-hyperchat agent mybot chat             # 与代理交互式聊天
+# Agent 管理（在当前工作区或全局）
+hyperchat agent create mybot           # 创建新 Agent
+hyperchat agent delete mybot           # 删除 Agent
 
 # 工作区管理
 hyperchat workspace create             # 在当前目录创建工作区
 
-# 任务管理（定时自动化）
-hyperchat task list                    # 列出所有任务
-hyperchat task create "daily-report" --description "生成日报" --agent mybot --cron "0 9 * * *"
-hyperchat task trigger "daily-report"  # 手动触发任务
-hyperchat task stats                   # 显示任务统计
 
-# 全局选项
+# 全局选项和工作区指定
 hyperchat chat --workspace /path/to/project  # 使用特定工作区
 hyperchat --verbose chat "你好"             # 详细日志
-hyperchat --help                             # 显示帮助
+hyperchat --help                            # 显示帮助
 
-# 环境变量使用
-export HYPERCHAT_WEB_PASSWORD=mypass         # 设置 Web 密码
-export HYPERCHAT_LANGUAGE=en                 # 设置界面语言为英文
-hyperchat serve --port 16100                  # CLI 参数覆盖环境变量
+# CLI 模式优势：
+# ⚡ Agent 直接启动，无需切换界面
+# 🔧 按需从工作区加载 MCP 工具
+# 💾 Agent 专属记忆和聊天历史
+# 🚀 适合脚本集成和自动化
+```
+
+### 🔄 双模式协同工作
+```bash
+# 场景1：开发时 Web
+hyperchat serve                       # 启动 Web 界面管理项目
+
+# 场景2：CI/CD 自动化使用 CLI
+hyperchat agent test-runner "运行所有测试并生成报告"
+
+# 场景3：团队协作使用 Web
+# 在 Web 界面中管理多个项目工作区，配置共享的 Agent 和 MCP 服务
 ```
 
 
@@ -162,87 +203,167 @@ echo "HyperChat_AI_Provider=gemini" >> ~/Documents/HyperChat/.env
 
 ## 🛠️ 技术架构
 
-### 🔌 工作区驱动的智能协作
-HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的项目紧密结合：
+### 🎯 双层架构技术实现
 
-- **项目工作区**：每个项目都有独立的 `.hyperchat/` 配置目录
-- **全局工作区**：系统级配置，可跨项目共享
-- **工作区隔离**：Agent、MCP 服务、聊天记录按工作区独立管理
-- **无缝切换**：多工作区标签页，一键切换不同项目环境
+HyperChat 2.0 采用**双层架构设计**，根据不同使用场景提供最优化的体验：
+
+#### 🌐 Web 层：工作区中心架构
+```typescript
+// Web 前端：工作区统一 MCP 管理
+const workspace = workspaceManager.get(workspacePath);
+const mcpManager = workspace.getMcpManager();
+const client = mcpManager.getClient(clientName);
 ```
-HyperChat/
+
+**技术特点**：
+- 🗂️ **多工作区并发管理**：`WorkspaceManager-enhanced` 支持多个工作区实例缓存
+- 🔌 **工作区级 MCP 服务池**：统一的 MCP 客户端管理
+- 📊 **实时数据同步**：SSE 流式推送，多标签页独立状态管理
+- 🔄**配置合并机制**：全局配置 + 工作区配置的智能合并
+
+#### 💻 CLI 层：Agent 优先架构
+```typescript
+// CLI 前端：Agent 专属 MCP 访问
+const agentInstance = workspace.getAgentInstance(agentName);
+const client = agentInstance.getMCPClient(clientName);
+// 回退到工作区共享 MCP（如果需要）
+```
+
+**技术特点**：
+- ⚡ **Agent 直接启动**：省略工作区初始化，直接访问 Agent 实例
+- 🔧 **工具链按需加载**：从 Agent 内置工具到工作区共享资源的渐进式加载
+- 💾 **专属上下文**：Agent 独立记忆、聊天历史、配置管理
+- 🚀 **极速响应**：无 UI 渲染开销，适合脚本和自动化
+
+
+```
+HyperChat 双层架构/
 ├── packages/
-│   ├── shared/            # 共享代码和类型定义
-│   ├── core/              # Node.js 核心服务 + CLI（主要平台）
-│   │   ├── src/cli/       # 命令行界面（首要平台，功能最完整）
-│   │   ├── src/workspace/ # 工作区管理系统
-│   │   ├── src/mcp/       # MCP 服务实现
-│   │   └── src/commands/  # API 命令层
-│   ├── web/               # React Web 前端（基于 CLI 核心）
-│   └── electron/          # Electron 桌面应用（开发中）
-└── docs/                  # 完整文档
+│   ├── shared/              # 共享代码和类型定义
+│   ├── core/                # Node.js 核心服务 + CLI Agent 优先层
+│   │   ├── src/cli/         # 💻 CLI Agent 直接交互层
+│   │   ├── src/workspace/   # 双层工作区管理系统
+│   │   │   ├── workspaceManager-enhanced.mts  # 🌐 多工作区并发管理
+│   │   ├── src/mcp/         # MCP 协议实现
+│   │   └── src/commands/    # Web API 命令系统
+│   ├── web/                 # 🌐 React Web 多工作区层
+│   │   ├── src/pages/workspace/  # 多工作区管理组件
+│   │   │   ├── WorkspaceManage.tsx   # 多标签页管理器
+│   │   │   └── workspace.tsx         # 单工作区实例组件
+│   │   └── src/hooks/useChatStream.ts    # workspacePath 参数化
+│   └── electron/            # Electron 应用封装
+└── docs/                    # 双层架构文档
 ```
 
+### 💼 双层架构配置管理
+
 ```
+🌐 Web 多工作区模式配置：
 项目目录/
-├── .hyperchat/           # AI 能力配置目录（可版本控制）
-│   ├── workspace.json    # 工作区配置
-│   ├── mcp.json         # MCP 服务配置（Tools as Code）
-│   ├── ai_models.json   # AI 模型配置
-│   ├── .env              # 全局 环境变量配置 
-│   ├── tasks/           # 工作流配置（Workflow as Code）
-│   │   ├── daily-report.yaml  # 自动化任务定义
-│   │   └── code-review.yaml   # 代码审查流程
-│   └── agents/          # AI 智能体配置（AI as Code）
-│       ├── frontend-expert/
-│       │   ├── agent.yaml      # Agent 能力定义
-│       │   ├── memory.md       # 持久化记忆
-│       │   └── chatlogs/       # 对话历史
-│       ├── backend-optimizer/
-│       └── security-scanner/
-├── .git/                # 代码版本控制·
-├── .gitignore
-└── README.md
+├── .hyperchat/                    # 工作区统一配置目录
+│   ├── mcp.json                   # 🔌 工作区级 MCP 服务池
+│   ├── ai_models.json             # 🤖 工作区 AI 模型配置
+│   ├── .env                       # 工作区环境变量
+│   └── agents/                    # 🗂️ 工作区 Agent 集合
+│       ├── project-assistant/     # 项目专用 Agent
+│       │   ├── agent.yaml         # Agent 配置
+│       │   ├── memory.md          # 项目上下文记忆
+│       │   └── chatlogs/          # 团队对话历史
+│       └── code-reviewer/         # 代码审查 Agent
+├── .git/                         # 版本控制
+└── package.json                  # 项目配置
+
+💻 CLI Agent 优先模式访问：
+全局配置/
+~/Documents/HyperChat/
+  .hyperchat/
+  ├── mcp.json                     # 🌍 全局 MCP 服务池
+  ├── .env                         # 全局环境变量
+  └── agents/                      # 🚀 全局 Agent 库
+      ├── personal-assistant/      # 个人助手 Agent
+      │   ├── agent.yaml           # Agent 配置
+      │   ├── memory.md            # 个人上下文记忆
+      │   └── chatlogs/            # 个人对话历史
+      └── code-expert/             # 专业代码 Agent
+```
+
+**双层配置的核心优势**：
+- 🌐 **Web 模式**：工作区中心化，适合项目级管理和团队协作
+- 💻 **CLI 模式**：Agent 中心化，支持跨项目的个人工具使用
+- 🔄 **智能合并**：全局配置 + 工作区配置的 5 层优先级管理
+- 💾 **数据隔离**：项目级和个人级数据完全分离，互不干扰
 
 ```
 
 ## 🌟 AI as Code 的革命性优势
 
-### 🔄 像管理代码一样管理 AI
+### 🔄 双层架构下的智能管理
+
+#### 🌐 Web 模式：团队协作版本控制
 ```bash
-# AI 配置也可以版本控制
-git add .hyperchat/agents/code-reviewer/
-git commit -m "添加 TypeScript 专用代码审查 Agent"
-git push origin feature/new-agent
+# 📁 项目级 AI 配置版本管理
+git add .hyperchat/agents/project-assistant/
+git commit -m "添加项目专用 AI 助手"
+git push origin feature/project-ai
 
-# 分享团队 AI 最佳实践
-git clone https://github.com/team/ai-templates.git
-cp -r ai-templates/react-expert/.hyperchat ./
+# 👥 团队 AI 最佳实践分享
+git clone https://github.com/team/ai-workspace-templates.git
+cp -r ai-workspace-templates/react-fullstack/.hyperchat ./
 
-# 回滚 AI 配置
-git checkout HEAD~1 -- .hyperchat/agents/
+# 🔄 项目 AI 配置回滚
+git checkout HEAD~1 -- .hyperchat/
 ```
 
-### 📋 配置即Agent
+#### 💻 CLI 模式：个人工具管理
+```bash
+# 🚀 快速部署个人 Agent
+hyperchat agent create personal-coder --template ~/ai-templates/
+
+# 🌍 跨项目使用个人 Agent
+cd /project-a && hyperchat agent personal-coder "分析这个项目"
+cd /project-b && hyperchat agent personal-coder "分析这个项目"
+
+# 💾 Agent 记忆和上下文自动切换
+# personal-coder 会记住不同项目的特点和上下文
+```
+
+
+
+### Agent 配置
 ```yaml
-# .hyperchat/agents/frontend-expert/agent.yaml
-name: "前端架构专家"
-description: "专注于 React、TypeScript、性能优化的 AI 助手"
+# .hyperchat/agents/project-assistant/agent.yaml
+name: "项目助手"
+description: "专门为本项目设计的 React + Node.js 全栈助手"
 modelKey: "claude-3-5-sonnet"
 isConfirmCallTool: false
-allowMCPs: ["filesystem", "terminal", "knowledge-base"]
+# 🔌 使用工作区级 MCP 服务池
+allowMCPs: ["filesystem", "git", "npm", "database"]
 prompt: |
-  你是一位资深的前端架构师，专精于：
-  1. React 18+ 最佳实践和性能优化
-  2. TypeScript 类型系统设计
-  3. 现代前端工程化工具链
-  4. 响应式设计和移动端适配
+  你是本项目的专属 AI 助手，熟悉：
+  - 项目架构：React + TypeScript + Node.js
+  - 业务领域：电商平台开发
+  - 团队规范：ESLint + Prettier + Jest
   
-  工作原则：
-  - 优先考虑性能和可维护性
-  - 遵循团队编码规范
-  - 提供可执行的具体建议
-tags: ["frontend", "react", "typescript", "performance"]
+  请基于项目上下文提供专业建议。
+tags: ["project", "fullstack", "ecommerce"]
+```
+
+```yaml
+# ~/Documents/HyperChat/.hyperchat/agents/personal-coder/agent.yaml
+name: "个人编程助手"
+description: "跨项目的通用编程助手，支持多种技术栈"
+modelKey: "gpt-4o"
+isConfirmCallTool: true
+# ⚡ Agent 专属 MCP 工具 + 回退到工作区
+allowMCPs: ["terminal", "browser", "calculator"]
+prompt: |
+  你是我的个人编程助手，擅长：
+  - 多语言开发：Python, JavaScript, Go, Rust
+  - 架构设计和代码审查
+  - 快速原型开发和问题解决
+  
+  根据不同项目的上下文调整回答风格。
+tags: ["personal", "general", "cross-project"]
 ```
 
 

@@ -31,8 +31,8 @@ interface ChatCompletionRequest {
   /** 聊天记录 Key (保存聊天历史的标识) */
   chatKey: string;
   agentName: string;
-  /** Agent 作用域 */
-  agentScope: "global" | "workspace";
+  /** 工作区路径 */
+  workspacePath?: string;
   /** 聊天历史消息 */
   messages: MyMessage[];
   /** 用户输入内容 */
@@ -55,6 +55,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     sessionId,
     chatKey,
     agentName,
+    workspacePath,
     messages,
     userMessage,
     configOverrides = {},
@@ -63,12 +64,24 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
   try {
     let workspaceManager = getWorkspaceManager();
-    // 获取工作区管理器
-    let workspace = workspaceManager.getCurrentWorkspace();
-
-
-    if (!workspace) {
-      throw new Error("No workspace available");
+    let workspace;
+    
+    if (workspacePath) {
+      // 使用指定的工作区
+      workspace = await workspaceManager.get(workspacePath, true);
+      if (!workspace) {
+        throw new Error(`Workspace not found: ${workspacePath}`);
+      }
+      // 确保工作区已初始化
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
+    } else {
+      // 使用当前工作区（向后兼容）
+      workspace = workspaceManager.getCurrentWorkspace();
+      if (!workspace) {
+        throw new Error("No workspace available");
+      }
     }
 
     // 获取 AI 设置

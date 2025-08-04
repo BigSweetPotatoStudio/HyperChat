@@ -14,8 +14,8 @@ import { ToolSet, TextStreamPart } from "ai"
 interface ChatStreamParams {
   /** Agent 名称 */
   agentName?: string;
-  /** Agent 作用域 */
-  agentScope?: "global" | "workspace";
+  /** 工作区路径 */
+  workspacePath?: string;
   /** 工具确认回调 */
   onToolConfirm?: (tool: HyperToolCall) => Promise<any>;
 }
@@ -312,7 +312,7 @@ export function useChatStream(params: ChatStreamParams) {
           messages,
           userMessage,
           agentName: params.agentName || 'default',
-          agentScope: params.agentScope || 'workspace',
+          workspacePath: params.workspacePath,
           configOverrides
         }),
       });
@@ -329,7 +329,7 @@ export function useChatStream(params: ChatStreamParams) {
       useForceUpdate();
       throw error;
     }
-  }, [connectSSE, params.agentName, params.agentScope, useForceUpdate]);
+  }, [connectSSE, params.agentName, params.workspacePath, useForceUpdate]);
 
 
   // 取消聊天流

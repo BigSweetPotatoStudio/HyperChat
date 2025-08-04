@@ -32,7 +32,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * 不允许 await import()。这样逻辑更加清晰，避免了动态导入带来的复杂性。
 
 ### 环境变量系统
-* 实现了5层优先级的环境变量系统（默认值 < process.env < 全局.env < 工作区.env < CLI参数）
+* 实现了5层优先级的环境变量系统（默认值 < process.env < ~/.hyperchat/.env < 工作区.env < CLI参数）
 
 ### 前后端通信
 * 前端发送消息给后端，默认通过 packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
@@ -51,7 +51,12 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 
 ## ✅ 双层架构设计 (2.0版本 - 已完成实现)
 
-### 核心理念：Web工作区中心 + CLI Agent优先
+### 核心理念：互补的双模式架构
+**重要**：CLI 和 Web 是**互补而非并发**的使用模式
+- 🌐 **Web模式**：开发阶段、项目配置、团队协作时使用
+- 💻 **CLI模式**：生产环境、CI/CD、自动化脚本、无界面环境使用
+- 🔄 **协同工作**：Web配置 → CLI执行，避免数据同步复杂性
+
 **目标**：根据不同使用场景优化用户体验，Web端注重项目协作，CLI端注重Agent交互
 
 ### 双层架构设计
@@ -59,14 +64,12 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 🌐 Web前端：工作区中心架构
 ├── 工作区级别的资源管理
 │   ├── 工作区MCP客户端管理 (mcp.json)
-│   ├── 工作区任务调度管理 (tasks/)
 │   └── 工作区Agent集合管理 (agents/)
 └── 适用场景：项目开发、团队协作、Web界面管理
 
 💻 CLI前端：Agent优先架构  
 ├── Agent级别的直接交互
 │   ├── Agent内置MCP工具使用
-│   ├── Agent专属任务执行
 │   └── Agent独立聊天会话
 └── 适用场景：快速对话、自动化脚本、命令行工作流
 ```
@@ -80,8 +83,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 2️⃣ 检测当前工作区 (./.hyperchat/)
 3️⃣ 合并为工作区统一环境
    ├── 工作区MCP客户端列表 (统一管理)
-   ├── 工作区Agent集合 (全局+本地)
-   └── 工作区任务调度系统
+   └── 工作区Agent集合 (全局+本地)
 
 💻 CLI模式：Agent直接访问
 1️⃣ 发现可用Agent (全局+工作区)
@@ -153,7 +155,6 @@ hc workspace current
 hyperchat chat                  # 直接AI对话
 hyperchat "你好"                    # 直接AI对话
 hyperchat serve                   # 启动Web服务器 (包含 Web 界面)
-hyperchat run                     # 启动核心服务 (不包含 Web 界面，适合后台运行)
 hyperchat agent list              # 列出AI代理
 hyperchat agent [agent_name] "你好"          # 使用某个agent直接AI对话
 hyperchat agent [agent_name] chat          # 使用某个agent进行对话
@@ -187,9 +188,9 @@ HyperChat/
 
 ### 全局配置目录
 ```
-~/Documents/HyperChat/
-    .hyperchat/
+~/.hyperchat/
     ├── mcp.json                  // 全局主控程序 (MCP) 配置文件
+    ├── .env                      // 全局环境变量配置
     ├── agents/
     │   ├── agent1-key/
     │   │   ├── memory.md         # Agent记忆
@@ -199,10 +200,6 @@ HyperChat/
     │   │       ├── chat1.yaml
     │   │       ├── chat2.yaml
     │   │       └── ...
-    │   └── ...
-    ├── tasks/                    // 任务文件夹
-    │   ├── task1.yaml            # 单个任务的定义文件
-    │   ├── task2.yaml
     │   └── ...
     └── ...
 ```
@@ -224,10 +221,6 @@ HyperChat/
       │   │       ├── chat2.yaml
       │   │       └── ...
       │   └── ...
-      ├── tasks/                    // 任务文件夹
-      │   ├── task1.yaml            # 单个任务的定义文件
-      │   ├── task2.yaml
-      │   └── ...
       └── ...
 ```
 
@@ -243,7 +236,7 @@ HyperChat/
 - [x] CLI架构重构：从HTTP API改为直接导入core模块，并集成到core包中
 - [x] Workspace配置合并逻辑：在workspace.mts中实现了智能工作区检测和配置合并
 - [x] CLI集成到Core包：简化架构，提升性能，统一构建流程
-- [x] CLI bug修复和简化 (2024-07-12)：修复agent显示undefined问题，简化命令结构，提升代码质量
+- [x] CLI bug修复和简化 (2025-07-12)：修复agent显示undefined问题，简化命令结构，提升代码质量
 - [x] Agent名称更新映射修复 (2025-08-01)：修复`updateAgentMapping`方法中缺失的`availableAgents`映射更新
 - [x] MCP架构统一重构 (2025-08-01)：统一使用工作区级别的MCP管理，修复所有相关的查找和调用逻辑
 
@@ -258,41 +251,9 @@ HyperChat/
 
 ### 🎯 最新更新日志
 
-#### 2024-07-13 工作区任务管理系统完整实现 (已完成)
-**核心功能**:
-- ✅ 完整的任务管理系统：支持创建、编辑、启用/禁用、删除、克隆、手动触发
-- ✅ TaskManager 类：基于YAML文件存储，支持完整的 CRUD 操作和统计
-- ✅ 工作区集成：任务管理器集成到 workspace.mts，自动创建 tasks 目录
-- ✅ 前端管理界面：TaskManagement.tsx 组件，支持可视化管理和 Cron 模板选择
-- ✅ CLI 命令支持：丰富的命令行接口（list/create/show/enable/disable/delete/edit/trigger/scheduler/stats）
-- ✅ 后台任务调度：基于 node-cron 的自动定时执行，支持中国时区
-- ✅ Agent 集成：任务执行通过指定的 Agent，并记录到聊天历史
 
-**架构设计**:
-- ✅ 基于 taskSchema.mts 的完整类型安全，包含 Task/CreateTaskRequest/UpdateTaskRequest 类型
-- ✅ 统一的 Command 系统集成（taskCommands.mts）
-- ✅ 前后端数据同步和状态管理
-- ✅ 工作区级别的任务隔离和统计
-- ✅ 智能调度器管理：任务启用/禁用时自动更新调度状态
-- ✅ TypeScript 完整类型安全：修复所有编译错误，确保类型一致性
 
-#### 2024-07-13 新增 `hyperchat run` 核心服务命令
-**新增功能**:
-- ✅ `hyperchat run` 命令：启动核心服务但不启动 HTTP 服务器
-- ✅ 适用场景：后台运行、定时任务执行、服务器环境中不需要 Web 界面的场景
-- ✅ 完整的资源管理：自动初始化工作区、启动 MCP 客户端、启动任务调度器
-- ✅ 优雅退出处理：支持 SIGINT/SIGTERM/SIGQUIT 信号，自动清理资源
-- ✅ 运行状态显示：启动时显示工作区统计信息和调度状态
-- ✅ 进程保持：通过事件循环保持前台运行，直到收到退出信号
-
-**技术实现**:
-- ✅ 新增 `packages/core/src/cli/commands/run.mts` 实现核心逻辑
-- ✅ 集成到 CLI 主入口和帮助系统
-- ✅ 支持 `--workspace` 参数指定工作区路径
-- ✅ 支持 `--verbose` 和 `--quiet` 日志控制
-- ✅ 异常处理和未捕获异常监听
-
-#### 2024-07-13 工作区初始化两阶段优化 🚀
+#### 2025-07-13 工作区初始化两阶段优化 🚀
 **核心问题**:
 - 原有 `workspace.init()` 方法集成了太多操作，导致启动时间过长
 - 无法快速获取工作区基本信息，用户体验不佳
@@ -300,8 +261,8 @@ HyperChat/
 
 **优化方案**:
 - ✅ **两阶段初始化架构**: `initialize()` + `start()` 替代单一的 `init()`
-- ✅ **第一阶段 - 快速配置加载**: 目录创建、设置管理器、任务管理器、Agent 管理器、基本配置
-- ✅ **第二阶段 - 重量级服务启动**: MCP 客户端（网络连接）、任务调度器
+- ✅ **第一阶段 - 快速配置加载**: 目录创建、设置管理器、Agent 管理器、基本配置
+- ✅ **第二阶段 - 重量级服务启动**: MCP 客户端（网络连接）
 - ✅ **状态管理系统**: `WorkspaceState` 枚举跟踪初始化进度
 - ✅ **向后兼容**: 保留 `init()` 方法，内部调用两阶段方法
 - ✅ **API 简化**: 移除冗余的 `isReady()` 方法，`isStarted()` 已足够
@@ -320,12 +281,12 @@ HyperChat/
 **使用场景分类**:
 ```typescript
 // 🚀 场景 1: 快速查询（只需配置）
-await workspaceManager.initialize();           // agent list, task list
+await workspaceManager.initialize();           // agent list
 const agents = workspace.getAgents();
 
 // 🔥 场景 2: 完整服务（需要网络连接）  
-await workspaceManager.initialize();           // hyperchat run
-await workspaceManager.start();                // task trigger, MCP 调用
+await workspaceManager.initialize();           // hyperchat serve
+await workspaceManager.start();                // MCP 调用
 
 // 🔧 场景 3: 向后兼容（一步完成）
 await workspaceManager.init();                 // 现有代码迁移
@@ -338,7 +299,7 @@ await workspaceManager.init();                 // 现有代码迁移
 - ⚡ `hyperchat chat` 命令展示两阶段启动过程
 - 🎯 智能场景适配：查询命令快速响应，服务命令完整启动
 
-#### 2024-07-12 CLI修复和简化
+#### 2025-07-12 CLI修复和简化
 **问题修复**:
 - ✅ 修复agent列表显示"undefined (undefined)"的bug
 - ✅ 修复ES模块导入问题，避免使用CommonJS require
@@ -390,7 +351,7 @@ const client = agentInstance.getMCPClient(clientName);
 
 ### 📋 标准化功能开发流程 (推荐采用)
 
-基于工作区任务管理系统的成功实现，我们总结出以下高效的开发流程：
+基于项目的成功实践，我们总结出以下高效的开发流程：
 
 #### 1️⃣ **Schema 定义阶段**
 ```typescript
@@ -505,7 +466,8 @@ const client = agentInstance.getMCPClient(clientName);
 ## 开发小技巧
 
 ### 构建优化
-* 以后不用build构建，运行typecheck就好了，不然太久了
+* 开发阶段推荐使用 `npm run typecheck` 进行类型检查，比完整构建更快
+* 生产部署时使用 `npm run build` 完整构建所有包
 
 
   1. 前端先调用 POST /api/chat/stream 获取 sessionId

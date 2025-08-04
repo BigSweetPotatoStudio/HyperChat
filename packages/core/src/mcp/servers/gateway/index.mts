@@ -3,7 +3,6 @@ import dayjs from "dayjs";
 import { CallToolRequestSchema, ListToolsRequestSchema, Server } from "../../../es6.mjs";
 import { CONST } from "../../../const.mjs";
 import { IMCPClient } from "@dadigua/hyperchat-shared";
-import { Command } from "../../../command.mjs";
 import { workspaceManager } from "../../../lib.mjs";
 
 
@@ -114,11 +113,20 @@ async function createServer(name: string, description: string, allowMCPs: string
                 throw new Error(`Tool ${request.params.name} not found`);
             }
 
-            return await Command.mcpCallTool({
-                name: find.clientName,
-                functionName: find.originalName,
-                args: request.params.arguments || {},
-            });
+            // 直接使用工作区的 MCP 管理器
+            const currentWorkspace = workspaceManager.getCurrentWorkspace();
+            const mcpManager = currentWorkspace.getMcpManager();
+            
+            if (!mcpManager) {
+                throw new Error('工作区 MCP 管理器未初始化');
+            }
+
+            const client = mcpManager.getClient(find.clientName);
+            if (!client) {
+                throw new Error(`MCP client "${find.clientName}" not found`);
+            }
+            
+            return await client.callTool(find.originalName, request.params.arguments || {});
         } catch (error: any) {
             return {
                 content: [

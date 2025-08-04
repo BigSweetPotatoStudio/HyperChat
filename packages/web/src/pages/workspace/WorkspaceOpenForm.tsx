@@ -93,7 +93,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       <Divider orientation="left">
         <Space>
           <GlobalOutlined />
-          <span>{t`Global Workspace`}</span>
+          <span>{t`Default Workspace`}</span>
         </Space>
       </Divider>
       <Card
@@ -111,7 +111,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           avatar={<GlobalOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
           title={
             <Space>
-              <span>{t`Global Workspace`}</span>
+              <span>{t`Default Workspace`}</span>
               <Tag color="blue">{t`Default`}</Tag>
             </Space>
           }
@@ -120,7 +120,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
               <Text type="secondary">{globalWorkspacePath}</Text>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                {t`Contains global agents, MCP tools and configurations`}
+                {t`Contains default agents, MCP tools and configurations`}
               </Text>
             </div>
           }
@@ -201,7 +201,7 @@ interface CollectionCreateFormModalProps {
   }>;
   onPathSelect: (path: string) => void;
   onHistoryRemove: (path: string) => void;
-  switching?: boolean;
+  adding?: boolean;
 }
 
 export const WorkspaceOpenModal: React.FC<CollectionCreateFormModalProps> = ({
@@ -215,16 +215,16 @@ export const WorkspaceOpenModal: React.FC<CollectionCreateFormModalProps> = ({
   workspaceHistory,
   onPathSelect,
   onHistoryRemove,
-  switching = false,
+  adding = false,
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
 
   return (
     <Modal
-      title={t`Switch Workspace`}
+      title={t`Add Workspace`}
       open={open}
       onCancel={onCancel}
-      confirmLoading={switching}
+      confirmLoading={adding}
       onOk={async () => {
         try {
           const values = await formInstance?.validateFields();

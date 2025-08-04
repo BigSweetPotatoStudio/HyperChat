@@ -4,7 +4,6 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import { t } from '../../i18n.mjs';
 import { agentCommands } from '../../commands/agentCommands.mjs';
@@ -30,16 +29,15 @@ export async function showAgentMemory(agentName: string) {
 
     // 智能获取当前工作区
     const currentWorkingDirectory = process.cwd();
-    await workspaceManager.initialize(currentWorkingDirectory);
-    const workspace = workspaceManager.getCurrentWorkspace();
-    
+    const workspace = await workspaceManager.initialize(currentWorkingDirectory);
+
     if (!workspace) {
       logger.error('当前没有可用的工作区');
       process.exit(1);
     }
 
     // 获取Agent记忆内容 (智能查找)
-    const memoryResult = await agentCommands.getAgentMemory({ 
+    const memoryResult = await agentCommands.getAgentMemory({
       agentName
     });
 
@@ -79,13 +77,14 @@ export async function listAgents() {
     const workspacePath = await getCurrentWorkspacePath();
 
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    
+
     if (currentWorkingDirectory !== workspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
 
     // 获取代理列表
-    const agents = await Command.getWorkspaceAgentsSummary();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const agents = await workspace.getAllAgentsSummary();
 
     console.log(`\n🤖 ${t`Agent list:`}`);
 
@@ -113,10 +112,10 @@ export async function listAgents() {
       if (chatLogsCount > 0) {
         console.log(`      ${t`Chat logs:`} ${chatLogsCount} ${t`entries`}`);
       }
-      
+
       // 检查是否有记忆文件
       try {
-        const memoryResult = await agentCommands.getAgentMemory({ 
+        const memoryResult = await agentCommands.getAgentMemory({
           agentName: config.name
         });
         if (memoryResult.content.trim()) {
@@ -147,7 +146,7 @@ export async function createAgent(name: string) {
     const workspacePath = await getCurrentWorkspacePath();
 
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    
+
     if (currentWorkingDirectory !== workspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
@@ -166,9 +165,12 @@ export async function createAgent(name: string) {
       tags: ['cli-created']
     };
 
-    const agent = await Command.createAgent({
-      config: agentConfig
-    });
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const agentInstance = await workspace.createAgent(agentConfig);
+    if (!agentInstance) {
+      throw new Error('创建 Agent 失败');
+    }
+    const agent = agentInstance.getConfig();
 
     logger.success(`✅ ${t`Agent created successfully`}`);
     console.log(`${t`Name:`} ${agent.name}`);
@@ -192,7 +194,8 @@ export async function checkAgentExists(agentName: string): Promise<{ exists: boo
     const currentWorkingDirectory = process.cwd();
     await workspaceManager.initialize(currentWorkingDirectory);
 
-    const agents = await Command.getWorkspaceAgentsSummary();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const agents = await workspace.getAllAgentsSummary();
     const agentSummary = agents.find(agent => {
       const config = agent.config as AgentConfig;
       return config.name === agentName;

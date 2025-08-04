@@ -143,7 +143,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         maxTokens: values.maxTokens,
         compressionStrategy: 'tokens',
         maxContextTokens: values.maxContextTokens,
-        
+
       };
 
       if (editingAgent) {
@@ -155,14 +155,15 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         }
         await call('updateAgent', {
           agentName: agentKey,
-          updates: agentConfig
-          // Scope parameter removed in Agent-centered architecture
+          updates: agentConfig,
+          workspacePath: workspace.path
         });
         message.success(t`Agent updated successfully`);
       } else {
-        // 创建新Agent（Agent-centered架构，无需scope参数）
+        // 创建新Agent
         await call('createAgent', {
-          config: agentConfig
+          config: agentConfig,
+          workspacePath: workspace.path
         });
         message.success(t`Agent created successfully`);
       }
@@ -181,8 +182,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const deleteAgent = async (agent: Agent) => {
     try {
       await call('deleteAgent', {
-        agentName: agent.config.name
-        // Scope parameter removed in Agent-centered architecture
+        agentName: agent.config.name,
+        workspacePath: workspace.path
       });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
@@ -198,11 +199,12 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     try {
       setLoadingChatHistory(true);
 
-      // 获取Agent的聊天历史记录（Agent-centered架构，无需scope参数）
+      // 获取Agent的聊天历史记录
       const result = await call('getAgentChatLogs', {
         agentName: agent.config.name,
         page: page - 1, // API使用0-based页码
-        pageSize: pageSize
+        pageSize: pageSize,
+        workspacePath: workspace.path
       });
 
       setChatHistoryList(result.chatLogs || []);
@@ -242,7 +244,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           await call('deleteAgentChatLog', {
             agentName: chatHistoryAgent.config.name,
-            chatKey: chatLog.key
+            chatKey: chatLog.key,
+            workspacePath: workspace.path
           });
 
           message.success(t`Chat log deleted successfully`);
@@ -388,18 +391,19 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                           </Tooltip>
                         )}
                         {agent.config.allowMCPs && agent.config.allowMCPs.length > 0 && (
-                          <Tooltip title={t`Tools count`}>
+                          <Tooltip title={t`MCP count`}>
                             <Tag color="cyan">{agent.config.allowMCPs.length} 🔧</Tag>
                           </Tooltip>
+                        )}
+                        {agent.config.modelKey && (
+                          <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
                         )}
                       </Space>
                     }
                     description={
                       <div className="text-xs">
-                        <div className="text-gray-500 mb-1">
-                          {agent.config.modelKey && (
-                            <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
-                          )}
+                        <div className="text-gray-500 mb-1 line-clamp-1">
+
                           {agent.config.description || agent.config.prompt?.slice(0, 50) || t`No description`}
                         </div>
                         {/* <Space size="small">

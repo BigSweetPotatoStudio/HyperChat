@@ -5,7 +5,6 @@
 import process from 'process';
 import { basename } from 'path';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import { t } from '../../i18n.mjs';
 import { appDataDir } from '../../const.mjs';
@@ -16,8 +15,8 @@ async function getCurrentWorkspacePath(): Promise<string> {
 
   // workspaceManager is already imported
   const currentWorkingDirectory = process.cwd();
-  await workspaceManager.initialize(currentWorkingDirectory);
-  return workspaceManager.getCurrentWorkspacePath();
+  let workspace = await workspaceManager.initialize(currentWorkingDirectory);
+  return workspace.workspacePath;
 }
 
 export async function listWorkspaces() {
@@ -32,8 +31,24 @@ export async function listWorkspaces() {
     // 获取当前工作区路径（配置所在的目录）
     const currentWorkspacePath = await getCurrentWorkspacePath();
 
-    // 新架构：只显示当前工作区
-    const currentWorkspace = await Command.getCurrentWorkspace();
+    // 获取当前工作区信息
+    const workspace = workspaceManager.getCurrentWorkspace();
+    let currentWorkspace = null;
+    if (workspace) {
+      const config = workspace.getConfig();
+      const summary = await workspace.getSummary();
+      const isGlobal = workspaceManager.isGlobalWorkspace(currentWorkspacePath);
+      const mcpManager = workspace.getMcpManager();
+      const mcpServersCount = mcpManager ? mcpManager.getAllClients().length : 0;
+      currentWorkspace = {
+        name: config.name || basename(currentWorkspacePath),
+        path: currentWorkspacePath,
+        description: config.description,
+        isGlobal,
+        agentsCount: summary.agentsCount,
+        mcpServersCount
+      };
+    }
 
     console.log(`\n📍 ${t`Current working directory:`} ${currentWorkingDirectory}`);
     console.log(`📁 ${t`Current workspace:`} ${currentWorkspacePath}`);
@@ -72,8 +87,8 @@ export async function showCurrentWorkspace() {
   try {
     // 初始化工作区管理器
     const currentWorkingDirectory = process.cwd();
-    await workspaceManager.initialize(currentWorkingDirectory);
-    const workspace = workspaceManager.getCurrentWorkspace();
+    let workspace = await workspaceManager.initialize(currentWorkingDirectory);
+
 
     console.log(`\n🎯 ${t`Current Status:`}`);
     console.log(`📍 ${t`Working Directory:`} ${currentWorkingDirectory}`);
@@ -138,7 +153,7 @@ export async function showWorkspaceInfo(path: string) {
     logger.info(`📁 ${t`Viewing workspace info:`} ${path}`);
 
     // 检查目录是否是工作区
-    const isWorkspace = await Command.isWorkspaceDirectory({ directoryPath: path });
+    const isWorkspace = workspaceManager.isWorkspaceDirectory(path);
     if (!isWorkspace) {
       logger.error(t`This directory is not a workspace`);
       return;
@@ -162,10 +177,10 @@ export async function showWorkspaceInfo(path: string) {
 
     // 获取MCP客户端信息
     try {
-      const mcpClients = await Command.getWorkspaceMcpClients();
+      const mcpClients = workspace.getMcpClients();
       console.log(`  ${t`MCP clients:`} ${mcpClients.length} ${t`items`}`);
       if (mcpClients.length > 0) {
-        mcpClients.forEach(client => {
+        mcpClients.forEach((client: any) => {
           console.log(`    - ${client.serverName} (${client.status})`);
         });
       }
