@@ -4,7 +4,7 @@ import { Route } from "react-router-dom";
 
 import { Layout } from "./layout";
 import { t } from "./i18n";
-import { Workspace } from "./pages/workspace/workspace";
+import { WorkspaceManage } from "./pages/workspace/WorkspaceManage";
 
 type RouteType = {
   path: string;
@@ -26,7 +26,7 @@ export function getLayoutRoute() {
         path: "/Workspace",
         name: t`Workspace`,
         icon: <FolderOpenOutlined />,
-        component: <Workspace />,
+        component: <WorkspaceManage />,
       },
     ]
   };

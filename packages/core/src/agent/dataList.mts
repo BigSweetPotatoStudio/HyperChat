@@ -457,7 +457,7 @@ export class DataList<T extends { key: string }> {
           return item;
         }
       } catch (error) {
-        this.logger.warn(`加载文件 ${filename} 失败:`, error);
+        this.logger.warn(`加载文件 ${filePath} 失败:`, error);
       }
     }
     

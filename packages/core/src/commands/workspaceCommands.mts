@@ -215,6 +215,33 @@ export const workspaceCommands = {
   },
 
   /**
+   * 获取所有已加载的工作区列表
+   * @returns 工作区列表
+   */
+  async getAllWorkspaces(): Promise<Array<{
+    path: string;
+    isCurrentWorkspace: boolean;
+    isInitialized: boolean;
+    isStarted: boolean;
+  }>> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const currentPath = workspaceManager.getCurrentWorkspacePath();
+      const allWorkspaces = workspaceManager.getAll();
+      
+      return allWorkspaces.map(({ path, workspace }) => ({
+        path,
+        isCurrentWorkspace: path === currentPath,
+        isInitialized: workspace.isInitialized(),
+        isStarted: workspace.isStarted()
+      }));
+    } catch (error) {
+      console.error("Failed to get all workspaces:", error);
+      return [];
+    }
+  },
+
+  /**
    * 切换到指定工作区
    * @param workspacePath 工作区路径
    * @returns 切换结果
@@ -232,6 +259,30 @@ export const workspaceCommands = {
       return true;
     } catch (error) {
       console.error("Failed to switch workspace:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 从缓存中移除工作区
+   * @param workspacePath 工作区路径
+   * @returns 移除结果
+   */
+  async removeWorkspace({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<boolean> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      // 不能移除当前工作区
+      const currentPath = workspaceManager.getCurrentWorkspacePath();
+      if (workspacePath === currentPath) {
+        throw new Error("Cannot remove current workspace");
+      }
+      return await workspaceManager.remove(workspacePath);
+    } catch (error) {
+      console.error("Failed to remove workspace:", error);
       throw error;
     }
   },
