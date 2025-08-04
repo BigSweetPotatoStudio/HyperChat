@@ -332,8 +332,9 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
     const mcpClients = Object.values(details.mcpClients).sort((a, b) => a.order - b.order);
     return (
       <div className="h-full">
+        <div className="h-full w-[1px] bg-gray-200"></div>
         <Splitter
-          style={{ height: '100%' }}
+          style={{ height: '100%', padding: '0px 0.5rem' }}
           onResize={handlePanelSizeChange}
         >
           {/* 中间面板：聊天界面 */}

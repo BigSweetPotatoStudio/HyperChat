@@ -6326,5 +6326,523 @@
     "ko": "파일 관리자에서 보기:",
     "fr": "Afficher dans le gestionnaire de fichiers :",
     "de": "Im Dateimanager anzeigen:"
+  },
+  "Actual": {
+    "zh": "实际",
+    "ja": "実際",
+    "ko": "실제",
+    "fr": "Actuel",
+    "de": "Aktuell"
+  },
+  "Add Workspace": {
+    "zh": "添加工作区",
+    "ja": "ワークスペースを追加",
+    "ko": "워크스페이스 추가",
+    "fr": "Ajouter un espace de travail",
+    "de": "Arbeitsbereich hinzufügen"
+  },
+  "Agent configuration:": {
+    "zh": "代理配置：",
+    "ja": "エージェント設定:",
+    "ko": "에이전트 구성:",
+    "fr": "Configuration de l'Agent :",
+    "de": "Agentenkonfiguration:"
+  },
+  "Agent selected:": {
+    "zh": "已选代理：",
+    "ja": "選択されたエージェント:",
+    "ko": "선택된 에이전트:",
+    "fr": "Agent sélectionné :",
+    "de": "Ausgewählter Agent:"
+  },
+  "Agent unloaded, exiting...": {
+    "zh": "代理已卸载，正在退出...",
+    "ja": "エージェントがアンロードされ、終了しています...",
+    "ko": "에이전트 언로드됨, 종료 중...",
+    "fr": "Agent déchargé, sortie...",
+    "de": "Agent entladen, wird beendet..."
+  },
+  "Approaching compression threshold": {
+    "zh": "接近压缩阈值",
+    "ja": "圧縮しきい値に近づいています",
+    "ko": "압축 임계값에 근접",
+    "fr": "Seuil de compression approché",
+    "de": "Komprimierungsschwelle wird erreicht"
+  },
+  "Cannot close default workspace": {
+    "zh": "无法关闭默认工作区",
+    "ja": "デフォルトのワークスペースは閉じられません",
+    "ko": "기본 워크스페이스를 닫을 수 없습니다",
+    "fr": "Impossible de fermer l'espace de travail par défaut",
+    "de": "Standard-Arbeitsbereich kann nicht geschlossen werden"
+  },
+  "Chat history:": {
+    "zh": "聊天历史记录：",
+    "ja": "チャット履歴:",
+    "ko": "채팅 기록:",
+    "fr": "Historique du chat :",
+    "de": "Chat-Verlauf:"
+  },
+  "Chat with agent from specific path": {
+    "zh": "从指定路径与代理聊天",
+    "ja": "特定パスのエージェントとチャット",
+    "ko": "특정 경로의 에이전트와 채팅",
+    "fr": "Discuter avec l'agent depuis un chemin spécifique",
+    "de": "Mit Agent von spezifischem Pfad chatten"
+  },
+  "Chat with default agent (Hyper)": {
+    "zh": "与默认代理 (Hyper) 聊天",
+    "ja": "デフォルトエージェント（Hyper）とチャット",
+    "ko": "기본 에이전트(Hyper)와 채팅",
+    "fr": "Discuter avec l'agent par défaut (Hyper)",
+    "de": "Mit Standard-Agent (Hyper) chatten"
+  },
+  "Chat with specific agent": {
+    "zh": "与指定代理聊天",
+    "ja": "特定のエージェントとチャット",
+    "ko": "특정 에이전트와 채팅",
+    "fr": "Discuter avec un agent spécifique",
+    "de": "Mit spezifischem Agent chatten"
+  },
+  "Compress": {
+    "zh": "压缩",
+    "ja": "圧縮",
+    "ko": "압축",
+    "fr": "Compresser",
+    "de": "Komprimieren"
+  },
+  "Contains default agents, MCP tools and configurations": {
+    "zh": "包含默认代理、MCP 工具和配置",
+    "ja": "デフォルトエージェント、MCPツール、設定が含まれます",
+    "ko": "기본 에이전트, MCP 도구 및 구성을 포함합니다",
+    "fr": "Contient les agents par défaut, les outils MCP et les configurations",
+    "de": "Enthält Standard-Agenten, MCP-Werkzeuge und Konfigurationen"
+  },
+  "Create an agent first using:": {
+    "zh": "请先使用以下方式创建代理：",
+    "ja": "まずエージェントを作成してください：",
+    "ko": "먼저 다음을 사용하여 에이전트를 생성하세요:",
+    "fr": "Créez d'abord un agent en utilisant :",
+    "de": "Erstellen Sie zuerst einen Agenten mit:"
+  },
+  "Created default agent:": {
+    "zh": "已创建默认代理：",
+    "ja": "デフォルトエージェントが作成されました：",
+    "ko": "기본 에이전트 생성됨:",
+    "fr": "Agent par défaut créé :",
+    "de": "Standard-Agent erstellt:"
+  },
+  "Default Workspace": {
+    "zh": "默认工作区",
+    "ja": "デフォルトワークスペース",
+    "ko": "기본 워크스페이스",
+    "fr": "Espace de travail par défaut",
+    "de": "Standard-Arbeitsbereich"
+  },
+  "Default agent not found, creating global default agent...": {
+    "zh": "未找到默认代理，正在创建全局默认代理...",
+    "ja": "デフォルトエージェントが見つかりません。グローバルデフォルトエージェントを作成しています...",
+    "ko": "기본 에이전트를 찾을 수 없습니다. 전역 기본 에이전트를 생성합니다...",
+    "fr": "Agent par défaut introuvable, création de l'agent par défaut global...",
+    "de": "Standard-Agent nicht gefunden, globaler Standard-Agent wird erstellt..."
+  },
+  "Enter model ID manually": {
+    "zh": "手动输入模型 ID",
+    "ja": "モデルIDを手動で入力",
+    "ko": "모델 ID를 수동으로 입력하세요",
+    "fr": "Saisir manuellement l'ID du modèle",
+    "de": "Modell-ID manuell eingeben"
+  },
+  "Error occurred during agent cleanup:": {
+    "zh": "代理清理过程中发生错误：",
+    "ja": "エージェントのクリーンアップ中にエラーが発生しました:",
+    "ko": "에이전트 정리 중 오류 발생:",
+    "fr": "Une erreur est survenue lors du nettoyage de l'agent :",
+    "de": "Fehler bei der Bereinigung des Agenten aufgetreten:"
+  },
+  "Estimated": {
+    "zh": "预估",
+    "ja": "推定",
+    "ko": "예상",
+    "fr": "Estimé",
+    "de": "Geschätzt"
+  },
+  "Failed to add workspace tab": {
+    "zh": "添加工作区标签页失败",
+    "ja": "ワークスペースタブの追加に失敗しました",
+    "ko": "워크스페이스 탭 추가 실패",
+    "fr": "Échec de l'ajout de l'onglet d'espace de travail",
+    "de": "Fehler beim Hinzufügen des Arbeitsbereich-Tabs"
+  },
+  "Failed to load models from server": {
+    "zh": "从服务器加载模型失败",
+    "ja": "サーバーからのモデルの読み込みに失敗しました",
+    "ko": "서버에서 모델 로드 실패",
+    "fr": "Échec du chargement des modèles depuis le serveur",
+    "de": "Fehler beim Laden der Modelle vom Server"
+  },
+  "Failed to load models: ${result.error}": {
+    "zh": "加载模型失败：${result.error}",
+    "ja": "モデルの読み込みに失敗しました: ${result.error}",
+    "ko": "모델 로드 실패: ${result.error}",
+    "fr": "Échec du chargement des modèles : ${result.error}",
+    "de": "Fehler beim Laden der Modelle: ${result.error}"
+  },
+  "Found global default agent:": {
+    "zh": "找到全局默认代理：",
+    "ja": "グローバルデフォルトエージェントが見つかりました:",
+    "ko": "전역 기본 에이전트 찾음:",
+    "fr": "Agent par défaut global trouvé :",
+    "de": "Globaler Standard-Agent gefunden:"
+  },
+  "Found local default agent:": {
+    "zh": "发现本地默认代理：",
+    "ja": "ローカルのデフォルトエージェントが見つかりました:",
+    "ko": "로컬 기본 에이전트 발견:",
+    "fr": "Agent local par défaut trouvé :",
+    "de": "Lokaler Standard-Agent gefunden:"
+  },
+  "Global agents:": {
+    "zh": "全局代理：",
+    "ja": "グローバルエージェント:",
+    "ko": "글로벌 에이전트:",
+    "fr": "Agents globaux :",
+    "de": "Globale Agenten:"
+  },
+  "Initializing Agent-centered chat environment...": {
+    "zh": "正在初始化以代理为中心的聊天环境...",
+    "ja": "エージェント中心のチャット環境を初期化中...",
+    "ko": "에이전트 중심 채팅 환경 초기화 중...",
+    "fr": "Initialisation de l'environnement de chat centré sur l'Agent...",
+    "de": "Agenten-zentrierte Chat-Umgebung wird initialisiert..."
+  },
+  "Loading workspace...": {
+    "zh": "正在加载工作区...",
+    "ja": "ワークスペースを読み込み中...",
+    "ko": "워크스페이스 로드 중...",
+    "fr": "Chargement de l'espace de travail...",
+    "de": "Arbeitsbereich wird geladen..."
+  },
+  "Local agents:": {
+    "zh": "本地代理：",
+    "ja": "ローカルエージェント:",
+    "ko": "로컬 에이전트:",
+    "fr": "Agents locaux :",
+    "de": "Lokale Agenten:"
+  },
+  "MCP Tool Selection": {
+    "zh": "MCP 工具选择",
+    "ja": "MCPツール選択",
+    "ko": "MCP 도구 선택",
+    "fr": "Sélection d'outil MCP",
+    "de": "MCP Werkzeugauswahl"
+  },
+  "MCP clients status:": {
+    "zh": "MCP 客户端状态：",
+    "ja": "MCPクライアントステータス:",
+    "ko": "MCP 클라이언트 상태:",
+    "fr": "Statut des clients MCP :",
+    "de": "MCP-Client-Status:"
+  },
+  "MCP count": {
+    "zh": "MCP 计数",
+    "ja": "MCPカウント",
+    "ko": "MCP 개수",
+    "fr": "Nombre de MCP",
+    "de": "MCP-Anzahl"
+  },
+  "MCP status error:": {
+    "zh": "MCP 状态错误：",
+    "ja": "MCPステータスエラー:",
+    "ko": "MCP 상태 오류:",
+    "fr": "Erreur de statut MCP :",
+    "de": "MCP-Statusfehler:"
+  },
+  "Manually compress memory": {
+    "zh": "手动压缩内存",
+    "ja": "手動でメモリを圧縮",
+    "ko": "수동으로 메모리 압축",
+    "fr": "Compresser la mémoire manuellement",
+    "de": "Speicher manuell komprimieren"
+  },
+  "Max tokens:": {
+    "zh": "最大令牌数：",
+    "ja": "最大トークン数:",
+    "ko": "최대 토큰:",
+    "fr": "Jetons max :",
+    "de": "Max. Token:"
+  },
+  "Maximum context tokens before compression (1000-128000)": {
+    "zh": "压缩前的最大上下文令牌数 (1000-128000)",
+    "ja": "圧縮前の最大コンテキストトークン数 (1000-128000)",
+    "ko": "압축 전 최대 컨텍스트 토큰 (1000-128000)",
+    "fr": "Jetons de contexte maximum avant compression (1000-128000)",
+    "de": "Maximale Kontext-Token vor Komprimierung (1000-128000)"
+  },
+  "Memory compression completed successfully": {
+    "zh": "内存压缩成功",
+    "ja": "メモリ圧縮が正常に完了しました",
+    "ko": "메모리 압축 완료",
+    "fr": "Compression de la mémoire terminée avec succès",
+    "de": "Speicherkomprimierung erfolgreich abgeschlossen"
+  },
+  "Memory compression failed, please try again later": {
+    "zh": "内存压缩失败，请稍后重试",
+    "ja": "メモリ圧縮に失敗しました。後でもう一度お試しください",
+    "ko": "메모리 압축 실패, 나중에 다시 시도해주세요",
+    "fr": "Échec de la compression de la mémoire, veuillez réessayer plus tard",
+    "de": "Speicherkomprimierung fehlgeschlagen, bitte versuchen Sie es später erneut"
+  },
+  "Memory compression failed:": {
+    "zh": "内存压缩失败：",
+    "ja": "メモリ圧縮に失敗しました:",
+    "ko": "메모리 압축 실패:",
+    "fr": "Échec de la compression de la mémoire :",
+    "de": "Speicherkomprimierung fehlgeschlagen:"
+  },
+  "Memory compression not available": {
+    "zh": "内存压缩不可用",
+    "ja": "メモリ圧縮は利用できません",
+    "ko": "메모리 압축을 사용할 수 없습니다",
+    "fr": "Compression de la mémoire non disponible",
+    "de": "Speicherkomprimierung nicht verfügbar"
+  },
+  "Memory compression will be triggered soon": {
+    "zh": "内存压缩即将触发",
+    "ja": "メモリ圧縮が間もなくトリガーされます",
+    "ko": "메모리 압축이 곧 시작됩니다",
+    "fr": "La compression de la mémoire sera bientôt déclenchée",
+    "de": "Speicherkomprimierung wird bald ausgelöst"
+  },
+  "Models from remote API": {
+    "zh": "来自远程 API 的模型",
+    "ja": "リモートAPIからのモデル",
+    "ko": "원격 API의 모델",
+    "fr": "Modèles de l'API distante",
+    "de": "Modelle von Remote-API"
+  },
+  "No MCP clients configured": {
+    "zh": "未配置 MCP 客户端",
+    "ja": "MCPクライアントが設定されていません",
+    "ko": "구성된 MCP 클라이언트 없음",
+    "fr": "Aucun client MCP configuré",
+    "de": "Keine MCP-Clients konfiguriert"
+  },
+  "No agents found in the system": {
+    "zh": "系统中未找到代理",
+    "ja": "システム内にエージェントが見つかりません",
+    "ko": "시스템에서 에이전트를 찾을 수 없습니다",
+    "fr": "Aucun agent trouvé dans le système",
+    "de": "Keine Agenten im System gefunden"
+  },
+  "No agents found. Create one using:": {
+    "zh": "未找到代理。请使用以下方式创建：",
+    "ja": "エージェントが見つかりません。以下を使用して作成してください:",
+    "ko": "에이전트를 찾을 수 없습니다. 다음을 사용하여 생성하십시오:",
+    "fr": "Aucun agent trouvé. Créez-en un en utilisant :",
+    "de": "Keine Agenten gefunden. Erstellen Sie einen mit:"
+  },
+  "No workspace loaded": {
+    "zh": "未加载工作区",
+    "ja": "ワークスペースがロードされていません",
+    "ko": "로드된 워크스페이스 없음",
+    "fr": "Aucun espace de travail chargé",
+    "de": "Kein Arbeitsbereich geladen"
+  },
+  "Not enough conversation to compress": {
+    "zh": "对话内容不足，无法压缩",
+    "ja": "圧縮するのに十分な会話がありません",
+    "ko": "압축할 대화가 충분하지 않습니다",
+    "fr": "Pas assez de conversation pour compresser",
+    "de": "Nicht genügend Konversation zum Komprimieren"
+  },
+  "Open Workspace": {
+    "zh": "打开工作区",
+    "ja": "ワークスペースを開く",
+    "ko": "워크스페이스 열기",
+    "fr": "Ouvrir l'espace de travail",
+    "de": "Arbeitsbereich öffnen"
+  },
+  "Prompt length:": {
+    "zh": "提示词长度：",
+    "ja": "プロンプトの長さ:",
+    "ko": "프롬프트 길이:",
+    "fr": "Longueur de l'invite :",
+    "de": "Eingabeaufforderungslänge:"
+  },
+  "Refresh model list": {
+    "zh": "刷新模型列表",
+    "ja": "モデルリストを更新",
+    "ko": "모델 목록 새로고침",
+    "fr": "Actualiser la liste des modèles",
+    "de": "Modellliste aktualisieren"
+  },
+  "Select MCP clients and tools. Unchecked tools from selected clients will be blocked.": {
+    "zh": "选择 MCP 客户端和工具。未选中的客户端工具将被禁用。",
+    "ja": "MCPクライアントとツールを選択します。選択したクライアントのチェックされていないツールはブロックされます。",
+    "ko": "MCP 클라이언트 및 도구를 선택하십시오. 선택한 클라이언트에서 선택 취소된 도구는 차단됩니다.",
+    "fr": "Sélectionnez les clients et outils MCP. Les outils non cochés des clients sélectionnés seront bloqués.",
+    "de": "Wählen Sie MCP-Clients und Werkzeuge aus. Nicht ausgewählte Werkzeuge von ausgewählten Clients werden blockiert."
+  },
+  "Select a model": {
+    "zh": "选择模型",
+    "ja": "モデルを選択",
+    "ko": "모델 선택",
+    "fr": "Sélectionner un modèle",
+    "de": "Modell auswählen"
+  },
+  "Select from ${remoteModels.length} available models": {
+    "zh": "从 ${remoteModels.length} 个可用模型中选择",
+    "ja": "${remoteModels.length}個の利用可能なモデルから選択",
+    "ko": "사용 가능한 ${remoteModels.length}개 모델 중 선택",
+    "fr": "Sélectionner parmi ${remoteModels.length} modèles disponibles",
+    "de": "Aus ${remoteModels.length} verfügbaren Modellen auswählen"
+  },
+  "Specified agents:": {
+    "zh": "指定代理：",
+    "ja": "指定されたエージェント:",
+    "ko": "지정된 에이전트:",
+    "fr": "Agents spécifiés :",
+    "de": "Spezifizierte Agenten:"
+  },
+  "Start specific agent service": {
+    "zh": "启动指定代理服务",
+    "ja": "特定のエージェントサービスを開始",
+    "ko": "특정 에이전트 서비스 시작",
+    "fr": "Démarrer le service d'agent spécifique",
+    "de": "Spezifischen Agenten-Dienst starten"
+  },
+  "Starting manual memory compression...": {
+    "zh": "正在启动手动内存压缩...",
+    "ja": "手動メモリ圧縮を開始中...",
+    "ko": "수동 메모리 압축 시작 중...",
+    "fr": "Démarrage de la compression manuelle de la mémoire...",
+    "de": "Manuelle Speicherkomprimierung wird gestartet..."
+  },
+  "Successfully loaded ${result.models.length} models from ${provider.label}": {
+    "zh": "成功从 ${provider.label} 加载 ${result.models.length} 个模型",
+    "ja": "${provider.label} から ${result.models.length} 個のモデルを正常にロードしました",
+    "ko": "${provider.label}에서 ${result.models.length}개의 모델을 성공적으로 로드했습니다.",
+    "fr": "Chargement réussi de ${result.models.length} modèles depuis ${provider.label}",
+    "de": "Erfolgreich ${result.models.length} Modelle von ${provider.label} geladen"
+  },
+  "Temperature:": {
+    "zh": "温度：",
+    "ja": "温度:",
+    "ko": "온도:",
+    "fr": "Température :",
+    "de": "Temperatur:"
+  },
+  "This will delete the MCP server from current workspace.": {
+    "zh": "这将从当前工作区删除 MCP 服务器。",
+    "ja": "これにより、現在のワークスペースからMCPサーバーが削除されます。",
+    "ko": "현재 워크스페이스에서 MCP 서버를 삭제합니다.",
+    "fr": "Cela supprimera le serveur MCP de l'espace de travail actuel.",
+    "de": "Dadurch wird der MCP-Server aus dem aktuellen Arbeitsbereich gelöscht."
+  },
+  "Token Usage": {
+    "zh": "令牌用量",
+    "ja": "トークン使用量",
+    "ko": "토큰 사용량",
+    "fr": "Utilisation des jetons",
+    "de": "Token-Nutzung"
+  },
+  "Token usage information not available": {
+    "zh": "令牌用量信息不可用",
+    "ja": "トークン使用量の情報はありません",
+    "ko": "토큰 사용량 정보를 사용할 수 없습니다.",
+    "fr": "Informations sur l'utilisation des jetons non disponibles",
+    "de": "Informationen zur Token-Nutzung nicht verfügbar"
+  },
+  "Total clients:": {
+    "zh": "客户端总数：",
+    "ja": "合計クライアント数:",
+    "ko": "총 클라이언트 수:",
+    "fr": "Clients au total :",
+    "de": "Gesamtzahl Clients:"
+  },
+  "Usage examples:": {
+    "zh": "使用示例：",
+    "ja": "使用例:",
+    "ko": "사용 예시:",
+    "fr": "Exemples d'utilisation :",
+    "de": "Anwendungsbeispiele:"
+  },
+  "Use:": {
+    "zh": "使用：",
+    "ja": "使用:",
+    "ko": "사용:",
+    "fr": "Utiliser :",
+    "de": "Verwenden:"
+  },
+  "Using local workspace with .hyperchat directory.": {
+    "zh": "正在使用本地工作区，目录为 .hyperchat。",
+    "ja": ".hyperchat ディレクトリでローカルワークスペースを使用しています。",
+    "ko": ".hyperchat 디렉토리와 함께 로컬 워크스페이스를 사용 중입니다.",
+    "fr": "Utilisation de l'espace de travail local avec le répertoire .hyperchat.",
+    "de": "Lokaler Arbeitsbereich mit .hyperchat-Verzeichnis wird verwendet."
+  },
+  "Version:": {
+    "zh": "版本：",
+    "ja": "バージョン:",
+    "ko": "버전:",
+    "fr": "Version :",
+    "de": "Version:"
+  },
+  "Workspace added to new tab": {
+    "zh": "工作区已添加到新标签页",
+    "ja": "ワークスペースが新しいタブに追加されました",
+    "ko": "새 탭에 워크스페이스가 추가되었습니다",
+    "fr": "Espace de travail ajouté au nouvel onglet",
+    "de": "Arbeitsbereich wurde neuem Tab hinzugefügt"
+  },
+  "Workspace created and added to new tab": {
+    "zh": "工作区已创建并添加到新标签页",
+    "ja": "ワークスペースが作成され、新しいタブに追加されました",
+    "ko": "워크스페이스가 생성되어 새 탭에 추가되었습니다",
+    "fr": "Espace de travail créé et ajouté au nouvel onglet",
+    "de": "Arbeitsbereich erstellt und neuem Tab hinzugefügt"
+  },
+  "Workspace is already open": {
+    "zh": "工作区已打开",
+    "ja": "ワークスペースはすでに開いています",
+    "ko": "워크스페이스가 이미 열려 있습니다",
+    "fr": "L'espace de travail est déjà ouvert",
+    "de": "Arbeitsbereich ist bereits geöffnet"
+  },
+  "characters": {
+    "zh": "字符",
+    "ja": "文字",
+    "ko": "자",
+    "fr": "caractères",
+    "de": "Zeichen"
+  },
+  "conversations": {
+    "zh": "对话",
+    "ja": "会話",
+    "ko": "대화",
+    "fr": "conversations",
+    "de": "Unterhaltungen"
+  },
+  "default": {
+    "zh": "默认",
+    "ja": "デフォルト",
+    "ko": "기본",
+    "fr": "par défaut",
+    "de": "Standard"
+  },
+  "inherit from workspace": {
+    "zh": "继承工作区设置",
+    "ja": "ワークスペースから継承",
+    "ko": "워크스페이스에서 상속",
+    "fr": "hériter de l'espace de travail",
+    "de": "vom Arbeitsbereich erben"
+  },
+  "mcp": {
+    "zh": "MCP",
+    "ja": "MCP",
+    "ko": "MCP",
+    "fr": "mcp",
+    "de": "MCP"
   }
 }

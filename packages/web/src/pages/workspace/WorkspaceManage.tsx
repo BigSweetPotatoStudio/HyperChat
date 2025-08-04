@@ -35,6 +35,7 @@ interface WorkspaceTab {
   name: string;
   isGlobal: boolean;
   closable: boolean;
+  isPrimary: boolean;
 }
 
 interface WorkspaceHistoryItem {
@@ -75,7 +76,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
       const path = await call("getGlobalWorkspacePath");
       setGlobalWorkspacePath(path);
     } catch (error) {
-      console.error("Failed to load global workspace path:", error);
+      console.error("Failed to load default workspace path:", error);
     }
   };
 
@@ -84,29 +85,30 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
     try {
       // 首先获取所有已加载的工作区列表
       const existingWorkspaces = await call("getAllWorkspaces");
-      
+
       if (existingWorkspaces && existingWorkspaces.length > 0) {
         // 如果已有工作区，加载它们作为标签页
         const loadedTabs: WorkspaceTab[] = [];
-        
+
         for (const workspaceInfo of existingWorkspaces) {
-          const workspaceData = await call("getWorkspaceInfo", { 
-            workspacePath: workspaceInfo.path 
+          const workspaceData = await call("getWorkspaceInfo", {
+            workspacePath: workspaceInfo.path
           } as any);
-          
+
           if (workspaceData) {
             const newTab: WorkspaceTab = {
               key: workspaceData.path,
               path: workspaceData.path,
               name: workspaceData.name,
               isGlobal: workspaceData.isGlobal,
-              closable: !workspaceData.isGlobal
+              closable: false,
+              isPrimary: workspaceInfo.isPrimary
             };
-            
+
             loadedTabs.push(newTab);
           }
         }
-        
+
         // 一次性设置所有标签页
         if (loadedTabs.length > 0) {
           setWorkspaceTabs(loadedTabs);
@@ -123,7 +125,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
         try {
           await addWorkspaceTab(globalWorkspacePath);
         } catch (fallbackError) {
-          console.error("Failed to load fallback global workspace:", fallbackError);
+          console.error("Failed to load fallback default workspace:", fallbackError);
           // 最终失败时不显示错误，让用户手动添加工作区
         }
       }
@@ -140,7 +142,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
       await loadGlobalWorkspacePath();
       loadHistory();
     };
-    
+
     initializeApp();
   }, []);
 
@@ -164,18 +166,19 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
 
     try {
       // 使用新的 addWorkspace 命令添加工作区到管理器
-      const workspaceData = await call("addWorkspace", { 
-        workspacePath, 
-        forceCreate: false 
+      const workspaceData = await call("addWorkspace", {
+        workspacePath,
+        forceCreate: false
       });
-      
+
       if (workspaceData) {
         const newTab: WorkspaceTab = {
           key: workspaceData.path,
           path: workspaceData.path,
           name: workspaceData.name,
           isGlobal: workspaceData.isGlobal,
-          closable: !workspaceData.isGlobal // 全局工作区不可关闭
+          closable: true, // 默认工作区不可关闭,
+          isPrimary: false,
         };
 
         setWorkspaceTabs(prev => [...prev, newTab]);
@@ -189,23 +192,24 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
       }
     } catch (error) {
       console.error("Failed to add workspace tab:", error);
-      
+
       // 如果工作区不存在，尝试强制创建
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('不是有效的工作区目录') || errorMessage.includes('工作区不存在')) {
         try {
-          const workspaceData = await call("addWorkspace", { 
-            workspacePath, 
-            forceCreate: true 
+          const workspaceData = await call("addWorkspace", {
+            workspacePath,
+            forceCreate: true
           });
-          
+
           if (workspaceData) {
             const newTab: WorkspaceTab = {
               key: workspaceData.path,
               path: workspaceData.path,
               name: workspaceData.name,
               isGlobal: workspaceData.isGlobal,
-              closable: !workspaceData.isGlobal
+              closable: true, // 默认工作区不可关闭,
+              isPrimary: false,
             };
 
             setWorkspaceTabs(prev => [...prev, newTab]);
@@ -352,7 +356,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
     } else if (action === 'remove' && typeof targetKey === 'string') {
       const tabToRemove = workspaceTabs.find(tab => tab.key === targetKey);
       if (tabToRemove && !tabToRemove.closable) {
-        message.warning(t`Cannot close global workspace`);
+        message.warning(t`Cannot close default workspace`);
         return;
       }
 
@@ -382,7 +386,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
             {tab.path}
           </div>
         </div>
-        {tab.isGlobal && <Tag color="blue">{t`Global`}</Tag>}
+        {tab.isGlobal && <Tag color="blue">{t`Default`}</Tag>}
       </Space>
     );
   };
@@ -413,7 +417,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
           </div> */}
 
           {/* 工作区标签页或空状态 */}
-          <div style={{ height: 'calc(100% - 57px)' }}>
+          <div>
             {workspaceTabs.length > 0 ? (
               <Tabs
                 tabBarExtraContent={{

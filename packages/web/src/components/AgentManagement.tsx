@@ -143,7 +143,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         maxTokens: values.maxTokens,
         compressionStrategy: 'tokens',
         maxContextTokens: values.maxContextTokens,
-        
+
       };
 
       if (editingAgent) {
@@ -391,18 +391,19 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                           </Tooltip>
                         )}
                         {agent.config.allowMCPs && agent.config.allowMCPs.length > 0 && (
-                          <Tooltip title={t`Tools count`}>
+                          <Tooltip title={t`MCP count`}>
                             <Tag color="cyan">{agent.config.allowMCPs.length} 🔧</Tag>
                           </Tooltip>
+                        )}
+                        {agent.config.modelKey && (
+                          <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
                         )}
                       </Space>
                     }
                     description={
                       <div className="text-xs">
-                        <div className="text-gray-500 mb-1">
-                          {agent.config.modelKey && (
-                            <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
-                          )}
+                        <div className="text-gray-500 mb-1 line-clamp-1">
+
                           {agent.config.description || agent.config.prompt?.slice(0, 50) || t`No description`}
                         </div>
                         {/* <Space size="small">
