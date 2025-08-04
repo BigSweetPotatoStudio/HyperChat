@@ -84,7 +84,7 @@ export async function listAgents() {
     }
 
     // 获取代理列表
-    const agents = await Command.getWorkspaceAgentsSummary();
+    const agents = await Command.getCurrentWorkspaceAgentsSummary();
 
     console.log(`\n🤖 ${t`Agent list:`}`);
 
@@ -191,7 +191,7 @@ export async function checkAgentExists(agentName: string): Promise<{ exists: boo
     const currentWorkingDirectory = process.cwd();
     await workspaceManager.initialize(currentWorkingDirectory);
 
-    const agents = await Command.getWorkspaceAgentsSummary();
+    const agents = await Command.getCurrentWorkspaceAgentsSummary();
     const agentSummary = agents.find(agent => {
       const config = agent.config as AgentConfig;
       return config.name === agentName;

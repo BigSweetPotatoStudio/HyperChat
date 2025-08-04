@@ -120,16 +120,33 @@ export const workspaceCommands = {
    * @returns 目录项目列表，包含文件名、类型、大小、修改时间等信息
    */
   async getWorkspaceDirectoryList({
+    workspacePath,
     directoryPath = ""
   }: {
+    workspacePath?: string;
     directoryPath?: string;
   } = {}) {
     const { fs, path } = zx;
 
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
+      let workspace;
+      
+      if (workspacePath) {
+        workspace = await workspaceManager.get(workspacePath, true);
+        if (!workspace) {
+          throw new Error(`工作区不存在: ${workspacePath}`);
+        }
+      } else {
+        workspace = workspaceManager.getCurrentWorkspace();
+      }
+      
       if (!workspace) return [];
+      
+      // 确保工作区已初始化
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
 
       // 获取当前工作区路径
       const workingDir = workspace.workspacePath;
@@ -264,6 +281,105 @@ export const workspaceCommands = {
   },
 
   /**
+   * 添加新工作区到管理器中（多工作区支持）
+   * @param workspacePath 工作区路径
+   * @param forceCreate 如果不是工作区目录，是否强制创建
+   * @returns 添加的工作区信息
+   */
+  async addWorkspace({
+    workspacePath,
+    forceCreate = false
+  }: {
+    workspacePath: string;
+    forceCreate?: boolean;
+  }): Promise<{
+    path: string;
+    name: string;
+    isGlobal: boolean;
+    isInitialized: boolean;
+    isStarted: boolean;
+  }> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      
+      // 创建工作区实例
+      const workspace = await workspaceManager.create(workspacePath, forceCreate);
+      
+      // 初始化工作区
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
+      
+      // 获取工作区信息
+      const config = workspace.getConfig();
+      const isGlobal = workspaceManager.isGlobalWorkspace(workspacePath);
+      
+      return {
+        path: workspacePath,
+        name: config.name || (isGlobal ? 'Global Workspace' : 'Workspace'),
+        isGlobal,
+        isInitialized: workspace.isInitialized(),
+        isStarted: workspace.isStarted()
+      };
+    } catch (error) {
+      console.error("Failed to add workspace:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取指定工作区的详细信息（多工作区支持）
+   * @param workspacePath 工作区路径
+   * @returns 工作区详细信息
+   */
+  async getWorkspaceInfo({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<{
+    path: string;
+    name: string;
+    description?: string;
+    created: number;
+    agentsCount: number;
+    isGlobal: boolean;
+    isInitialized: boolean;
+    isStarted: boolean;
+  } | null> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = await workspaceManager.get(workspacePath, true);
+      
+      if (!workspace) {
+        return null;
+      }
+      
+      // 确保工作区已初始化
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
+      
+      const config = workspace.getConfig();
+      const summary = await workspace.getSummary();
+      const isGlobal = workspaceManager.isGlobalWorkspace(workspacePath);
+      
+      return {
+        path: workspacePath,
+        name: config.name || (isGlobal ? 'Global Workspace' : 'Workspace'),
+        description: config.description,
+        created: config.created || Date.now(),
+        agentsCount: summary.agentsCount,
+        isGlobal,
+        isInitialized: workspace.isInitialized(),
+        isStarted: workspace.isStarted()
+      };
+    } catch (error) {
+      console.error("Failed to get workspace info:", error);
+      throw error;
+    }
+  },
+
+  /**
    * 从缓存中移除工作区
    * @param workspacePath 工作区路径
    * @returns 移除结果
@@ -286,6 +402,80 @@ export const workspaceCommands = {
       throw error;
     }
   },
+
+  /**
+   * 获取指定工作区的 Agent 摘要信息（多工作区支持）
+   * @param workspacePath 工作区路径，如果不提供则使用当前工作区
+   */
+  async getWorkspaceAgentsSummary({
+    workspacePath
+  }: {
+    workspacePath?: string;
+  } = {}): Promise<Array<{
+    config: any;
+    chatLogsCount: number;
+    lastChatTime?: number;
+  }>> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      let workspace;
+      
+      if (workspacePath) {
+        workspace = await workspaceManager.get(workspacePath, true);
+        if (!workspace) {
+          throw new Error(`工作区不存在: ${workspacePath}`);
+        }
+      } else {
+        workspace = workspaceManager.getCurrentWorkspace();
+      }
+      
+      // 确保工作区已初始化
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
+      
+      // 通过工作区获取所有 Agent 摘要信息
+      return await workspace.getAllAgentsSummary();
+    } catch (error) {
+      console.error("Failed to get workspace agents summary:", error);
+      return [];
+    }
+  },
+
+  /**
+   * 获取指定工作区的 MCP 客户端列表（多工作区支持）
+   * @param workspacePath 工作区路径，如果不提供则使用当前工作区
+   */
+  async getWorkspaceMcpClients({
+    workspacePath
+  }: {
+    workspacePath?: string;
+  } = {}): Promise<any[]> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      let workspace;
+      
+      if (workspacePath) {
+        workspace = await workspaceManager.get(workspacePath, true);
+        if (!workspace) {
+          throw new Error(`工作区不存在: ${workspacePath}`);
+        }
+      } else {
+        workspace = workspaceManager.getCurrentWorkspace();
+      }
+      
+      // 确保工作区已初始化
+      if (!workspace.isInitialized()) {
+        await workspace.initialize();
+      }
+      
+      return workspace.getMcpClients();
+    } catch (error) {
+      console.error("Failed to get workspace MCP clients:", error);
+      return [];
+    }
+  },
+
 
   /**
    * 读取工作区内指定文件的内容

@@ -79,25 +79,54 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
     }
   };
 
-  // 加载当前工作区并创建初始标签页
-  const loadCurrentWorkspace = async () => {
+  // 加载初始工作区（先检查现有工作区列表）
+  const loadInitialWorkspace = async () => {
     try {
-      const currentWorkspaceData = await call("getCurrentWorkspace");
-      if (currentWorkspaceData) {
-        const workspaceTab: WorkspaceTab = {
-          key: currentWorkspaceData.path,
-          path: currentWorkspaceData.path,
-          name: currentWorkspaceData.name || (currentWorkspaceData.isGlobal ? t`Global Workspace` : 'Workspace'),
-          isGlobal: currentWorkspaceData.isGlobal || false,
-          closable: !currentWorkspaceData.isGlobal // 全局工作区不可关闭
-        };
-
-        setWorkspaceTabs([workspaceTab]);
-        setActiveTabKey(workspaceTab.key);
+      // 首先获取所有已加载的工作区列表
+      const existingWorkspaces = await call("getAllWorkspaces");
+      
+      if (existingWorkspaces && existingWorkspaces.length > 0) {
+        // 如果已有工作区，加载它们作为标签页
+        const loadedTabs: WorkspaceTab[] = [];
+        
+        for (const workspaceInfo of existingWorkspaces) {
+          const workspaceData = await call("getWorkspaceInfo", { 
+            workspacePath: workspaceInfo.path 
+          } as any);
+          
+          if (workspaceData) {
+            const newTab: WorkspaceTab = {
+              key: workspaceData.path,
+              path: workspaceData.path,
+              name: workspaceData.name,
+              isGlobal: workspaceData.isGlobal,
+              closable: !workspaceData.isGlobal
+            };
+            
+            loadedTabs.push(newTab);
+          }
+        }
+        
+        // 一次性设置所有标签页
+        if (loadedTabs.length > 0) {
+          setWorkspaceTabs(loadedTabs);
+          setActiveTabKey(loadedTabs[0].key);
+        }
+      } else if (globalWorkspacePath) {
+        // 如果没有现有工作区，则初始化全局工作区
+        await addWorkspaceTab(globalWorkspacePath);
       }
     } catch (error) {
-      console.error("Failed to load current workspace:", error);
-      message.error(t`Failed to load current workspace`);
+      console.error("Failed to load initial workspace:", error);
+      // 如果加载失败，尝试加载全局工作区作为后备
+      if (globalWorkspacePath) {
+        try {
+          await addWorkspaceTab(globalWorkspacePath);
+        } catch (fallbackError) {
+          console.error("Failed to load fallback global workspace:", fallbackError);
+          // 最终失败时不显示错误，让用户手动添加工作区
+        }
+      }
     }
   };
 
@@ -107,16 +136,21 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
   };
 
   useEffect(() => {
-    loadGlobalWorkspacePath();
-    loadCurrentWorkspace();
-    loadHistory();
+    const initializeApp = async () => {
+      await loadGlobalWorkspacePath();
+      loadHistory();
+    };
+    
+    initializeApp();
   }, []);
 
-  // 获取工作区名称
-  const getWorkspaceName = (path: string) => {
-    const parts = path.split(/[/\\]/);
-    return parts[parts.length - 1] || path;
-  };
+  // 当全局工作区路径加载完成且还没有标签页时，加载初始工作区
+  useEffect(() => {
+    if (globalWorkspacePath && workspaceTabs.length === 0) {
+      loadInitialWorkspace();
+    }
+  }, [globalWorkspacePath]);
+
 
   // 添加新的工作区标签页
   const addWorkspaceTab = useCallback(async (workspacePath: string) => {
@@ -129,17 +163,19 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
     }
 
     try {
-      // 切换到新工作区以加载其信息
-      await call("switchWorkspace", { workspacePath, force: false });
-      const workspaceData = await call("getCurrentWorkspace");
-
+      // 使用新的 addWorkspace 命令添加工作区到管理器
+      const workspaceData = await call("addWorkspace", { 
+        workspacePath, 
+        forceCreate: false 
+      });
+      
       if (workspaceData) {
         const newTab: WorkspaceTab = {
           key: workspaceData.path,
           path: workspaceData.path,
-          name: workspaceData.name || getWorkspaceName(workspaceData.path),
-          isGlobal: workspaceData.isGlobal || false,
-          closable: true
+          name: workspaceData.name,
+          isGlobal: workspaceData.isGlobal,
+          closable: !workspaceData.isGlobal // 全局工作区不可关闭
         };
 
         setWorkspaceTabs(prev => [...prev, newTab]);
@@ -153,7 +189,41 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
       }
     } catch (error) {
       console.error("Failed to add workspace tab:", error);
-      message.error(t`Failed to add workspace tab`);
+      
+      // 如果工作区不存在，尝试强制创建
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('不是有效的工作区目录') || errorMessage.includes('工作区不存在')) {
+        try {
+          const workspaceData = await call("addWorkspace", { 
+            workspacePath, 
+            forceCreate: true 
+          });
+          
+          if (workspaceData) {
+            const newTab: WorkspaceTab = {
+              key: workspaceData.path,
+              path: workspaceData.path,
+              name: workspaceData.name,
+              isGlobal: workspaceData.isGlobal,
+              closable: !workspaceData.isGlobal
+            };
+
+            setWorkspaceTabs(prev => [...prev, newTab]);
+            setActiveTabKey(newTab.key);
+
+            // 添加到历史记录
+            addToWorkspaceHistory(workspacePath, newTab.name);
+            loadHistory();
+
+            message.success(t`Workspace created and added to new tab`);
+          }
+        } catch (createError) {
+          console.error("Failed to create workspace:", createError);
+          message.error(t`Failed to create workspace`);
+        }
+      } else {
+        message.error(t`Failed to add workspace tab`);
+      }
     }
   }, [workspaceTabs]);
 
@@ -270,17 +340,9 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
 
   // 处理标签页切换
   const handleTabChange = async (activeKey: string) => {
-    const targetTab = workspaceTabs.find(tab => tab.key === activeKey);
-    if (targetTab) {
-      try {
-        // 切换到目标工作区
-        await call("switchWorkspace", { workspacePath: targetTab.path, force: false });
-        setActiveTabKey(activeKey);
-      } catch (error) {
-        console.error("Failed to switch workspace:", error);
-        message.error(t`Failed to switch workspace`);
-      }
-    }
+    // 在多工作区架构中，标签页切换只需要更新UI状态
+    // 每个 Workspace 组件会通过 workspacePath prop 自动加载对应的工作区数据
+    setActiveTabKey(activeKey);
   };
 
   // 处理标签页编辑（添加/删除）

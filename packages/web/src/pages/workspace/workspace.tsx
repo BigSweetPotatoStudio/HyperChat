@@ -65,23 +65,23 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
   });
 
 
-  // 加载指定路径的工作区
+  // 加载指定路径的工作区信息
   const loadWorkspace = async (targetWorkspacePath: string) => {
     try {
-      // 先切换到指定工作区
-      await call("switchWorkspace", { workspacePath: targetWorkspacePath, force: false });
+      // 直接使用 getWorkspaceInfo 获取指定工作区的信息
+      const workspaceData = await call("getWorkspaceInfo", { 
+        workspacePath: targetWorkspacePath 
+      } as any);
       
-      // 然后获取工作区信息
-      const currentWorkspaceData = await call("getCurrentWorkspace");
-      if (currentWorkspaceData) {
+      if (workspaceData) {
         const currentWorkspaceInfo: WorkspaceInfo = {
-          path: currentWorkspaceData.path || '',
-          name: currentWorkspaceData.name || 'Workspace',
-          description: currentWorkspaceData.description,
-          created: currentWorkspaceData.created || Date.now(),
-          agentsCount: currentWorkspaceData.agentsCount || 0,
-          mcpServersCount: currentWorkspaceData.mcpServersCount || 0,
-          isGlobal: currentWorkspaceData.isGlobal || false,
+          path: workspaceData.path,
+          name: workspaceData.name,
+          description: workspaceData.description,
+          created: workspaceData.created,
+          agentsCount: workspaceData.agentsCount,
+          mcpServersCount: 0, // 在新架构中不再有工作区级别的MCP服务器计数
+          isGlobal: workspaceData.isGlobal,
         };
 
         setCurrentWorkspace(currentWorkspaceInfo);
@@ -91,9 +91,8 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
     }
   };
 
-  // 加载当前工作区详细信息
+  // 加载指定工作区的详细信息
   const loadWorkspaceDetails = async (workspace: WorkspaceInfo) => {
-
     try {
       const details: CurrentWorkspaceDetails = {
         agents: [],
@@ -104,13 +103,16 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
       // 加载根目录文件列表（懒加载）
       console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
       const rootItems = await call("getWorkspaceDirectoryList", {
+        workspacePath: workspace.path,
         directoryPath: ""
-      });
+      } as any);
       console.log("File tree loaded:", rootItems?.length, "items");
       details.fileTreeData = rootItems;
 
       // 加载 Agents（获取摘要信息）
-      const agentList = await call("getWorkspaceAgentsSummary");
+      const agentList = await call("getWorkspaceAgentsSummary", {
+        workspacePath: workspace.path
+      } as any);
       details.agents = agentList as Array<{
         config: AgentConfig & { scope?: "global" | "workspace" };
         chatLogsCount: number;
@@ -118,7 +120,9 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
       }>;
 
       // 加载 MCP 客户端
-      const mcpList = await call("getWorkspaceMcpClients");
+      const mcpList = await call("getWorkspaceMcpClients", {
+        workspacePath: workspace.path
+      } as any);
 
       // 将数组转换为对象格式，使用 name 作为 key
       if (mcpList && Array.isArray(mcpList)) {
@@ -190,7 +194,6 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
 
   // 处理面板尺寸变化（2栏布局）
   const handlePanelSizeChange = (sizes: number[]) => {
-    const currentWorkspace = getCurrentWorkspace();
     if (currentWorkspace && sizes.length >= 2) {
       // 直接更新状态数组
       setPanelSizes(sizes);
@@ -248,10 +251,7 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
     }
   }, [currentWorkspace]);
 
-  // 获取当前活动工作区
-  const getCurrentWorkspace = () => {
-    return currentWorkspace;
-  };
+  // 在多工作区架构中，工作区信息通过 workspacePath prop 传入
 
 
   // 获取当前工作区详情

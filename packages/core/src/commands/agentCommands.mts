@@ -93,7 +93,7 @@ export const agentCommands = {
    * @param scope 过滤范围（可选）
    * @returns Agent 摘要信息列表
    */
-  async getWorkspaceAgentsSummary(): Promise<Array<{
+  async getCurrentWorkspaceAgentsSummary(): Promise<Array<{
     config: AgentConfig;
     chatLogsCount: number;
     lastChatTime?: number;
