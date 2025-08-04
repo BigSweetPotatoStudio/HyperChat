@@ -59,7 +59,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
   const [selectedPath, setSelectedPath] = useState<string>('');
   const [workspaceHistory, setWorkspaceHistory] = useState<WorkspaceHistoryItem[]>([]);
   const [form] = Form.useForm();
-  const [switching, setSwitching] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   // 应用设置状态
   const [appSettings, setAppSettings] = useState<z.infer<typeof AppSettingsSchema> | null>(null);
@@ -229,7 +229,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
 
   // 打开新工作区
   const openWorkspace = async (values: { path: string }) => {
-    setSwitching(true);
+    setAdding(true);
     try {
       await addWorkspaceTab(values.path);
       setOpenModalOpen(false);
@@ -239,7 +239,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
       console.error("Failed to open workspace:", error);
       message.error(t`Failed to open workspace`);
     } finally {
-      setSwitching(false);
+      setAdding(false);
     }
   };
 
@@ -481,7 +481,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
           const updatedHistory = workspaceHistory.filter(item => item.path !== path);
           setWorkspaceHistory(updatedHistory);
         }}
-        switching={switching}
+        adding={adding}
       />
 
       {/* 服务器目录浏览器 */}

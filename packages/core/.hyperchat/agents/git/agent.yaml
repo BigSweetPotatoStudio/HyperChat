@@ -52,12 +52,10 @@ allowMCPs:
   - hyper_browser
 blockMCPTools: []
 isConfirmCallTool: false
-maxTokens: null
-maxContextTokens: 1000
+maxContextTokens: 32000
 tags: []
 subAgents: []
 version: 1
 temperature: 1
 modelKey: glm:glm-4.5
-maxAttachedDialogs: 5
 compressionStrategy: tokens

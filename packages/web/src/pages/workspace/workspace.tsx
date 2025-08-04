@@ -220,22 +220,11 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
     }
   };
 
-  // 加载全局工作区路径
-  const loadGlobalWorkspacePath = async () => {
-    try {
-      const path = await call("getGlobalWorkspacePath");
-      console.log("Global workspace path:", path);
-    } catch (error) {
-      console.error("Failed to load global workspace path:", error);
-      // 如果获取失败，使用默认路径
-    }
-  };
 
   // 当 workspacePath prop 变化时，加载对应的工作区
   useEffect(() => {
     if (workspacePath) {
       loadWorkspace(workspacePath);
-      loadGlobalWorkspacePath();
     }
   }, [workspacePath]);
 
