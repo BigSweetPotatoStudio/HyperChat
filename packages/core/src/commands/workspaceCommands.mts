@@ -309,6 +309,9 @@ export const workspaceCommands = {
       if (!workspace.isInitialized()) {
         await workspace.initialize();
       }
+      if (!workspace.isStarted()) {
+        await workspace.start();
+      }
       
       // 获取工作区信息
       const config = workspace.getConfig();

@@ -69,10 +69,10 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
   const loadWorkspace = async (targetWorkspacePath: string) => {
     try {
       // 直接使用 getWorkspaceInfo 获取指定工作区的信息
-      const workspaceData = await call("getWorkspaceInfo", { 
-        workspacePath: targetWorkspacePath 
+      const workspaceData = await call("getWorkspaceInfo", {
+        workspacePath: targetWorkspacePath
       } as any);
-      
+
       if (workspaceData) {
         const currentWorkspaceInfo: WorkspaceInfo = {
           path: workspaceData.path,
@@ -105,14 +105,14 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
       const rootItems = await call("getWorkspaceDirectoryList", {
         workspacePath: workspace.path,
         directoryPath: ""
-      } as any);
+      });
       console.log("File tree loaded:", rootItems?.length, "items");
       details.fileTreeData = rootItems;
 
       // 加载 Agents（获取摘要信息）
       const agentList = await call("getWorkspaceAgentsSummary", {
         workspacePath: workspace.path
-      } as any);
+      });
       details.agents = agentList as Array<{
         config: AgentConfig & { scope?: "global" | "workspace" };
         chatLogsCount: number;
@@ -122,7 +122,7 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
       // 加载 MCP 客户端
       const mcpList = await call("getWorkspaceMcpClients", {
         workspacePath: workspace.path
-      } as any);
+      });
 
       // 将数组转换为对象格式，使用 name 作为 key
       if (mcpList && Array.isArray(mcpList)) {
@@ -160,7 +160,9 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
         // 根据刷新类型选择性刷新数据
         if (type === 'agents' || type === 'all') {
           // 刷新 Agents
-          const rawAgentList = await call("getWorkspaceAgentsSummary");
+          const rawAgentList = await call("getWorkspaceAgentsSummary", {
+            workspacePath: workspacePath
+          });
           updatedDetails.agents = rawAgentList as Array<{
             config: AgentConfig & { scope?: "global" | "workspace" };
             chatLogsCount: number;
@@ -170,7 +172,9 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
 
         if (type === 'mcp' || type === 'all') {
           // 刷新 MCP 客户端
-          const mcpList = await call("getWorkspaceMcpClients");
+          const mcpList = await call("getWorkspaceMcpClients", {
+            workspacePath: workspacePath
+          });
 
           // 将数组转换为对象格式
           updatedDetails.mcpClients = {} as Record<string, any>;
@@ -288,7 +292,6 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
         title: tabTitle,
         type: 'chat',
         agentName: agent.config.name,
-        agentScope: "workspace", // Fixed scope in Agent-centered architecture
         workspacePath: workspace.path,
         closable: true,
         chatLogToLoad: chatLog, // 传递聊天记录数据

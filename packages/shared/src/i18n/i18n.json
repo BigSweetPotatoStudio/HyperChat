@@ -3359,13 +3359,6 @@
     "fr": "Changer",
     "de": "Wechseln"
   },
-  "Switch Workspace": {
-    "zh": "切换工作区",
-    "ja": "ワークスペースを切り替える",
-    "ko": "워크스페이스 전환",
-    "fr": "Changer d'espace de travail",
-    "de": "Arbeitsbereich wechseln"
-  },
   "Switch to Global Workspace": {
     "zh": "切换到全局工作区",
     "ja": "グローバルワークスペースに切り替える",

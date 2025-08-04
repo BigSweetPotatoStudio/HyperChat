@@ -91,7 +91,7 @@ router.post('/stream', async (req: Request, res: Response) => {
       messages,
       userMessage,
       agentName,
-      agentScope = 'workspace',
+      workspacePath,
       configOverrides = {}
     }: {
       sessionId: string;
@@ -99,7 +99,7 @@ router.post('/stream', async (req: Request, res: Response) => {
       messages: MyMessage[];
       userMessage?: MyMessage;
       agentName: string;
-      agentScope?: 'global' | 'workspace';
+      workspacePath?: string;
       configOverrides?: Partial<BaseAIConfig>;
     } = req.body;
 
@@ -140,7 +140,7 @@ router.post('/stream', async (req: Request, res: Response) => {
       messages,
       userMessage,
       agentName,
-      agentScope,
+      workspacePath,
       configOverrides,
       sseWriter, // 传递 SSE 写入器
       aiChannel: existingAiChannel, // 传递缓存的 aiChannel
