@@ -52,6 +52,7 @@ const saveHistoryToFile = async (history: string[]): Promise<void> => {
 export interface Command {
   command: string;
   description: string;
+  isAgentCommand?: boolean;  // 是否为Agent命令
 }
 
 // 建议类型枚举
@@ -72,8 +73,10 @@ export interface SmartTextInputProps {
   onSubmit: (value: string) => void;
   placeholder?: string;
   availableCommands?: Command[];
+  agentCommands?: Command[];  // Agent自定义命令
   maxHistorySize?: number;
   disabled?: boolean;
+  onCommandExecute?: (command: string, args: string) => Promise<string | null>;  // 命令执行回调
 }
 
 export const SmartTextInput: React.FC<SmartTextInputProps> = ({
@@ -82,8 +85,10 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
   onSubmit,
   placeholder = '',
   availableCommands = [],
+  agentCommands = [],
   maxHistorySize = 50,
-  disabled = false
+  disabled = false,
+  onCommandExecute
 }) => {
   // 输入历史相关状态
   const [inputHistory, setInputHistory] = useState<string[]>([]);
@@ -224,8 +229,9 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
         setSuggestions([]);
       }
     } else if (trimmedInput.startsWith('/')) {
-      // 命令建议
-      const filtered = availableCommands.filter(cmd => 
+      // 命令建议 - 合并系统命令和Agent命令
+      const allCommands = [...availableCommands, ...agentCommands];
+      const filtered = allCommands.filter(cmd => 
         cmd.command.startsWith(trimmedInput)
       ).slice(0, 8);
       
@@ -356,6 +362,26 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
     
     const trimmedInput = userInput.trim();
     
+    // 检查是否是Agent命令
+    if (trimmedInput.startsWith('/') && onCommandExecute) {
+      const spaceIndex = trimmedInput.indexOf(' ');
+      const commandName = spaceIndex > 0 ? trimmedInput.substring(1, spaceIndex) : trimmedInput.substring(1);
+      const args = spaceIndex > 0 ? trimmedInput.substring(spaceIndex + 1) : '';
+      
+      // 检查是否为Agent命令
+      const isAgentCommand = agentCommands.some(cmd => cmd.command === '/' + commandName);
+      if (isAgentCommand) {
+        // 执行命令替换
+        const replacedContent = await onCommandExecute(commandName, args);
+        if (replacedContent !== null) {
+          // 替换输入为命令内容并提交
+          await addToHistory(trimmedInput);  // 记录原始命令
+          onSubmit(replacedContent);
+          return;
+        }
+      }
+    }
+    
     // 关闭候选框
     setShowSuggestions(false);
     
@@ -467,6 +493,9 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
                   <Text color={index === suggestionIndex ? "black" : "gray"}>
                     {' '}- {suggestion.description}
                   </Text>
+                )}
+                {(suggestion as any).isAgentCommand && (
+                  <Text color="yellow"> [Agent]</Text>
                 )}
               </Text>
             </Box>

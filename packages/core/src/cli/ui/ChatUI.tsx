@@ -128,6 +128,27 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
     { command: '/exit', description: t`Exit chat` },
   ];
 
+  // Agent自定义命令
+  const [agentCommands, setAgentCommands] = useState<Command[]>([]);
+
+  // 加载Agent命令
+  useEffect(() => {
+    const loadAgentCommands = async () => {
+      try {
+        const commands = await agent.getCommands();
+        const formattedCommands: Command[] = commands.map(cmd => ({
+          command: `/${cmd.name}`,
+          description: cmd.content.split('\n')[0].substring(0, 50),
+          isAgentCommand: true
+        }));
+        setAgentCommands(formattedCommands);
+      } catch (error) {
+        // 静默处理错误
+      }
+    };
+    loadAgentCommands();
+  }, [agent]);
+
 
   // 聊天记录选择状态
   const [showChatLogSelector, setShowChatLogSelector] = useState(false);
@@ -245,15 +266,23 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
     }
 
     if (trimmedInput === '/help') {
-      const helpContent = `📋 ${t`Chat commands:`}
+      let helpContent = `📋 ${t`Chat commands:`}
   /exit             - ${t`Exit chat`}
   /help             - ${t`Show help`}
   /clear            - ${t`Clear chat history`}
   /model            - ${t`Show current model`}
   /resume           - ${t`Resume previous chat log`}
-  /compress         - ${t`Manually compress memory`}
+  /compress         - ${t`Manually compress memory`}`;
 
-⌨️  ${t`Keyboard shortcuts:`}
+      // 添加Agent命令帮助
+      if (agentCommands.length > 0) {
+        helpContent += `\n\n🎯 ${t`Agent commands:`}`;
+        for (const cmd of agentCommands) {
+          helpContent += `\n  ${cmd.command.padEnd(15)} - ${cmd.description}`;
+        }
+      }
+
+      helpContent += `\n\n⌨️  ${t`Keyboard shortcuts:`}
   Esc               - ${t`Cancel current AI request`}
   ↑/↓               - ${t`Navigate input history or suggestions`}
   Tab               - ${t`Auto-complete and select suggestions`}
@@ -771,7 +800,13 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
             onSubmit={handleSubmit}
             placeholder={t`Type your message... (↑↓: history, Tab: complete)`}
             availableCommands={availableCommands}
+            agentCommands={agentCommands}
             disabled={isThinking}
+            onCommandExecute={async (command, args) => {
+              // 执行Agent命令替换
+              const result = await agent.executeCommand(command, args);
+              return result;
+            }}
           />
         )}
       </Box>

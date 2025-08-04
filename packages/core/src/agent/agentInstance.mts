@@ -13,6 +13,7 @@ import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
 import { MCPManager } from "./mcp/manager.mjs";
 import { TaskQueue } from "../utils/taskQueue.mjs";
+import { AgentCommandManager } from "../workspace/agentCommands.mjs";
 
 /**
  * Agent 类 - 管理单个 Agent 的配置和聊天记录
@@ -25,6 +26,7 @@ export class AgentInstance {
   private mcpConfigPath: string;
   private initialized: boolean = false;
   private mcpManager?: MCPManager; // Agent专属MCP管理器
+  private commandManager?: AgentCommandManager; // Agent命令管理器
 
   // 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
   private static chatLogQueue = new TaskQueue({ concurrency: 1 });
@@ -54,6 +56,9 @@ export class AgentInstance {
       allowMCPs: this.config.allowMCPs,
       initiationType: "agent",
     });
+
+    // 初始化命令管理器
+    this.commandManager = new AgentCommandManager(this.agentPath);
   }
 
   /**
@@ -73,6 +78,11 @@ export class AgentInstance {
       path.join(this.agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
       DataList.FileFormat.YAML
     );
+
+    // 加载命令
+    if (this.commandManager) {
+      await this.commandManager.loadCommands();
+    }
 
     this.initialized = true;
   }
@@ -542,5 +552,58 @@ export class AgentInstance {
       console.error(`Agent ${this.config.name} MCP工具调用失败 [${toolName}:${functionName}]:`, error);
       throw error;
     }
+  }
+
+  // ==================== Agent命令管理 ====================
+
+  /**
+   * 获取命令管理器
+   */
+  getCommandManager(): AgentCommandManager | undefined {
+    return this.commandManager;
+  }
+
+  /**
+   * 获取所有可用命令
+   */
+  async getCommands() {
+    if (!this.commandManager) {
+      return [];
+    }
+    return await this.commandManager.getAllCommands();
+  }
+
+  /**
+   * 获取命令名称列表
+   */
+  async getCommandNames(): Promise<string[]> {
+    if (!this.commandManager) {
+      return [];
+    }
+    return await this.commandManager.getCommandNames();
+  }
+
+  /**
+   * 执行命令（替换模板）
+   */
+  async executeCommand(commandName: string, args: string): Promise<string | null> {
+    if (!this.commandManager) {
+      return null;
+    }
+    
+    // 确保命令已加载
+    await this.commandManager.loadCommands();
+    
+    return this.commandManager.executeCommand(commandName, args);
+  }
+
+  /**
+   * 创建示例命令
+   */
+  async createExampleCommands(): Promise<void> {
+    if (!this.commandManager) {
+      return;
+    }
+    await this.commandManager.createExampleCommands();
   }
 }
