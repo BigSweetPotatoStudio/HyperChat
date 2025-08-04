@@ -22,7 +22,7 @@ interface WorkspaceManagerOptions {
  */
 export class WorkspaceManager {
   private workspaces: Map<string, Workspace> = new Map();
-  private currentWorkspacePath: string | null = null; // 当前活跃的工作区路径
+  private primaryWorkspacePath: string | null = null; // 当前活跃的工作区路径
   private options: Required<WorkspaceManagerOptions>;
 
   constructor(options: WorkspaceManagerOptions = {}) {
@@ -144,6 +144,7 @@ export class WorkspaceManager {
   getAll(): Array<{ path: string, workspace: Workspace }> {
     return Array.from(this.workspaces.entries()).map(([path, workspace]) => ({
       path,
+      isPrimary: this.primaryWorkspacePath === path,
       workspace
     }));
   }
@@ -232,7 +233,7 @@ export class WorkspaceManager {
     const normalizedPath = path.resolve(workspacePath);
 
     // 设为当前工作区
-    this.currentWorkspacePath = normalizedPath;
+    this.primaryWorkspacePath = normalizedPath;
     let workspace = await this.create(workspacePath, true);
     await workspace.initialize();
     return workspace;
@@ -243,11 +244,11 @@ export class WorkspaceManager {
    * 获取当前工作区（单工作区模式兼容 - 返回当前活跃的工作区）
    */
   getCurrentWorkspace(): Workspace {
-    if (!this.currentWorkspacePath) {
+    if (!this.primaryWorkspacePath) {
       throw new Error("工作区管理器尚未初始化，请先调用 initialize() 方法。");
     }
 
-    const workspace = this.workspaces.get(this.currentWorkspacePath);
+    const workspace = this.workspaces.get(this.primaryWorkspacePath);
     if (!workspace) {
       throw new Error("当前工作区不存在");
     }
@@ -259,17 +260,17 @@ export class WorkspaceManager {
    * 检查工作区管理器是否已初始化
    */
   isWorkspaceInitialized(): boolean {
-    return this.currentWorkspacePath !== null && this.workspaces.has(this.currentWorkspacePath);
+    return this.primaryWorkspacePath !== null && this.workspaces.has(this.primaryWorkspacePath);
   }
 
   /**
    * 获取当前工作区路径
    */
   getCurrentWorkspacePath(): string {
-    if (!this.currentWorkspacePath) {
+    if (!this.primaryWorkspacePath) {
       throw new Error("工作区管理器尚未初始化");
     }
-    return this.currentWorkspacePath;
+    return this.primaryWorkspacePath;
   }
 
   /**
@@ -280,14 +281,14 @@ export class WorkspaceManager {
    */
   async switchWorkspace(workspacePath: string, force: boolean = false): Promise<void> {
     const normalizedPath = path.resolve(workspacePath);
-    
+
     // 检查目标工作区是否存在
     if (!force && !this.isWorkspaceDirectory(workspacePath)) {
       throw new Error(`工作区不存在: ${workspacePath}`);
     }
 
     // 如果目标路径与当前工作区相同，无需重新初始化
-    if (this.currentWorkspacePath === normalizedPath) {
+    if (this.primaryWorkspacePath === normalizedPath) {
       // 如果需要启动但未启动，则启动
       return;
     }
@@ -303,7 +304,7 @@ export class WorkspaceManager {
   async uninitialize(): Promise<void> {
     // 清理所有工作区
     await this.clear();
-    this.currentWorkspacePath = null;
+    this.primaryWorkspacePath = null;
   }
 
   /**

@@ -237,7 +237,7 @@ export const workspaceCommands = {
    */
   async getAllWorkspaces(): Promise<Array<{
     path: string;
-    isCurrentWorkspace: boolean;
+    isPrimary: boolean;
     isInitialized: boolean;
     isStarted: boolean;
   }>> {
@@ -248,7 +248,7 @@ export const workspaceCommands = {
       
       return allWorkspaces.map(({ path, workspace }) => ({
         path,
-        isCurrentWorkspace: path === currentPath,
+        isPrimary: path === currentPath,
         isInitialized: workspace.isInitialized(),
         isStarted: workspace.isStarted()
       }));
