@@ -230,13 +230,13 @@ export function ProviderSettings() {
   // 获取远程模型列表（通过后端API调用）
   const fetchRemoteModels = async (provider: ProviderConfig): Promise<void> => {
     if (!aiSettings || !provider?.key) return;
-    
+
     setLoadingModels(true);
     try {
       // 获取 API Key 和 Base URL
       let apiKey = '';
       let baseURL = '';
-      
+
       if (provider.isBuiltIn && provider.key) {
         const builtinConfig = aiSettings.builtinApiKeys?.[provider.key];
         apiKey = builtinConfig?.apiKey || '';
@@ -251,12 +251,12 @@ export function ProviderSettings() {
         return;
       }
 
-      const result = await call('fetchProviderModels', { 
+      const result = await call('fetchProviderModels', {
         providerKey: provider.key,
         apiKey,
-        baseURL 
+        baseURL
       });
-      
+
       if (result.success && result.models) {
         setRemoteModels(result.models);
         setCanFetchModels(true);
@@ -267,8 +267,8 @@ export function ProviderSettings() {
         if (result.error) {
           console.warn(`Failed to fetch models for ${provider.key}:`, result.error);
           // 只在非预期错误时显示错误信息
-          if (!result.error.includes('does not support model list API') && 
-              !result.error.includes('not provided')) {
+          if (!result.error.includes('does not support model list API') &&
+            !result.error.includes('not provided')) {
             message.warning(t`Failed to load models: ${result.error}`);
           }
         }
@@ -982,6 +982,29 @@ export function ProviderSettings() {
           onFinish={handleSaveModel}
           autoComplete="off"
         >
+
+          {/* Unknown provider specific fields */}
+          {selectedProvider?.key === 'unknown' && (
+            <>
+              <Form.Item
+                name="baseURL"
+                label={t`Base URL`}
+                rules={[
+                  { required: true, message: t`Please enter Base URL` },
+                  { type: 'url', message: t`Please enter a valid URL` }
+                ]}
+              >
+                <Input placeholder={t`e.g., https://api.example.com/v1`} />
+              </Form.Item>
+              <Form.Item
+                name="apiKey"
+                label={t`API Key`}
+                rules={[{ required: true, message: t`Please enter API Key` }]}
+              >
+                <Input.Password placeholder={t`Enter API Key for this model`} />
+              </Form.Item>
+            </>
+          )}
           <Form.Item
             name="model"
             label={t`Model ID`}
@@ -1028,29 +1051,6 @@ export function ProviderSettings() {
               <Option value="compatible">{t`Compatible`}</Option>
             </Select>
           </Form.Item>
-
-          {/* Unknown provider specific fields */}
-          {selectedProvider?.key === 'unknown' && (
-            <>
-              <Form.Item
-                name="apiKey"
-                label={t`API Key`}
-                rules={[{ required: true, message: t`Please enter API Key` }]}
-              >
-                <Input.Password placeholder={t`Enter API Key for this model`} />
-              </Form.Item>
-              <Form.Item
-                name="baseURL"
-                label={t`Base URL`}
-                rules={[
-                  { required: true, message: t`Please enter Base URL` },
-                  { type: 'url', message: t`Please enter a valid URL` }
-                ]}
-              >
-                <Input placeholder={t`e.g., https://api.example.com/v1`} />
-              </Form.Item>
-            </>
-          )}
 
           <Row gutter={16}>
             <Col span={8}>

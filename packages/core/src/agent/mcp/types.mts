@@ -28,13 +28,14 @@ export interface MCPManagerOptions {
    * 是否启用日志记录
    */
   enableLogging?: boolean;
-  
+
   /**
    * 允许启动的MCP服务器名称列表
    * 如果为空或未设置，则启动所有配置的服务器
    * Agent专属：只启动Agent允许的MCP服务器
    */
   allowMCPs?: string[];
+  initiationType?: "agent"
 }
 
 export interface MCPManagerEvents {

@@ -131,19 +131,73 @@ async function getDirectoryContents(
   return suggestions;
 }
 
-// 从输入中提取文件路径部分
-export function extractFilePathFromInput(input: string): string | null {
-  const match = input.match(/@([^\s]*)/);
-  if (match) {
-    // 如果只有@符号，返回空字符串表示当前目录
-    return match[1] || '';
+// 从输入中提取文件路径部分（支持多个@符号）
+export function extractFilePathFromInput(input: string, cursorPosition?: number): string | null {
+  // 找到所有@符号位置
+  const atMatches = [...input.matchAll(/@([^\s]*)/g)];
+  
+  if (atMatches.length === 0) {
+    return null;
   }
+  
+  // 如果没有光标位置，返回最后一个@路径（兼容原有行为）
+  if (cursorPosition === undefined) {
+    const lastMatch = atMatches[atMatches.length - 1];
+    return lastMatch[1] || '';
+  }
+  
+  // 根据光标位置找到对应的@路径
+  for (const match of atMatches) {
+    const matchStart = match.index!;
+    const matchEnd = matchStart + match[0].length;
+    
+    // 光标在这个@路径范围内
+    if (cursorPosition >= matchStart && cursorPosition <= matchEnd) {
+      return match[1] || '';
+    }
+  }
+  
+  // 如果光标不在任何@路径内，检查是否在@符号后紧邻位置
+  for (const match of atMatches) {
+    const matchEnd = match.index! + match[0].length;
+    if (cursorPosition === matchEnd) {
+      return match[1] || '';
+    }
+  }
+  
   return null;
 }
 
-// 构建完整的输入，替换文件路径部分
-export function buildInputWithFilePath(originalInput: string, newPath: string): string {
-  return originalInput.replace(/@[^\s]*/, `@${newPath}`);
+// 构建完整的输入，替换文件路径部分（支持多个@符号）
+export function buildInputWithFilePath(originalInput: string, newPath: string, cursorPosition?: number): string {
+  // 找到所有@符号位置
+  const atMatches = [...originalInput.matchAll(/@([^\s]*)/g)];
+  
+  if (atMatches.length === 0) {
+    return originalInput;
+  }
+  
+  // 如果没有光标位置，替换最后一个@路径（兼容原有行为）
+  if (cursorPosition === undefined) {
+    const lastMatch = atMatches[atMatches.length - 1];
+    const matchStart = lastMatch.index!;
+    const matchEnd = matchStart + lastMatch[0].length;
+    return originalInput.substring(0, matchStart) + `@${newPath}` + originalInput.substring(matchEnd);
+  }
+  
+  // 根据光标位置找到要替换的@路径
+  for (const match of atMatches) {
+    const matchStart = match.index!;
+    const matchEnd = matchStart + match[0].length;
+    
+    // 光标在这个@路径范围内或紧邻位置
+    if ((cursorPosition >= matchStart && cursorPosition <= matchEnd) || cursorPosition === matchEnd) {
+      return originalInput.substring(0, matchStart) + `@${newPath}` + originalInput.substring(matchEnd);
+    }
+  }
+  
+  // 如果找不到匹配的@路径，返回原输入
+  return originalInput;
 }
 
 // 判断路径是否为文件夹（以/结尾或确实是文件夹）
@@ -162,4 +216,40 @@ export function isDirectoryPath(filePath: string): boolean {
   }
   
   return false;
+}
+
+// 获取所有@符号的位置信息
+export interface AtSymbolInfo {
+  index: number;           // @符号在输入中的位置
+  pathPart: string;        // @后面的路径部分
+  fullMatch: string;       // 完整匹配（@路径）
+  matchStart: number;      // 匹配开始位置
+  matchEnd: number;        // 匹配结束位置
+}
+
+export function getAllAtSymbolsInfo(input: string): AtSymbolInfo[] {
+  const atMatches = [...input.matchAll(/@([^\s]*)/g)];
+  
+  return atMatches.map(match => ({
+    index: match.index!,
+    pathPart: match[1] || '',
+    fullMatch: match[0],
+    matchStart: match.index!,
+    matchEnd: match.index! + match[0].length
+  }));
+}
+
+// 根据光标位置获取当前@符号信息
+export function getCurrentAtSymbolInfo(input: string, cursorPosition: number): AtSymbolInfo | null {
+  const allAtSymbols = getAllAtSymbolsInfo(input);
+  
+  for (const atInfo of allAtSymbols) {
+    // 光标在这个@路径范围内或紧邻位置
+    if ((cursorPosition >= atInfo.matchStart && cursorPosition <= atInfo.matchEnd) || 
+        cursorPosition === atInfo.matchEnd) {
+      return atInfo;
+    }
+  }
+  
+  return null;
 }

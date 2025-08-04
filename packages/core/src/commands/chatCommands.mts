@@ -101,7 +101,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
     // console.log("Using Agent:", agentName, "agent:", agent);
     // 合并配置（移除工作区AI配置）
-    const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), undefined, aiSettings);
+    const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), aiSettings);
     // console.log("Effective AI Config:", effectiveConfig);
 
     // 使用传入的 AI 通道或创建新的

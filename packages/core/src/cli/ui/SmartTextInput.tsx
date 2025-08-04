@@ -6,7 +6,10 @@ import {
   getFilePathSuggestions, 
   extractFilePathFromInput, 
   buildInputWithFilePath,
-  type FileSuggestion 
+  getCurrentAtSymbolInfo,
+  getAllAtSymbolsInfo,
+  type FileSuggestion,
+  type AtSymbolInfo
 } from './FilePathUtils.js';
 import path from 'path';
 import fs from 'fs/promises';
@@ -94,6 +97,10 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [currentSuggestionType, setCurrentSuggestionType] = useState<SuggestionType>('command');
+  
+  // 光标位置追踪（用于多@符号支持）
+  const [estimatedCursorPosition, setEstimatedCursorPosition] = useState(0);
+  const [currentAtSymbolInfo, setCurrentAtSymbolInfo] = useState<AtSymbolInfo | null>(null);
 
   // 初始化历史记录
   useEffect(() => {
@@ -186,8 +193,16 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
   const updateSuggestions = useCallback(async (inputValue: string) => {
     const trimmedInput = inputValue.trimEnd();
     
-    // 检查是否是文件路径建议（包含@符号）
-    const filePathPart = extractFilePathFromInput(trimmedInput);
+    // 更新光标位置估算（通常在输入末尾）
+    const newCursorPosition = inputValue.length;
+    setEstimatedCursorPosition(newCursorPosition);
+    
+    // 获取当前光标位置的@符号信息
+    const atInfo = getCurrentAtSymbolInfo(trimmedInput, newCursorPosition);
+    setCurrentAtSymbolInfo(atInfo);
+    
+    // 检查是否是文件路径建议（使用新的多@符号支持）
+    const filePathPart = extractFilePathFromInput(trimmedInput, newCursorPosition);
     
     if (filePathPart !== null) {
       // 文件路径建议
@@ -258,9 +273,9 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
         onChange(finalInput);
         setInputKey(prev => prev + 1);
       } else if (selectedSuggestion.type === 'file') {
-        // 文件路径建议
+        // 文件路径建议（使用多@符号支持）
         const currentInput = value;
-        const newInput = buildInputWithFilePath(currentInput, selectedSuggestion.value);
+        const newInput = buildInputWithFilePath(currentInput, selectedSuggestion.value, estimatedCursorPosition);
         
         // 检查是否是文件夹
         if (selectedSuggestion.description === 'Folder') {
@@ -290,7 +305,7 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
       return await selectSuggestion();
     } else {
       // 如果没有候选框，尝试自动补全
-      const filePathPart = extractFilePathFromInput(value);
+      const filePathPart = extractFilePathFromInput(value, estimatedCursorPosition);
       
       if (filePathPart !== null) {
         // 文件路径自动补全 - 暂时触发建议显示
@@ -434,7 +449,10 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
           flexDirection="column"
         >
           <Text color="cyan" bold>
-            {currentSuggestionType === 'command' ? '📋 ' + t`Command suggestions:` : '📁 ' + t`File path suggestions:`}
+            {currentSuggestionType === 'command' ? 
+              '📋 ' + t`Command suggestions:` : 
+              '📁 ' + t`File path suggestions:` + (currentAtSymbolInfo ? ` @${currentAtSymbolInfo.pathPart}` : '')
+            }
           </Text>
           {suggestions.map((suggestion, index) => (
             <Box key={`${suggestion.type}-${suggestion.value}-${index}`} marginY={0}>

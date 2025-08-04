@@ -87,7 +87,7 @@ export class AiChannel {
     }
   }
 
-  async getAIOptions(modelKey?: string): Promise<{
+  async getAIOptions(modelKey?: string, agentInstance?: AgentInstance): Promise<{
     model: LanguageModel;
     modelConfig: ModelConfig;
   }> {
@@ -106,8 +106,7 @@ export class AiChannel {
     // 使用 buildEffectiveConfig 获取有效配置（包括modelKey选择）
     const effectiveConfig = buildEffectiveConfig(
       { modelKey }, // 传入的 modelKey 作为覆盖参数
-      undefined,   // 没有 agent 配置
-      undefined,   // 没有工作区配置
+      agentInstance?.getConfig(),   // 没有 agent 配置
       aiSettings   // 应用设置
     );
 
@@ -301,7 +300,7 @@ export class AiChannel {
       ...aiTools,
     }
     try {
-      let aiOptions = await this.getAIOptions(params.modelKey);
+      let aiOptions = await this.getAIOptions(params.modelKey, params.agentInstance);
       if (!aiOptions || !aiOptions.model) throw new Error('AI model not initialized');
       let newOptions: Parameters<typeof streamText>[0] = {
         ...options,

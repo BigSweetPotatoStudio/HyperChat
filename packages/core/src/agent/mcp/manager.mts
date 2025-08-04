@@ -77,7 +77,7 @@ export class MCPManager {
 
     // 加载工作区配置
     const config = await this.loadWorkspaceConfig();
-    
+
     // 初始化所有服务器的order，确保顺序稳定
     this.initializeServerOrders(config);
 
@@ -90,7 +90,7 @@ export class MCPManager {
 
     for (const server of builtinServers) {
       // 检查是否在allowMCPs允许列表中
-      if (this.options.allowMCPs && this.options.allowMCPs.length > 0) {
+      if (this.options.initiationType == "agent" && this.options.allowMCPs) {
         if (!this.options.allowMCPs.includes(server.name)) {
           this.logInfo(`跳过内置服务器 ${server.name}：不在allowMCPs允许列表中`);
           continue;
@@ -146,7 +146,7 @@ export class MCPManager {
     // 启动用户配置的服务器
     for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
       // 检查是否在allowMCPs允许列表中
-      if (this.options.allowMCPs && this.options.allowMCPs.length > 0) {
+      if (this.options.initiationType == "agent" && this.options.allowMCPs) {
         if (!this.options.allowMCPs.includes(name)) {
           this.logInfo(`跳过自定义服务器 ${name}：不在allowMCPs允许列表中`);
           continue;
@@ -469,7 +469,7 @@ export class MCPManager {
   async stopClient(name: string): Promise<void> {
     const clientId = this.getClientId(name);
     const client = this.clients.get(clientId);
-    
+
     if (!client) {
       this.logInfo(`客户端 ${clientId} 不存在，跳过停止操作`);
       return;
@@ -507,7 +507,7 @@ export class MCPManager {
     // 停止客户端连接但不从 clients Map 中删除
     const clientId = this.getClientId(name);
     const client = this.clients.get(clientId);
-    
+
     if (client) {
       try {
         await client.close();

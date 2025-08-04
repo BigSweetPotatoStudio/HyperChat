@@ -9,11 +9,12 @@ import { AgentInstance, Workspace, workspaceManager, getDefaultAgent } from '../
 import { AiChannel } from '../ai/ai.mjs';
 import { getBuiltinPrompts } from '../ai/hyperchat-builtin-prompts.mjs';
 import { EnvManager } from '../data/managers/envManager.mjs';
-import type {
-  MyMessage,
-  AISettings,
-  BaseAIConfig,
-  IMCPClient
+import {
+  type MyMessage,
+  type AISettings,
+  type BaseAIConfig,
+  type IMCPClient,
+  t
 } from '@dadigua/hyperchat-shared';
 
 /**
@@ -29,12 +30,11 @@ export interface AIEnvironment {
 
 /**
  * 构建有效配置（配置继承逻辑）
- * 优先级：overrides > agentConfig > workspaceConfig > aiSettings
+ * 优先级：overrides > agentConfig > aiSettings
  */
 export function buildEffectiveConfig(
   overrides: Partial<BaseAIConfig> = {},
   agentConfig?: Partial<BaseAIConfig>,
-  workspaceAIConfig?: any,
   aiSettings?: AISettings
 ): BaseAIConfig & { modelKey: string } {
   // 获取环境变量配置
@@ -53,7 +53,6 @@ export function buildEffectiveConfig(
     const candidates = [
       overrides.modelKey,           // 最高优先级：运行时覆盖
       agentConfig?.modelKey,        // Agent配置
-      workspaceAIConfig?.modelKey,  // 工作区配置
       firstAvailableModel,          // 默认第一个可用模型
       envModel                      // 环境变量（最低优先级，配置找不到时才使用）
     ].filter(Boolean);
@@ -73,18 +72,18 @@ export function buildEffectiveConfig(
       return envModel;
     }
 
-    return 'default-model';
+    throw new Error(t`No AI model available, please check the configuration or environment variables`)  ;
   };
 
   return {
     modelKey: findValidModelKey(),
     allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
     blockMCPTools: overrides.blockMCPTools || agentConfig?.blockMCPTools || [],
-    isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
-    temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
-    maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
-    prompt: overrides.prompt || agentConfig?.prompt || workspaceAIConfig?.prompt || '',
-    maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceAIConfig?.maxContextTokens,
+    isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
+    temperature: overrides.temperature ?? agentConfig?.temperature ?? 0.7,
+    maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? 4000,
+    prompt: overrides.prompt || agentConfig?.prompt || '',
+    maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens
   };
 }
 
@@ -134,7 +133,7 @@ export async function initializeAIEnvironment(options: {
   const agentConfig = agent.getConfig();
 
   // 构建有效配置（移除工作区AI配置）
-  const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, undefined, aiSettings);
+  const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, aiSettings);
 
 
   // 获取 MCP 工具（如果需要的话） - Agent-centered版本

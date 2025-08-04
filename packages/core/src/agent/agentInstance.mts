@@ -51,7 +51,8 @@ export class AgentInstance {
     this.loadConfig();
 
     this.mcpManager = new MCPManager(this.deriveWorkspacePath(), {
-      allowMCPs: this.config.allowMCPs
+      allowMCPs: this.config.allowMCPs,
+      initiationType: "agent",
     });
   }
 
