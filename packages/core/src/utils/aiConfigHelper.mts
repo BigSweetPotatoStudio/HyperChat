@@ -4,7 +4,7 @@
  */
 
 import { Logger } from '../log.mjs';
-import { Command } from '../command.mjs';
+import { getAppSettingsManager } from '../data/appSettingsService.mjs';
 import { AgentInstance, Workspace, workspaceManager, getDefaultAgent } from '../workspace/index.mjs';
 import { AiChannel } from '../ai/ai.mjs';
 import { getBuiltinPrompts } from '../ai/hyperchat-builtin-prompts.mjs';
@@ -127,8 +127,8 @@ export async function initializeAIEnvironment(options: {
   }
 
   // 从 workspace 和 agent 获取配置信息
-  const appSettings = await Command.getAppSettings();
-  const aiSettings = appSettings.ai;
+  const appSettingsManager = getAppSettingsManager();
+  const aiSettings = appSettingsManager.getAI();
 
   // 工作区设置已移除，现在使用envManage进行环境变量管理
   const agentConfig = agent.getConfig();

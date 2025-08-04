@@ -9,7 +9,7 @@ import { render } from 'ink';
 import process from 'process';
 import path from 'path';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../command.mjs';
+import { getAppSettingsManager } from '../../data/appSettingsService.mjs';
 import { AgentInstance } from '../../workspace/index.mjs';
 import {
   initializeAIEnvironment,
@@ -173,8 +173,8 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     await showAgentStartupInfo(agent, logger);
 
     // 创建AI环境对象（Agent-centered版本）
-    const appSettings = await Command.getAppSettings();
-    const aiSettings = appSettings.ai;
+    const appSettingsManager = getAppSettingsManager();
+    const aiSettings = appSettingsManager.getAI();
 
     // 构建有效配置
     let effectiveConfig = {

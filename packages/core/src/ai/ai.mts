@@ -17,6 +17,7 @@ import { v4 } from "uuid";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
+import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 import { Logger } from "../log.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator, type MemoryCompressionCheck } from "./memory-compressor.mjs";
@@ -99,8 +100,8 @@ export class AiChannel {
     const envProvider = envManager.get('HyperChat_AI_Provider');
 
     // 尝试从应用设置获取配置
-    let appSettings = await Command.getAppSettings()
-    let aiSettings = appSettings?.ai || {};
+    const appSettingsManager = getAppSettingsManager();
+    let aiSettings = appSettingsManager.getAI() || {};
 
     // 使用 buildEffectiveConfig 获取有效配置（包括modelKey选择）
     const effectiveConfig = buildEffectiveConfig(

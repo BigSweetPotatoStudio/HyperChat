@@ -40,7 +40,6 @@ import { startChatInk } from './commands/chat-ink.mjs';
 import { startServer } from './commands/server.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists, showAgentMemory } from './commands/agent.mjs';
-import { Command } from '../command.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
 import { initCliI18n, t, setCurrLang, getCurrLang } from '../i18n.mjs';
 import type { Language } from '@dadigua/hyperchat-shared';
@@ -316,9 +315,12 @@ async function deleteAgentWrapper(name: string, logger: Logger) {
     }
 
     // 删除agent
-    const success = await Command.deleteAgent({
-      agentName: name
-    });
+    const workspace = workspaceManager.getCurrentWorkspace();
+    if (!workspace) {
+      logger.error('当前没有可用的工作区');
+      return;
+    }
+    const success = await workspace.deleteAgent(name);
 
     if (success) {
       console.log(`✅ ${t`Agent deleted successfully`}: '${name}'`);

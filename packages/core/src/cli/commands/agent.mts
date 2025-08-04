@@ -4,7 +4,6 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import { t } from '../../i18n.mjs';
 import { agentCommands } from '../../commands/agentCommands.mjs';
@@ -84,7 +83,8 @@ export async function listAgents() {
     }
 
     // 获取代理列表
-    const agents = await Command.getCurrentWorkspaceAgentsSummary();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const agents = await workspace.getAllAgentsSummary();
 
     console.log(`\n🤖 ${t`Agent list:`}`);
 
@@ -165,9 +165,12 @@ export async function createAgent(name: string) {
       tags: ['cli-created']
     };
 
-    const agent = await Command.createAgent({
-      config: agentConfig
-    });
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const agentInstance = await workspace.createAgent(agentConfig);
+    if (!agentInstance) {
+      throw new Error('创建 Agent 失败');
+    }
+    const agent = agentInstance.getConfig();
 
     logger.success(`✅ ${t`Agent created successfully`}`);
     console.log(`${t`Name:`} ${agent.name}`);
@@ -191,7 +194,8 @@ export async function checkAgentExists(agentName: string): Promise<{ exists: boo
     const currentWorkingDirectory = process.cwd();
     await workspaceManager.initialize(currentWorkingDirectory);
 
-    const agents = await Command.getCurrentWorkspaceAgentsSummary();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const agents = await workspace.getAllAgentsSummary();
     const agentSummary = agents.find(agent => {
       const config = agent.config as AgentConfig;
       return config.name === agentName;
