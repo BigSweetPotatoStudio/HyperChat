@@ -8,12 +8,13 @@ interface WorkspaceManagerOptions {
 }
 
 /**
- * 工作区管理器 - 职责明确的简洁设计
+ * 工作区管理器 - 多工作区管理 + 单工作区模式兼容
  * 
  * 职责：
  * - 创建和缓存 Workspace 实例
  * - 管理工作区生命周期
  * - 提供工作区查找和统计
+ * - 支持单工作区模式的兼容API（initialize、getCurrentWorkspace等）
  * 
  * 不负责：
  * - 工作区内部状态管理（由 Workspace 自己负责）
@@ -21,6 +22,7 @@ interface WorkspaceManagerOptions {
  */
 export class WorkspaceManager {
   private workspaces: Map<string, Workspace> = new Map();
+  private currentWorkspacePath: string | null = null; // 当前活跃的工作区路径
   private options: Required<WorkspaceManagerOptions>;
 
   constructor(options: WorkspaceManagerOptions = {}) {
@@ -36,17 +38,17 @@ export class WorkspaceManager {
    */
   async create(workspacePath: string, forceCreate = false): Promise<Workspace> {
     const normalizedPath = path.resolve(workspacePath);
-    
+
     // 检查路径是否存在
     if (!fs.existsSync(normalizedPath)) {
       throw new Error(`路径不存在: ${workspacePath}`);
     }
-    
+
     // 如果已存在，直接返回
     if (this.workspaces.has(normalizedPath)) {
       return this.workspaces.get(normalizedPath)!;
     }
-    
+
     // 检查是否需要创建工作区目录
     if (!this.isWorkspaceDirectory(normalizedPath)) {
       if (!forceCreate) {
@@ -56,10 +58,10 @@ export class WorkspaceManager {
       const hyperChatPath = path.join(normalizedPath, CONSTANTS.HYPERCHAT_DIR);
       fs.mkdirSync(hyperChatPath, { recursive: true });
     }
-    
+
     // 创建工作区实例
     const workspace = new Workspace(normalizedPath);
-    
+
     // 添加到缓存
     return this.add(workspace);
   }
@@ -71,17 +73,17 @@ export class WorkspaceManager {
    */
   async get(workspacePath: string, autoCreate = false): Promise<Workspace | null> {
     const normalizedPath = path.resolve(workspacePath);
-    
+
     // 从缓存获取
     if (this.workspaces.has(normalizedPath)) {
       return this.workspaces.get(normalizedPath)!;
     }
-    
+
     // 自动创建
     if (autoCreate && this.isWorkspaceDirectory(normalizedPath)) {
       return await this.create(normalizedPath);
     }
-    
+
     return null;
   }
 
@@ -91,15 +93,15 @@ export class WorkspaceManager {
    */
   add(workspace: Workspace): Workspace {
     const normalizedPath = path.resolve(workspace.workspacePath);
-    
+
     // 检查是否需要清理最旧的工作区
     if (this.workspaces.size >= this.options.maxWorkspaces) {
       throw new Error(`工作区数量已达上限: ${this.options.maxWorkspaces}`);
     }
-    
+
     // 添加到缓存
     this.workspaces.set(normalizedPath, workspace);
-    
+
     return workspace;
   }
 
@@ -109,22 +111,22 @@ export class WorkspaceManager {
    */
   async remove(workspacePath: string): Promise<boolean> {
     const normalizedPath = path.resolve(workspacePath);
-    
+
     const workspace = this.workspaces.get(normalizedPath);
     if (!workspace) {
       return false;
     }
-    
+
     // 清理工作区资源
     try {
       await workspace.uninit();
     } catch (error) {
       console.warn(`清理工作区失败: ${workspacePath}`, error);
     }
-    
+
     // 从缓存移除
     this.workspaces.delete(normalizedPath);
-    
+
     return true;
   }
 
@@ -139,7 +141,7 @@ export class WorkspaceManager {
   /**
    * 获取所有已管理的工作区
    */
-  getAll(): Array<{path: string, workspace: Workspace}> {
+  getAll(): Array<{ path: string, workspace: Workspace }> {
     return Array.from(this.workspaces.entries()).map(([path, workspace]) => ({
       path,
       workspace
@@ -158,13 +160,13 @@ export class WorkspaceManager {
    */
   async clear(): Promise<void> {
     const promises: Promise<void>[] = [];
-    
+
     for (const workspace of this.workspaces.values()) {
       promises.push(workspace.uninit().catch(e => console.warn('清理工作区失败:', e)));
     }
-    
+
     await Promise.all(promises);
-    
+
     this.workspaces.clear();
   }
 
@@ -175,49 +177,24 @@ export class WorkspaceManager {
    */
   async preload(paths: string[], initializeAll = false): Promise<Workspace[]> {
     const results: Workspace[] = [];
-    
+
     for (const path of paths) {
       try {
         if (this.isWorkspaceDirectory(path)) {
           const workspace = await this.create(path);
-          
+
           if (initializeAll && !workspace.isInitialized()) {
             await workspace.initialize();
           }
-          
+
           results.push(workspace);
         }
       } catch (error) {
         console.warn(`预加载工作区失败: ${path}`, error);
       }
     }
-    
-    return results;
-  }
 
-  /**
-   * 获取管理器统计信息
-   */
-  getStats(): {
-    total: number;
-    maxCapacity: number;
-    workspaces: Array<{
-      path: string;
-      isInitialized: boolean;
-      isStarted: boolean;
-    }>;
-  } {
-    const workspaceList = Array.from(this.workspaces.entries()).map(([path, workspace]) => ({
-      path,
-      isInitialized: workspace.isInitialized(),
-      isStarted: workspace.isStarted()
-    }));
-    
-    return {
-      total: this.workspaces.size,
-      maxCapacity: this.options.maxWorkspaces,
-      workspaces: workspaceList
-    };
+    return results;
   }
 
   /**
@@ -242,6 +219,98 @@ export class WorkspaceManager {
    */
   getGlobalWorkspacePath(): string {
     return CONSTANTS.GLOBAL_PATH;
+  }
+
+  // === 单工作区模式兼容API ===
+
+  /**
+   * 初始化工作区管理器（单工作区模式兼容 - 相当于添加第一个工作区）
+   * @param workspacePath 工作区路径
+   * @param autoStart 是否自动启动工作区，默认false（仅初始化）
+   */
+  async initialize(workspacePath: string): Promise<Workspace> {
+    const normalizedPath = path.resolve(workspacePath);
+
+    // 设为当前工作区
+    this.currentWorkspacePath = normalizedPath;
+    let workspace = await this.create(workspacePath, true);
+    await workspace.initialize();
+    return workspace;
+  }
+
+
+  /**
+   * 获取当前工作区（单工作区模式兼容 - 返回当前活跃的工作区）
+   */
+  getCurrentWorkspace(): Workspace {
+    if (!this.currentWorkspacePath) {
+      throw new Error("工作区管理器尚未初始化，请先调用 initialize() 方法。");
+    }
+
+    const workspace = this.workspaces.get(this.currentWorkspacePath);
+    if (!workspace) {
+      throw new Error("当前工作区不存在");
+    }
+
+    return workspace;
+  }
+
+  /**
+   * 检查工作区管理器是否已初始化
+   */
+  isWorkspaceInitialized(): boolean {
+    return this.currentWorkspacePath !== null && this.workspaces.has(this.currentWorkspacePath);
+  }
+
+  /**
+   * 获取当前工作区路径
+   */
+  getCurrentWorkspacePath(): string {
+    if (!this.currentWorkspacePath) {
+      throw new Error("工作区管理器尚未初始化");
+    }
+    return this.currentWorkspacePath;
+  }
+
+  /**
+   * 切换到新工作区（单工作区模式兼容 - 实际上是重新初始化）
+   * @param workspacePath 工作区路径
+   * @param force 是否强制创建工作区
+   * @param autoStart 是否自动启动新工作区
+   */
+  async switchWorkspace(workspacePath: string, force: boolean = false): Promise<void> {
+    const normalizedPath = path.resolve(workspacePath);
+    
+    // 检查目标工作区是否存在
+    if (!force && !this.isWorkspaceDirectory(workspacePath)) {
+      throw new Error(`工作区不存在: ${workspacePath}`);
+    }
+
+    // 如果目标路径与当前工作区相同，无需重新初始化
+    if (this.currentWorkspacePath === normalizedPath) {
+      // 如果需要启动但未启动，则启动
+      return;
+    }
+
+    // 切换到新工作区（不清理旧工作区，保持在缓存中）
+    await this.initialize(workspacePath);
+  }
+
+
+  /**
+   * 清理工作区管理器，释放资源
+   */
+  async uninitialize(): Promise<void> {
+    // 清理所有工作区
+    await this.clear();
+    this.currentWorkspacePath = null;
+  }
+
+  /**
+   * 创建新工作区（单工作区模式兼容）
+   */
+  async createWorkspace(workspacePath: string): Promise<Workspace> {
+    return await this.create(workspacePath, true);
   }
 
 

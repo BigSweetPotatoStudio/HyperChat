@@ -30,16 +30,15 @@ export async function showAgentMemory(agentName: string) {
 
     // 智能获取当前工作区
     const currentWorkingDirectory = process.cwd();
-    await workspaceManager.initialize(currentWorkingDirectory);
-    const workspace = workspaceManager.getCurrentWorkspace();
-    
+    const workspace = await workspaceManager.initialize(currentWorkingDirectory);
+
     if (!workspace) {
       logger.error('当前没有可用的工作区');
       process.exit(1);
     }
 
     // 获取Agent记忆内容 (智能查找)
-    const memoryResult = await agentCommands.getAgentMemory({ 
+    const memoryResult = await agentCommands.getAgentMemory({
       agentName
     });
 
@@ -79,7 +78,7 @@ export async function listAgents() {
     const workspacePath = await getCurrentWorkspacePath();
 
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    
+
     if (currentWorkingDirectory !== workspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
@@ -113,10 +112,10 @@ export async function listAgents() {
       if (chatLogsCount > 0) {
         console.log(`      ${t`Chat logs:`} ${chatLogsCount} ${t`entries`}`);
       }
-      
+
       // 检查是否有记忆文件
       try {
-        const memoryResult = await agentCommands.getAgentMemory({ 
+        const memoryResult = await agentCommands.getAgentMemory({
           agentName: config.name
         });
         if (memoryResult.content.trim()) {
@@ -147,7 +146,7 @@ export async function createAgent(name: string) {
     const workspacePath = await getCurrentWorkspacePath();
 
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    
+
     if (currentWorkingDirectory !== workspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }

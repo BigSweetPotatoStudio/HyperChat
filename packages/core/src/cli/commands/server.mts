@@ -36,15 +36,15 @@ export interface ServerOptions {
  */
 export async function startServer(options: ServerOptions = {}) {
   const logger = new Logger(options.verbose, options.quiet);
-  
+
   // 解析 CLI 参数为环境配置
   const cliArgs = parseOptionsToEnv(options);
-  
+
   // 获取环境管理器（包含 CLI 参数覆盖）
   const envManager = EnvManager.getInstance();
   envManager.initBase(process.cwd(), cliArgs);
   const config = envManager.getConfig();
-  
+
   const port = config.HyperChat_HTTP_PORT;
   const host = options.host || 'localhost';
 
@@ -53,15 +53,14 @@ export async function startServer(options: ServerOptions = {}) {
 
 
     logger.info(`⏳ ${t`Waiting for server to start...`}`);
-    
+
     // 1. 初始化工作区管理器
     const currentWorkingDirectory = process.cwd();
 
-    await getWorkspaceManager().initialize(currentWorkingDirectory);
-    let workspace = getWorkspaceManager().getCurrentWorkspace();
+    let workspace = await getWorkspaceManager().initialize(currentWorkingDirectory);
     await workspace.start();
 
-    
+
     // 2. 启动 HTTP 服务
     await initHttp();
 

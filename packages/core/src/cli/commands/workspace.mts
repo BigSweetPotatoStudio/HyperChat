@@ -16,8 +16,8 @@ async function getCurrentWorkspacePath(): Promise<string> {
 
   // workspaceManager is already imported
   const currentWorkingDirectory = process.cwd();
-  await workspaceManager.initialize(currentWorkingDirectory);
-  return workspaceManager.getCurrentWorkspacePath();
+  let workspace = await workspaceManager.initialize(currentWorkingDirectory);
+  return workspace.workspacePath;
 }
 
 export async function listWorkspaces() {
@@ -72,8 +72,8 @@ export async function showCurrentWorkspace() {
   try {
     // 初始化工作区管理器
     const currentWorkingDirectory = process.cwd();
-    await workspaceManager.initialize(currentWorkingDirectory);
-    const workspace = workspaceManager.getCurrentWorkspace();
+    let workspace = await workspaceManager.initialize(currentWorkingDirectory);
+
 
     console.log(`\n🎯 ${t`Current Status:`}`);
     console.log(`📍 ${t`Working Directory:`} ${currentWorkingDirectory}`);
