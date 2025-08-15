@@ -27,7 +27,7 @@ import { CONST, getAppDataDir } from "../../const.mjs";
  */
 export class AppSettingsManager {
   private settings: AppSettings;
-  private settingsPath: string;
+  settingsPath: string;
   private schemaPath: string;
 
   constructor(private appDataDir: string) {

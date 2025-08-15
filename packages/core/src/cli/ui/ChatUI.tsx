@@ -16,7 +16,9 @@ import { TaskQueue } from '../../utils/taskQueue.mjs';
 import { getMyUuid } from '../utils/util.mjs';
 import { AgentInstance } from '../../lib.mjs';
 import { Logger } from '../utils/logger.mjs';
-import { sleep } from 'zx';
+import { path, sleep } from 'zx';
+import { getAppSettingsManager } from '../../data/appSettingsService.mjs';
+import { appDataDir } from '../../const.mjs';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -312,7 +314,49 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
     }
 
     if (trimmedInput === '/model') {
-      addSystemMessage(`🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}`);
+      try {
+        const appSettingsManager = getAppSettingsManager();
+        const aiSettings = appSettingsManager.getAI();
+        const availableModels = aiSettings?.models || [];
+
+        let modelInfo = `🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}\n\n`;
+
+        if (availableModels.length > 0) {
+          modelInfo += `📋 ${t`Available models:`}\n\n`;
+          availableModels.forEach((model: any, index: number) => {
+            const isCurrent = model.key === workspaceInfo?.currentModel;
+            const prefix = isCurrent ? '✅' : '  ';
+            modelInfo += `${prefix} ${model.key}${model.displayName ? ` (${model.displayName})` : ''}\n`;
+
+            if (model.temperature !== undefined) {
+              modelInfo += `      🌡️  Temperature: ${model.temperature}\n`;
+            }
+            if (model.maxTokens) {
+              modelInfo += `      🔢 Max Tokens: ${model.maxTokens}\n`;
+            }
+
+            // if (index < availableModels.length - 1) {
+            //   modelInfo += '';
+            // }
+          });
+
+          modelInfo += `\n📍 ${t`Configuration file:`} ${getAppSettingsManager().settingsPath}`;
+
+          // 显示环境变量提示
+          const envManager = await import('../../data/managers/envManager.mjs');
+          const envModel = envManager.EnvManager.getInstance().get('HyperChat_AI_Model');
+          if (envModel) {
+            modelInfo += `\n🔧 ${t`Environment variable:`} HyperChat_AI_Model=${envModel}`;
+          }
+
+        } else {
+          modelInfo += `❌ ${t`No models configured. Please configure AI models first.`}`;
+        }
+
+        addSystemMessage(modelInfo);
+      } catch (error) {
+        addSystemMessage(`❌ ${t`Failed to load model information:`} ${error instanceof Error ? error.message : String(error)}`);
+      }
       setInput('');
       return;
     }
