@@ -534,7 +534,43 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         }
 
         if (input.trim() === '/model') {
-          console.log(`\n🤖 ${t`Current model:`} ${env.effectiveConfig.modelKey}\n`);
+          try {
+            const availableModels = aiSettings?.models || [];
+            
+            let modelInfo = `\n🤖 ${t`Current model:`} ${env.effectiveConfig.modelKey}\n`;
+            
+            if (availableModels.length > 0) {
+              modelInfo += `\n📋 ${t`Available models:`}\n\n`;
+              availableModels.forEach((model: any) => {
+                const isCurrent = model.key === env.effectiveConfig.modelKey;
+                const prefix = isCurrent ? '✅' : '  ';
+                modelInfo += `${prefix} ${model.key}${model.displayName ? ` (${model.displayName})` : ''}\n`;
+                
+                if (model.temperature !== undefined) {
+                  modelInfo += `      🌡️  Temperature: ${model.temperature}\n`;
+                }
+                if (model.maxTokens) {
+                  modelInfo += `      🔢 Max Tokens: ${model.maxTokens}\n`;
+                }
+              });
+              
+              modelInfo += `\n📍 ${t`Configuration file:`} ${appSettingsManager.settingsPath}`;
+              
+              // 显示环境变量提示
+              const { EnvManager } = await import('../../data/managers/envManager.mjs');
+              const envModel = EnvManager.getInstance().get('HyperChat_AI_Model');
+              if (envModel) {
+                modelInfo += `\n🔧 ${t`Environment variable:`} HyperChat_AI_Model=${envModel}`;
+              }
+              
+            } else {
+              modelInfo += `\n❌ ${t`No models configured. Please configure AI models first.`}`;
+            }
+            
+            console.log(modelInfo + '\n');
+          } catch (error) {
+            console.log(`\n❌ ${t`Failed to load model information:`} ${error instanceof Error ? error.message : String(error)}\n`);
+          }
           continue;
         }
 
