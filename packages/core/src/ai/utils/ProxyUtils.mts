@@ -40,7 +40,7 @@ export class ProxyUtils {
     const skipSslVerification = this.shouldSkipSslVerification();
     if (skipSslVerification) {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-      Logger.warn('SSL verification disabled globally - use only for development/debugging');
+      Logger.warn('SSL verification skip');
     }
   }
 
@@ -63,8 +63,6 @@ export class ProxyUtils {
       // 创建代理 agent，根据配置决定是否跳过SSL验证
       const httpsOptions = skipSslVerification ? {
         rejectUnauthorized: false,  // 允许自签名证书
-        checkServerIdentity: () => undefined, // 跳过服务器身份验证
-        secureProtocol: 'TLSv1_2_method', // 强制使用 TLS 1.2
       } : {};
 
       const agent = isHttps
@@ -87,7 +85,7 @@ export class ProxyUtils {
       const response = await nodeFetch(targetUrl, fetchOptions);
 
       // 将 node-fetch 的 Response 转换为标准 Response
-      const body = await response.buffer();
+      const body = await response.arrayBuffer();
       return new Response(body, {
         status: response.status,
         statusText: response.statusText,

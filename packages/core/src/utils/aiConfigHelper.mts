@@ -40,7 +40,6 @@ export function buildEffectiveConfig(
   // 获取环境变量配置
   const envManager = EnvManager.getInstance();
   const envModel = envManager.get('HyperChat_AI_Model');
-  
   // 获取可用模型列表
   const availableModels = aiSettings?.models || [];
   const isModelAvailable = (modelKey: string) =>
@@ -53,8 +52,6 @@ export function buildEffectiveConfig(
     const candidates = [
       overrides.modelKey,           // 最高优先级：运行时覆盖
       agentConfig?.modelKey,        // Agent配置
-      firstAvailableModel,          // 默认第一个可用模型
-      envModel                      // 环境变量（最低优先级，配置找不到时才使用）
     ].filter(Boolean);
 
     for (const modelKey of candidates) {
@@ -63,16 +60,19 @@ export function buildEffectiveConfig(
       }
     }
 
-    // 如果没有找到可用模型，按优先级返回fallback
-    if (firstAvailableModel) {
-      return firstAvailableModel;
-    }
-    
+
+    // 环境变量第二优先级
     if (envModel) {
       return envModel;
     }
 
-    throw new Error(t`No AI model available, please check the configuration or environment variables`)  ;
+    // 如果没有找到可用模型，按优先级返回fallback
+    if (firstAvailableModel) {
+      return firstAvailableModel;
+    }
+
+
+    throw new Error(t`No AI model available, please check the configuration or environment variables`);
   };
 
   return {
@@ -144,7 +144,7 @@ export async function initializeAIEnvironment(options: {
     const agentMcpClients = agent.getMCPClients();
     mcpClients = agentMcpClients.map(client => client.toJSON() as IMCPClient);
   }
-  
+
 
   return {
     agent,
@@ -203,7 +203,7 @@ export async function executeAICompletion(
  */
 export function logAIConfig(logger: typeof Logger, env: AIEnvironment): void {
   const agentConfig = env.agent.getConfig();
-  
+
   if (agentConfig && env.effectiveConfig.modelKey === agentConfig.modelKey) {
     logger.info(`📋 使用Agent配置的AI模型: ${env.effectiveConfig.modelKey}`);
   } else {

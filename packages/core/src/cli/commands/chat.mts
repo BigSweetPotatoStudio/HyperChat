@@ -14,7 +14,8 @@ import type { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { createReadline } from '../utils/readline.mjs';
 import { AgentInstance } from '../../workspace/index.mjs';
 import {
-  createAIChannel
+  createAIChannel,
+  buildEffectiveConfig
 } from '../../utils/aiConfigHelper.mjs';
 import {
   DEFAULT_AGENT_NAME
@@ -26,6 +27,7 @@ import { getMyUuid } from '../utils/util.mjs';
 import { CONST } from '../../const.mjs';
 import type { Logger as CLILogger } from '../utils/logger.mjs';
 import { TaskQueue } from '../../utils/taskQueue.mjs';
+import type { BaseAIConfig } from '@dadigua/hyperchat-shared';
 
 // 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
 const chatLogQueue = new TaskQueue({ concurrency: 1 });
@@ -396,30 +398,15 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     const appSettingsManager = getAppSettingsManager();
     const aiSettings = appSettingsManager.getAI();
 
-    // 构建有效配置
-    let effectiveConfig = {
-      modelKey: agentConfig.modelKey || aiSettings?.models?.[0]?.key || 'default-model',
-      allowMCPs: agentConfig.allowMCPs || [],
-      blockMCPTools: agentConfig.blockMCPTools || [],
-      isConfirmCallTool: agentConfig.isConfirmCallTool ?? false,
-      temperature: agentConfig.temperature,
-      maxTokens: agentConfig.maxTokens ?? 4000,
-      prompt: agentConfig.prompt || '',
-      maxContextTokens: agentConfig.maxContextTokens,
-    };
-
-    // 如果命令行指定了模型，覆盖配置
+    // 构建命令行覆盖配置
+    const overrides: Partial<BaseAIConfig> = {};
     if (options.model) {
-      const availableModels = aiSettings?.models || [];
-      const isModelAvailable = availableModels.some((m: any) => m.key === options.model);
-
-      if (isModelAvailable) {
-        effectiveConfig.modelKey = options.model;
-        logger.info(`📋 ${t`Using AI model specified from command line:`} ${options.model}`);
-      } else {
-        logger.warn(`⚠️  ${t`Specified model`} '${options.model}' ${t`is not available, using default model`}`);
-      }
+      overrides.modelKey = options.model;
+      logger.info(`📋 ${t`Using AI model specified from command line:`} ${options.model}`);
     }
+
+    // 使用 buildEffectiveConfig 构建有效配置
+    const effectiveConfig = buildEffectiveConfig(overrides, agentConfig, aiSettings);
 
     // 显示最终使用的模型信息
     logger.info(`🤖 ${t`Model:`} ${effectiveConfig.modelKey}${agentConfig.modelKey && agentConfig.modelKey !== effectiveConfig.modelKey ? ` (${t`agent default:`} ${agentConfig.modelKey})` : ''}`);

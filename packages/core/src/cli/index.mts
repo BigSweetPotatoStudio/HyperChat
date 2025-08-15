@@ -277,7 +277,40 @@ async function startChatWrapper(messages: string[], logger: Logger, agentName?: 
       ...extraOptions  // 合并额外的选项
     };
 
-    const message = messages.length > 0 ? messages.join(' ') : undefined;
+    let message = messages.length > 0 ? messages.join(' ') : undefined;
+
+    // 检测是否是Agent命令（以 / 开头）
+    if (message && message.startsWith('/')) {
+      // 解析Agent命令
+      const spaceIndex = message.indexOf(' ');
+      const commandName = spaceIndex > 0 ? message.substring(1, spaceIndex) : message.substring(1);
+      const args = spaceIndex > 0 ? message.substring(spaceIndex + 1) : '';
+      
+      logger.info(`🎯 ${t`Detected agent command:`} /${commandName}`);
+      
+      try {
+        // 获取Agent实例
+        const { getAgent } = await import('./agentManager.mjs');
+        const agent = await getAgent({
+          agentName: options.agent,
+          agentPath: options.agentPath,
+          workspace: options.workspace,
+        });
+        
+        // 执行命令替换
+        const replacedContent = await agent.executeCommand(commandName, args);
+        if (replacedContent !== null) {
+          logger.info(`✅ ${t`Command executed successfully, sending to AI...`}`);
+          message = replacedContent;
+        } else {
+          logger.warn(`❌ ${t`Command not found:`} /${commandName}`);
+          // 继续使用原始消息
+        }
+      } catch (error) {
+        logger.warn(`⚠️ ${t`Failed to execute agent command:`} ${error instanceof Error ? error.message : String(error)}`);
+        // 继续使用原始消息
+      }
+    }
 
     // 根据 UI 选项选择不同的聊天实现
     if (globalOptions.ui === 'ink') {
@@ -543,7 +576,7 @@ async function main() {
     }
     
     // 执行命令
-    const result = await handleCommand();
+    await handleCommand();
     
     // Agent-centered架构下，Agent资源按需创建和自动清理
     // 不需要显式的全局清理逻辑

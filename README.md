@@ -12,6 +12,8 @@ HyperChat 是一个革命性的**本地 AI Agent 平台**，通过**配置文件
 - 📁 **配置即代码**：所有 AI 能力通过文件配置，支持 Git 管理
 - 🔧 **深度工具集成**：MCP 协议支持，可直接操作本地文件系统
 - 📦 **一键迁移**：完整的 `.hyperchat/` 配置目录，随项目迁移
+- 📂 **多@文件路径**：智能识别多个文件引用，支持复杂文件操作 ✨**新功能**
+- 🎯 **Agent自定义命令**：Markdown模板驱动的快捷命令系统 ✨**新功能**
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 [![@dadigua/hyperchat](https://img.shields.io/npm/v/%40dadigua%2Fhyperchat)](https://www.npmjs.com/package/@dadigua/hyperchat)
@@ -106,6 +108,16 @@ hyperchat agent mybot chat             # 🎯 Agent 专属对话会话
 hyperchat "你好，今天怎么样？"           # 直接与默认模型聊天
 hyperchat chat "写一个 Python 脚本"     # 聊天命令
 hyperchat chat                         # 交互式聊天模式
+
+# 📁 智能文件处理 - 多@符号支持 ✨新功能
+hyperchat "分析 @./src/index.ts 的代码质量"
+hyperchat "对比 @./package.json 和 @./yarn.lock"
+hyperchat "请比较 @./src/components/ 和 @./docs/ 的结构"
+
+# 🎯 Agent自定义命令 - 快捷输入专业提示词 ✨新功能
+hyperchat agent coder "/bug-fix @./src/login.ts 登录功能异常"
+hyperchat agent coder "/review @./src/api/user.js"
+hyperchat agent coder "/optimize 这段代码性能不好"
 
 # Agent 管理（在当前工作区或全局）
 hyperchat agent create mybot           # 创建新 Agent
@@ -329,7 +341,9 @@ cd /project-b && hyperchat agent personal-coder "分析这个项目"
 
 
 
-### Agent 配置
+### Agent 配置与自定义命令 ✨**新功能**
+
+#### Agent 基础配置
 ```yaml
 # .hyperchat/agents/project-assistant/agent.yaml
 name: "项目助手"
@@ -346,6 +360,76 @@ prompt: |
   
   请基于项目上下文提供专业建议。
 tags: ["project", "fullstack", "ecommerce"]
+```
+
+#### Agent 自定义命令目录结构 ✨**新功能**
+```
+.hyperchat/agents/project-assistant/
+├── agent.yaml              # Agent 配置
+├── memory.md               # Agent 记忆
+├── commands/               # 🎯 自定义命令目录
+│   ├── bug-fix.md         # 修复bug命令
+│   ├── review.md          # 代码审查命令
+│   ├── explain.md         # 代码解释命令
+│   ├── test.md            # 测试用例命令
+│   ├── optimize.md        # 代码优化命令
+│   └── document.md        # 文档生成命令
+└── chatlogs/              # 聊天记录
+```
+
+#### 命令模板示例（纯Markdown）
+```markdown
+# commands/bug-fix.md
+请帮我修复以下代码中的bug：
+
+$ARG
+
+要求：
+1. 仔细分析问题的根本原因
+2. 提供详细的修复方案
+3. 给出修复后的完整代码
+4. 解释修复的原理和最佳实践
+5. 提供预防类似问题的建议
+```
+
+```markdown
+# commands/review.md
+请对以下代码进行全面的code review：
+
+$ARG
+
+Review要点：
+1. **代码质量**：可读性、维护性、命名规范
+2. **性能问题**：算法效率、内存使用、潜在瓶颈
+3. **安全隐患**：输入验证、权限控制、数据泄露风险
+4. **最佳实践**：设计模式、架构原则、团队规范
+5. **改进建议**：具体的优化方案和替代实现
+
+请提供具体的修改建议和代码示例。
+```
+
+#### 使用示例
+```bash
+# 使用自定义命令进行bug修复
+hyperchat agent project-assistant "/bug-fix @./src/login.ts 用户登录后跳转异常"
+
+# 实际发送给AI的内容：
+# 请帮我修复以下代码中的bug：
+# @./src/login.ts 用户登录后跳转异常
+# 要求：
+# 1. 仔细分析问题的根本原因
+# 2. 提供详细的修复方案
+# 3. 给出修复后的完整代码
+# 4. 解释修复的原理和最佳实践
+# 5. 提供预防类似问题的建议
+
+# 使用代码审查命令
+hyperchat agent project-assistant "/review @./src/components/UserProfile.tsx"
+
+# 在交互式聊天中使用
+hyperchat agent project-assistant chat
+> /bug-fix 这个函数有内存泄漏问题
+> /optimize @./src/utils/dataProcessor.js
 ```
 
 ```yaml
