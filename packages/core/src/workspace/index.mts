@@ -39,7 +39,9 @@ export { Data } from "./data.mjs";
 // 导出全局实例
 import { WorkspaceManager } from "./workspaceManager.mjs";
 import { Data } from "./data.mjs";
-import { WorkspaceConfig } from "./types.mjs";
+import { WorkspaceConfig, AgentConfig } from "./types.mjs";
+import { Workspace } from "./workspace.mjs";
+import { AgentInstance } from "../agent/agentInstance.mjs";
 
 // 全局工作区管理器实例
 export const workspaceManager = new WorkspaceManager();
@@ -55,7 +57,7 @@ const defaultAgentName = 'Hyper';
  * 获取或创建默认 Agent
  * 如果工作区中没有名为 "default" 的 Agent，则自动创建一个
  */
-export async function getDefaultAgent(): Promise<{ agentName: string; agentInstance: any; agentConfig: any } | null> {
+export async function getDefaultAgent(): Promise<{ agentName: string; agentInstance: AgentInstance; agentConfig: AgentConfig } | null> {
   try {
     const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) {
@@ -108,7 +110,7 @@ export async function getDefaultAgent(): Promise<{ agentName: string; agentInsta
  * 创建默认 Agent
  * 内部辅助函数，用于创建一个标准的默认 Agent
  */
-async function createDefaultAgent(workspace: any): Promise<void> {
+async function createDefaultAgent(workspace: Workspace): Promise<void> {
 
   // 使用内置提示词生成增强的系统提示词
   const basePrompt = `You are a helpful AI assistant. You can assist with various tasks including file operations, coding, research, and general questions.`;

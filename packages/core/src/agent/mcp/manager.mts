@@ -606,7 +606,7 @@ export class MCPManager {
   /**
    * 记录信息日志
    */
-  private logInfo(message: string, ...args: any[]): void {
+  private logInfo(message: string, ...args: unknown[]): void {
     if (this.options.enableLogging) {
       Logger.info(`[MCPManager] ${message}`, ...args);
     }
@@ -615,7 +615,7 @@ export class MCPManager {
   /**
    * 记录错误日志
    */
-  private logError(message: string, ...args: any[]): void {
+  private logError(message: string, ...args: unknown[]): void {
     if (this.options.enableLogging) {
       Logger.error(`[MCPManager] ${message}`, ...args);
     }

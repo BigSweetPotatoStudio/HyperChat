@@ -13,35 +13,35 @@ export class Logger {
     this.quiet = quiet;
   }
 
-  info(message: string, ...args: any[]) {
+  info(message: string, ...args: unknown[]) {
     if (!this.quiet) {
       console.log(message, ...args);
     }
   }
 
-  success(message: string, ...args: any[]) {
+  success(message: string, ...args: unknown[]) {
     if (!this.quiet) {
       console.log('✅ ' + message, ...args);
     }
   }
 
-  warn(message: string, ...args: any[]) {
+  warn(message: string, ...args: unknown[]) {
     if (!this.quiet) {
       console.warn('⚠️  ' + message, ...args);
     }
   }
 
-  error(message: string, ...args: any[]) {
+  error(message: string, ...args: unknown[]) {
     console.error('❌ ' + message, ...args);
   }
 
-  debug(message: string, ...args: any[]) {
+  debug(message: string, ...args: unknown[]) {
     if (this.verbose && !this.quiet) {
       console.log('🔍 ' + message, ...args);
     }
   }
 
-  log(message: string, ...args: any[]) {
+  log(message: string, ...args: unknown[]) {
     if (!this.quiet) {
       console.log(message, ...args);
     }

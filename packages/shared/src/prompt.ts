@@ -226,7 +226,7 @@ export const genSystemPrompt = (userSystemPrompt: string, tools: HyperChatComple
  * @param {string} toolUseString - 包含工具调用的字符串
  * @returns {Object|null} - 返回包含工具名称和参数的对象，格式为 {name: string, params: Object}，如果解析失败则返回null
  */
-export function extractTool(toolUseString: any) {
+export function extractTool(toolUseString: string): { name: string; params: Record<string, unknown> } | null {
   try {
     // 使用正则表达式匹配<tool_use>标签内的内容
     const nameRegex = /<name>(.*?)<\/name>/s;

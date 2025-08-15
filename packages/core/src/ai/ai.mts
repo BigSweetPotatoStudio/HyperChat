@@ -1,6 +1,7 @@
 
 
 import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject, AIModelConfigItem } from "@dadigua/hyperchat-shared";
+import type { KnownProvider } from "@dadigua/hyperchat-shared";
 
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
@@ -9,7 +10,7 @@ import { generateObject, streamObject, jsonSchema, smoothStream, streamText } fr
 import { z, ZodSchema } from "zod";
 // 兼容旧版本的 zod
 if (typeof globalThis !== 'undefined') {
-  (globalThis as any).z = z;
+  (globalThis as typeof globalThis & { z: typeof z }).z = z;
 }
 
 import { v4 } from "uuid";
@@ -145,7 +146,7 @@ export class AiChannel {
         key: finalModelKey,
         name: finalModelKey,
         model: finalModelKey,
-        provider: (envProvider as any) || "unknown",
+        provider: (envProvider as KnownProvider) || "unknown",
         baseURL: envApiUrl,
         apiKey: envApiKey,
         supportImage: true,
@@ -166,7 +167,7 @@ export class AiChannel {
       }
 
       if ((!modelConfig.provider || modelConfig.provider === "unknown") && envProvider) {
-        modelConfig.provider = envProvider as any;
+        modelConfig.provider = envProvider as KnownProvider;
         Logger.debug(`Using provider from environment variable: ${envProvider}`);
       }
     }

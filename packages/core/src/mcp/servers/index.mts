@@ -5,12 +5,14 @@ import { HyperTools } from "./hyper_tools/index.mjs";
 // import { HyperAgent } from "./Task/index.mjs";
 import { HyperTerminal } from "./terminal/index.mjs";
 import { HyperSystem } from "./hyper_system/index.mjs";
-type ServerConfig = {
+import type { ZodSchema } from "zod";
+
+export interface ServerConfig {
   name: string;
   type: string;
-  configSchema: any;
-  createServer: () => Promise<any>;
-};
+  configSchema: ZodSchema;
+  createServer: () => Promise<unknown>;
+}
 
 
 // 工作区的内置mcp服务器

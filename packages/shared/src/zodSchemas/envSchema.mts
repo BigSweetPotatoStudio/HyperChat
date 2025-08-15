@@ -68,7 +68,7 @@ export type RuntimeEnv = z.infer<typeof RuntimeEnvSchema>;
 export type InterfaceLanguage = z.infer<typeof InterfaceLanguageSchema>;
 
 // 验证函数
-export function validateEnvConfig(data: any): data is EnvConfig {
+export function validateEnvConfig(data: unknown): data is EnvConfig {
   return EnvSchema.safeParse(data).success;
 }
 

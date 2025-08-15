@@ -67,19 +67,19 @@ export const DEFAULT_TASK: Task = {
 };
 
 // 验证函数
-export function validateTask(data: any): data is Task {
+export function validateTask(data: unknown): data is Task {
   return TaskSchema.safeParse(data).success;
 }
 
-export function validateTaskList(data: any): data is TaskList {
+export function validateTaskList(data: unknown): data is TaskList {
   return TaskListSchema.safeParse(data).success;
 }
 
-export function validateCreateTaskRequest(data: any): data is CreateTaskRequest {
+export function validateCreateTaskRequest(data: unknown): data is CreateTaskRequest {
   return CreateTaskSchema.safeParse(data).success;
 }
 
-export function validateUpdateTaskRequest(data: any): data is UpdateTaskRequest {
+export function validateUpdateTaskRequest(data: unknown): data is UpdateTaskRequest {
   return UpdateTaskSchema.safeParse(data).success;
 }
 

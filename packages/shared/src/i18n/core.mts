@@ -40,7 +40,7 @@ function hasEnglish(str: string): boolean {
  * 国际化翻译函数 - 支持模板字符串语法
  * 使用方式：t`Hello ${name}!` 或 t`Welcome to HyperChat`
  */
-export function t(strings: TemplateStringsArray, ...values: any[]): string {
+export function t(strings: TemplateStringsArray, ...values: (string | number)[]): string {
   // 将模板字符串重新组合成完整字符串
   let str = strings.reduce(
     (result: string, str: string, i: number) => result + str + (values[i] || ""),

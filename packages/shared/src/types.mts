@@ -453,7 +453,18 @@ export interface ChatMessageCreateEvent extends ChatMessageEvent {
 }
 
 export interface ChatMessageUpdateEvent extends ChatMessageEvent {
-  delta: any; // TextStreamPart<ToolSet> 类型
+  delta: {
+    type: 'text-delta' | 'tool-call-delta' | 'tool-result-delta' | 'error';
+    textDelta?: string;
+    toolCallDelta?: {
+      type: 'function';
+      function: {
+        name?: string;
+        arguments?: string;
+      };
+    };
+    [key: string]: unknown;
+  };
 }
 
 export interface ChatMessageReplaceEvent extends ChatMessageEvent {

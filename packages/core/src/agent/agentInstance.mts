@@ -524,12 +524,12 @@ export class AgentInstance {
   async callTool(
     toolName: string,
     functionName: string,
-    args: any = {},
+    args: Record<string, unknown> = {},
     abortController?: AbortController
-  ): Promise<any> {
+  ): Promise<unknown> {
     // 获取对应的MCP客户端
     const mcpClients = this.getMCPClients();
-    const client = mcpClients.find((client: any) => client.serverName === toolName);
+    const client = mcpClients.find((client) => client.serverName === toolName);
 
     if (!client) {
       throw new Error(`MCP client "${toolName}" not found in agent "${this.config.name}"`);

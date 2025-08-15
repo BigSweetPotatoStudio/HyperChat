@@ -62,7 +62,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       mcpType?: MCPType;
       workspacePath: string;
       globalPath?: string;
-      createServer?: any; // 传输方式 inMemory
+      createServer?: () => Promise<unknown>; // 传输方式 inMemory
     }
   ) {
     this.mcpType = options.mcpType || "custom";
@@ -73,7 +73,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       // 工作区服务器
       const server = WorkSpaceServers.find((s) => s.name === serverName);
       if (server?.configSchema) {
-        this.ext.configSchema = zodToJsonSchema(server.configSchema) as any;
+        this.ext.configSchema = zodToJsonSchema(server.configSchema) as MCPConfigSchema;
       }
     }
   }
@@ -106,16 +106,16 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     }
 
     try {
-      const options: any = { timeout: timeoutMs };
+      const options: { timeout: number; signal?: AbortSignal } = { timeout: timeoutMs };
       if (combinedSignal) {
         options.signal = combinedSignal;
       }
       
       return await this.client.callTool(
-        { name: functionName, arguments: args as any },
+        { name: functionName, arguments: args as ToolCallArgs },
         CallToolResultSchema,
         options
-      ) as any;
+      ) as MCPTypes.CallToolResult;
     } catch (error) {
       // 检查是否是中断错误
       if (abortController?.signal?.aborted) {
@@ -131,7 +131,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       throw new Error("MCP Client is not initialized");
     }
     try {
-      const options: any = { timeout: timeoutMs };
+      const options: { timeout: number; signal?: AbortSignal } = { timeout: timeoutMs };
       if (abortController?.signal) {
         options.signal = abortController.signal;
       }
@@ -139,14 +139,14 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       const res = await this.client.request(
         {
           method: "tools/call",
-          params: { name: functionName, arguments: args as any },
+          params: { name: functionName, arguments: args as ToolCallArgs },
         },
         CompatibilityCallToolResultSchema,
         options
       );
 
       this.logInfo("CompatibilityCallToolResultSchema success:", res);
-      return (res as any).toolResult || res;
+      return (res as { toolResult?: unknown }).toolResult || res;
     } catch (error) {
       // 检查是否是中断错误
       if (abortController?.signal?.aborted) {
@@ -179,7 +179,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     }
     this.logInfo("MCP callPrompt", functionName, args);
     await this.ensureConnected();
-    return await this.client.getPrompt({ name: functionName, arguments: args as any });
+    return await this.client.getPrompt({ name: functionName, arguments: args as ToolCallArgs });
   }
 
   private mapToolsToHyperChatFormat(tools: MCPTypes.Tool[]): HyperChatCompletionTool[] {

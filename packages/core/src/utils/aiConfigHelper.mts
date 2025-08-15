@@ -43,7 +43,7 @@ export function buildEffectiveConfig(
   // 获取可用模型列表
   const availableModels = aiSettings?.models || [];
   const isModelAvailable = (modelKey: string) =>
-    availableModels.some((model: any) => model.key === modelKey);
+    availableModels.some((model) => model.key === modelKey);
 
   const firstAvailableModel = availableModels[0]?.key || '';
 
@@ -213,6 +213,6 @@ export function logAIConfig(logger: typeof Logger, env: AIEnvironment): void {
   logger.info(`🤖 使用模型: ${env.effectiveConfig.modelKey}`);
   logger.info(`🤖 使用Agent: ${agentConfig.name}`);
 
-  const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
+  const mcpToolCount = env.mcpClients.flatMap((client) => client.tools || []).length;
   logger.info(`🔧 可用MCP工具数量: ${mcpToolCount}`);
 }

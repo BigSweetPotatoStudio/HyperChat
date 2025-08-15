@@ -128,36 +128,36 @@ export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'uuid'> = (() => {
 })();
 
 // 验证函数
-export function validateAppSettings(data: any): data is AppSettings {
+export function validateAppSettings(data: unknown): data is AppSettings {
   return AppSettingsSchema.safeParse(data).success;
 }
 
-export function validateAppearanceSettings(data: any): data is AppearanceSettings {
+export function validateAppearanceSettings(data: unknown): data is AppearanceSettings {
   return AppearanceSchema.safeParse(data).success;
 }
 
 
-export function validateSystemSettings(data: any): data is SystemSettings {
+export function validateSystemSettings(data: unknown): data is SystemSettings {
   return SystemSchema.safeParse(data).success;
 }
 
-export function validateDesktopSettings(data: any): data is DesktopSettings {
+export function validateDesktopSettings(data: unknown): data is DesktopSettings {
   return DesktopSchema.safeParse(data).success;
 }
 
-export function validateAISettings(data: any): data is AISettings {
+export function validateAISettings(data: unknown): data is AISettings {
   return AIConfigSchema.safeParse(data).success;
 }
 
-export function validateAIModelConfigItem(data: any): data is AIModelConfigItem {
+export function validateAIModelConfigItem(data: unknown): data is AIModelConfigItem {
   return AIModelConfigItemSchema.safeParse(data).success;
 }
 
-export function validateProviderConfig(data: any): data is ProviderConfig {
+export function validateProviderConfig(data: unknown): data is ProviderConfig {
   return ProviderConfigSchema.safeParse(data).success;
 }
 
-export function validateMCPGateway(data: any): data is MCPGateway {
+export function validateMCPGateway(data: unknown): data is MCPGateway {
   return MCPGatewaySchema.safeParse(data).success;
 }
 

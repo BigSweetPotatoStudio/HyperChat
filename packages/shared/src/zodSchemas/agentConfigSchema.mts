@@ -96,11 +96,11 @@ export function createDefaultAgentConfig(name: string, prompt: string): AgentCon
 }
 
 // 验证函数
-export function validateBaseAIConfig(data: any): data is BaseAIConfig {
+export function validateBaseAIConfig(data: unknown): data is BaseAIConfig {
   return BaseAIConfigSchema.safeParse(data).success;
 }
 
-export function validateAgentConfig(data: any): data is AgentConfig {
+export function validateAgentConfig(data: unknown): data is AgentConfig {
   return AgentConfigSchema.safeParse(data).success;
 }
 
@@ -175,7 +175,7 @@ export const ChatHistoryItemSchema = z.object({
 export type ChatHistoryItemType = z.infer<typeof ChatHistoryItemSchema>;
 
 // ChatHistoryItem 验证函数
-export function validateChatHistoryItem(data: any): data is ChatHistoryItemType {
+export function validateChatHistoryItem(data: unknown): data is ChatHistoryItemType {
   return ChatHistoryItemSchema.safeParse(data).success;
 }
 
