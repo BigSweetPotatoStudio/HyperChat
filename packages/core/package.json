@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat",
-  "version": "2.0.0-alpha.57",
+  "version": "2.0.0-alpha.58",
   "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
   "license": "MIT",
@@ -60,6 +60,7 @@
     "ink-spinner": "5.0.0",
     "ink-text-input": "6.0.0",
     "js-yaml": "^4.1.0",
+    "json-schema-to-zod": "^2.6.1",
     "jsonc-parser": "^3.3.1",
     "koa-body": "^6.0.1",
     "koa-mount": "^4.0.0",
@@ -79,9 +80,12 @@
     "react-markdown": "^9.0.1",
     "shell-path": "^3.0.0",
     "socket.io": "^4.8.1",
+    "uuid": "^11.1.0",
     "wav": "^1.0.2",
     "wav-encoder": "^1.3.0",
     "webdav": "^5.6.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.24.6",
     "zx": "8.7.1"
   },
   "devDependencies": {
