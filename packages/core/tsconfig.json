@@ -25,8 +25,8 @@
     "src",
     "types",
     "**/*.json",
-    "../shared/",
-    "../shared/**/*.json",
+    "../shared/src",
+    "../shared/src/**/*.json",
   ],
   "exclude": [
     "node_modules",
