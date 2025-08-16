@@ -449,7 +449,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       };
       aiChannel.addMessage(userMessage);
 
-      // 生成聊天Key
+      // 生成聊天Key（一次性生成，整个会话复用）
       const chatKey = getMyUuid();
 
       console.log(`\n🤖 ${t`AI reply:`}`);

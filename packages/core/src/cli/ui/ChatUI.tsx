@@ -116,6 +116,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
   const [aiChannel] = useState(() => createAIChannel()); // 创建AI通道
+  const [chatKey, setChatKey] = useState(() => getMyUuid()); // 聊天Key状态管理
 
 
 
@@ -241,6 +242,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
         aiChannel.messages = chatLog.messages;
       }
 
+      // 恢复原始的 chatKey，确保后续保存到同一文件
+      setChatKey(chatLog.key);
+
       logger.info(`✅ ${t`Loaded chat log:`} ${chatLog.label} (${chatLog.messages?.length || 0} ${t`messages`})`);
       forceRefresh();
       addSystemMessage(`✅ ${t`Resumed chat:`} ${chatLog.label}`);
@@ -307,6 +311,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
       // 清空AI消息和系统消息
       aiChannel.messages = [];
       setSystemMessages([]);
+      // 重新生成 chatKey，开始新的聊天会话
+      setChatKey(getMyUuid());
       addSystemMessage(`✅ ${t`Chat history cleared`}`);
       forceRefresh();
       setInput('');
@@ -428,8 +434,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
 
   // 处理用户输入的核心逻辑
   const handleUserInput = async (userInput: string): Promise<void> => {
-    // 生成聊天Key
-    const chatKey = getMyUuid();
+    // 使用已生成的聊天Key
 
     // 添加用户消息
     const userMessage: MyMessage = {
