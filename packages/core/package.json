@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat",
-  "version": "2.0.0-alpha.54",
+  "version": "2.0.0-alpha.55",
   "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
   "license": "MIT",
@@ -70,7 +70,6 @@
     "multer": "^1.4.5-lts.2",
     "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
-    "node-pty": "^1.0.0",
     "opusscript": "^0.1.1",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^4.10.38",
