@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat-web",
-  "version": "2.0.0-alpha.56",
+  "version": "2.0.0-alpha.57",
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "^1.24.0",

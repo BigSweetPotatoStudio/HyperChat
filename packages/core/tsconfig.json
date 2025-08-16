@@ -10,9 +10,6 @@
       "./types"
     ],
     "paths": {
-      "@dadigua/hyperchat-shared/*": [
-        "../shared/src/*"
-      ],
       "@dadigua/hyperchat-shared": [
         "../shared/src/index.ts"
       ]
@@ -24,7 +21,7 @@
   "include": [
     "src",
     "types",
-    "**/*.json",
+    "package.json",
     "../shared/src",
     "../shared/src/**/*.json",
   ],
