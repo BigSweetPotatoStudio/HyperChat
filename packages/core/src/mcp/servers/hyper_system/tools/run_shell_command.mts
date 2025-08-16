@@ -48,14 +48,6 @@ function getCommandRoot(command: string): string | undefined {
  * 检查命令是否允许执行（基础安全检查）
  */
 function isCommandAllowed(command: string): { allowed: boolean; reason?: string } {
-  // 禁止命令替换
-  if (command.includes('$(')) {
-    return {
-      allowed: false,
-      reason: 'Command substitution using $() is not allowed for security reasons',
-    };
-  }
-
   // 使用正则表达式精确匹配危险命令模式
   const dangerousPatterns = [
     /^\s*rm\s+-rf\s+\/\s*$/i,                    // rm -rf /
