@@ -10,7 +10,7 @@ import chalk from 'chalk';
 import { Logger } from '../utils/logger.mjs';
 import { getAppSettingsManager } from '../../data/appSettingsService.mjs';
 import { AiChannel } from '../../ai/ai.mjs';
-import type { MyMessage } from '@dadigua/hyperchat-shared/types';
+import type { MyMessage } from '@dadigua/hyperchat-shared';
 import { createReadline } from '../utils/readline.mjs';
 import { AgentInstance } from '../../workspace/index.mjs';
 import {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import { t } from '../../i18n.mjs';
-import type { ChatHistoryItem } from '@dadigua/hyperchat-shared/types';
+import type { ChatHistoryItem } from '@dadigua/hyperchat-shared';
 
 interface ChatLogSelectorProps {
   chatLogs: ChatHistoryItem[];

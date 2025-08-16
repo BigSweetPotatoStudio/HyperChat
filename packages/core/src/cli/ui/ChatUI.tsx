@@ -4,7 +4,7 @@ import Spinner from 'ink-spinner';
 import { marked } from 'marked';
 import TerminalRenderer from 'marked-terminal';
 import { t } from '../../i18n.mjs';
-import type { MyMessage, CommonContent, ChatHistoryItem } from '@dadigua/hyperchat-shared/types';
+import type { MyMessage, CommonContent, ChatHistoryItem } from '@dadigua/hyperchat-shared';
 import chalk from 'chalk';
 import ChatLogSelector from './ChatLogSelector.js';
 import { SmartTextInput, type Command } from './SmartTextInput.js';
@@ -638,7 +638,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
           {/* 只显示一次 AI 标签 */}
           <Text color="green">🤖 {t`AI:`}</Text>
 
-          {msgList.map((message, msgIndex) => {
+          {msgList.map((message: MyMessage, msgIndex) => {
             if (message.role === 'assistant') {
               return (
                 <Box key={`assistant-${msgIndex}`} flexDirection="column">
@@ -656,7 +656,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
                       <Text>{renderMarkdown(renderContent(message.content))}</Text>
                     </Box>
                   )}
-
                   {/* 工具调用 */}
                   {message.content_tool_calls && message.content_tool_calls.map((tool, toolIndex) => {
                     // 根据消息状态显示不同的工具调用状态

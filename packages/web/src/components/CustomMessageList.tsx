@@ -22,7 +22,7 @@ import {
   VerticalAlignBottomOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { MyMessage } from '@dadigua/hyperchat-shared/types';
+import { MyMessage } from '@dadigua/hyperchat-shared';
 import { setClipboardText } from '../common/util';
 import { t } from '../i18n';
 import { Icon } from './icon';

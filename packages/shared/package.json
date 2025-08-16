@@ -52,13 +52,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "2.0.0",
-    "@ai-sdk/google": "2.0.0",
-    "@ai-sdk/openai": "2.0.0",
-    "@ai-sdk/openai-compatible": "1.0.0",
-    "@modelcontextprotocol/sdk": "^1.13.3",
-    "@openrouter/ai-sdk-provider": "1.0.0-beta.6",
-    "ai": "5.0.0",
     "json-schema-to-zod": "^2.6.1",
     "uuid": "^11.0.3",
     "zod": "^3.25.76",
@@ -67,7 +60,7 @@
   "devDependencies": {
     "@types/node": "^22.7.5",
     "@types/uuid": "^10.0.0",
-    "typescript": "^5.5.2"
+    "typescript": "^5.9.2"
   },
   "files": [
     "dist",

@@ -6,11 +6,6 @@
   },
   "version": "2.0.0-alpha.55",
   "private": true,
-  "workspaces": [
-    "packages/shared",
-    "packages/core",
-    "packages/web"
-  ],
   "scripts": {
     "dev": "node scripts/build.mjs dev",
     "dev:web": "node scripts/build.mjs dev web",
@@ -27,8 +22,8 @@
     "publish:core": "node scripts/build.mjs publishCore",
     "publish:all": "node scripts/build.mjs publishAll",
     "clean": "node scripts/build.mjs clean",
-    "typecheck": "npm run typecheck --workspaces",
-    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "cd packages/shared && npm run typecheck && cd ../core && npm run typecheck && cd ../web && npm run typecheck && cd ../electron && npm run typecheck",
+    "lint": "cd packages/shared && npm run lint && cd ../core && npm run lint && cd ../web && npm run lint && cd ../electron && npm run lint",
     "extract-i18n": "node scripts/extract-i18n.mjs",
     "i18n": "node scripts/extract-i18n.mjs",
     "version:sync": "node scripts/sync-version.mjs",

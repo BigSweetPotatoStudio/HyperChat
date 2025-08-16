@@ -1,4 +1,4 @@
-import { MCPServerConfig, IMCPClient } from "@dadigua/hyperchat-shared/types";
+import { MCPServerConfig, IMCPClient } from "@dadigua/hyperchat-shared";
 import { getWorkspaceManager, workspaceManager } from "../workspace/index.mjs";
 
 // findAgentByMcpClient 函数已移除，因为现在使用工作区级别的 MCP 管理

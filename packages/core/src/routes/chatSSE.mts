@@ -6,7 +6,7 @@ import { Router, Request, Response } from 'express';
 import { SSEWriter } from '../sse/SSEWriter.mjs';
 import { Logger } from '../log.mjs';
 import { streamChatCompletion, handleToolConfirmResponse } from '../commands/chatCommands.mjs';
-import { MyMessage } from '@dadigua/hyperchat-shared/types';
+import { MyMessage } from '@dadigua/hyperchat-shared';
 import { BaseAIConfig } from '@dadigua/hyperchat-shared';
 import type { AiChannel } from '../ai/ai.mjs';
 import { getBuiltinPrompts } from '../ai/hyperchat-builtin-prompts.mjs';

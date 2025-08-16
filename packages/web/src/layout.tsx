@@ -55,7 +55,7 @@ import type { Language } from "@dadigua/hyperchat-shared";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
 
-} from "@dadigua/hyperchat-shared/types";
+} from "@dadigua/hyperchat-shared";
 import { InitedClient, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import {
