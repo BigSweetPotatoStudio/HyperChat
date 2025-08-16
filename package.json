@@ -4,7 +4,7 @@
     "name": "Dadigua",
     "email": "0laopo0@gmail.com"
   },
-  "version": "2.0.0-alpha.55",
+  "version": "2.0.0-alpha.56",
   "private": true,
   "scripts": {
     "dev": "node scripts/build.mjs dev",
@@ -18,9 +18,7 @@
     "build:core": "node scripts/build.mjs buildCore",
     "build:electron": "node scripts/build.mjs buildElectron",
     "build:publish": "node scripts/build.mjs buildForPublish",
-    "publish:shared": "node scripts/build.mjs publishShared",
     "publish:core": "node scripts/build.mjs publishCore",
-    "publish:all": "node scripts/build.mjs publishAll",
     "clean": "node scripts/build.mjs clean",
     "typecheck": "cd packages/shared && npm run typecheck && cd ../core && npm run typecheck && cd ../web && npm run typecheck && cd ../electron && npm run typecheck",
     "lint": "cd packages/shared && npm run lint && cd ../core && npm run lint && cd ../web && npm run lint && cd ../electron && npm run lint",
