@@ -6,7 +6,7 @@ export const CONSTANTS = {
   HYPERCHAT_DIR: '.hyperchat',
   CONFIG_FILES: {
     MCP: 'mcp.json',
-    AGENT_CONFIG: 'agent.yaml',
+    AGENT_CONFIG: 'agent.md',
   },
   DIRECTORIES: {
     AGENTS: 'agents',

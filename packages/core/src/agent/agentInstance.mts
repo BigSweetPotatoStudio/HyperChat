@@ -49,6 +49,9 @@ export class AgentInstance {
       temperature: 0.7,
     };
 
+    // 检查并执行自动迁移
+    this.checkAndMigrateConfig();
+
     // 加载配置
     this.loadConfig();
 
@@ -59,6 +62,57 @@ export class AgentInstance {
 
     // 初始化命令管理器
     this.commandManager = new AgentCommandManager(this.agentPath);
+  }
+
+  /**
+   * 检查并执行自动迁移（从 agent.yaml 到 agent.md）
+   */
+  private checkAndMigrateConfig(): void {
+    const newConfigPath = this.configPath; // agent.md
+    const oldConfigPath = path.join(this.agentPath, 'agent.yaml'); // 旧的 agent.yaml
+
+    // 如果新格式文件已存在，无需迁移
+    if (fs.existsSync(newConfigPath)) {
+      return;
+    }
+
+    // 如果旧格式文件存在，执行迁移
+    if (fs.existsSync(oldConfigPath)) {
+      try {
+        console.log(`🔄 检测到旧格式配置文件，正在迁移: ${path.basename(this.agentPath)}`);
+        this.migrateConfigFromYaml(oldConfigPath, newConfigPath);
+        console.log(`✅ 迁移完成: ${oldConfigPath} → ${newConfigPath}`);
+      } catch (error) {
+        console.warn(`⚠️ 配置文件迁移失败 ${path.basename(this.agentPath)}:`, error);
+      }
+    }
+  }
+
+  /**
+   * 执行从 YAML 到 Markdown 格式的迁移
+   */
+  private migrateConfigFromYaml(oldConfigPath: string, newConfigPath: string): void {
+    // 读取旧的 YAML 配置
+    const oldContent = fs.readFileSync(oldConfigPath, 'utf-8');
+    const oldConfig = yaml.load(oldContent) as AgentConfig;
+
+    // 分离 prompt 和其他配置
+    const { prompt, ...configWithoutPrompt } = oldConfig;
+
+    // 生成新格式的内容
+    const frontMatter = yaml.dump(configWithoutPrompt, { indent: 2 });
+    const newContent = `---
+${frontMatter}---
+
+${prompt || ''}`;
+
+    // 写入新格式文件
+    fs.writeFileSync(newConfigPath, newContent, 'utf-8');
+
+    // 创建旧文件的备份并删除原文件
+    const backupPath = oldConfigPath + '.bak';
+    fs.renameSync(oldConfigPath, backupPath);
+    console.log(`📦 已将旧配置文件备份至: ${backupPath}`);
   }
 
   /**
@@ -114,17 +168,65 @@ export class AgentInstance {
     if (fs.existsSync(this.configPath)) {
       try {
         const content = fs.readFileSync(this.configPath, "utf-8");
-        const config = yaml.load(content) as AgentConfig;
-
+        const parsed = this.parseAgentConfig(content);
+        
         // 合并配置
-        this.config = { ...this.config, ...config };
+        this.config = { ...this.config, ...parsed.config };
 
         // 使用文件夹名称作为 name
         this.config.name = folderName;
 
+        // 保存 prompt 内容
+        if (parsed.prompt) {
+          this.config.prompt = parsed.prompt;
+        }
+
       } catch (error) {
         console.warn(`加载 Agent 配置失败 ${folderName}:`, error);
       }
+    }
+  }
+
+  /**
+   * 解析 Agent 配置文件（支持 YAML Front Matter + Markdown 格式）
+   */
+  private parseAgentConfig(content: string): { config: Partial<AgentConfig>; prompt: string } {
+    const trimmedContent = content.trim();
+    
+    // 检查是否是新的 YAML Front Matter + Markdown 格式
+    if (trimmedContent.startsWith('---')) {
+      const frontMatterEnd = trimmedContent.indexOf('\n---\n', 3);
+      if (frontMatterEnd !== -1) {
+        // 新格式：YAML Front Matter + Markdown
+        const frontMatter = trimmedContent.substring(3, frontMatterEnd);
+        const markdownContent = trimmedContent.substring(frontMatterEnd + 5).trim();
+        
+        try {
+          const config = yaml.load(frontMatter) as Partial<AgentConfig>;
+          return {
+            config,
+            prompt: markdownContent
+          };
+        } catch (error) {
+          console.warn('解析 YAML Front Matter 失败:', error);
+          // 回退到旧格式解析
+        }
+      }
+    }
+    
+    // 旧格式：纯 YAML（向后兼容）
+    try {
+      const config = yaml.load(trimmedContent) as AgentConfig;
+      return {
+        config,
+        prompt: config.prompt || ''
+      };
+    } catch (error) {
+      console.warn('解析 Agent 配置失败:', error);
+      return {
+        config: {},
+        prompt: ''
+      };
     }
   }
 
@@ -134,13 +236,32 @@ export class AgentInstance {
    */
   async saveConfig(): Promise<boolean> {
     try {
-      const yamlContent = yaml.dump(this.config, { indent: 2 });
-      await fs.promises.writeFile(this.configPath, yamlContent, "utf-8");
+      const content = this.generateAgentConfigContent();
+      await fs.promises.writeFile(this.configPath, content, "utf-8");
       return true;
     } catch (error) {
       console.warn(`保存 Agent 配置失败 ${this.config.name}:`, error);
       return false;
     }
+  }
+
+  /**
+   * 生成 Agent 配置文件内容（YAML Front Matter + Markdown 格式）
+   */
+  private generateAgentConfigContent(): string {
+    // 分离 prompt 和其他配置
+    const { prompt, ...configWithoutPrompt } = this.config;
+    
+    // 生成 YAML Front Matter
+    const frontMatter = yaml.dump(configWithoutPrompt, { indent: 2 });
+    
+    // 生成完整内容
+    const content = `---
+${frontMatter}---
+
+${prompt || ''}`;
+    
+    return content;
   }
 
   /**

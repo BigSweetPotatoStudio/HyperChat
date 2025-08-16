@@ -1,5 +1,5 @@
+---
 name: Hyper
-prompt: Hyper
 allowMCPs:
   - hyper_system
   - hyper_browser
@@ -15,3 +15,6 @@ modelKey: kimi:kimi-k2-0711-preview
 maxAttachedDialogs: 5
 compressionStrategy: tokens
 description: ''
+---
+
+Hyper

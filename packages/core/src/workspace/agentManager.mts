@@ -53,14 +53,20 @@ export class AgentManager {
           if (entry.isDirectory() && !entry.name.startsWith('.')) {
             const agentPath = path.join(agentsBasePath, entry.name);
             
-            // 检查是否为有效的Agent目录（存在agent.yaml）
-            const configPath = path.join(agentPath, 'agent.yaml');
-            if (fs.existsSync(configPath)) {
+            // 检查是否为有效的Agent目录（存在 agent.md 或 agent.yaml）
+            const newConfigPath = path.join(agentPath, 'agent.md');
+            const oldConfigPath = path.join(agentPath, 'agent.yaml');
+            if (fs.existsSync(newConfigPath) || fs.existsSync(oldConfigPath)) {
               // 只记录路径，不创建实例
               const agentName = path.basename(agentPath);
               this.availableAgents.set(agentName, agentPath);
               // 后加载的同名Agent会覆盖先加载的（通常是工作区覆盖全局）
               this.nameToPath.set(agentName, agentPath);
+
+              // 如果只有旧格式文件存在，标记为需要迁移
+              if (!fs.existsSync(newConfigPath) && fs.existsSync(oldConfigPath)) {
+                console.log(`📋 发现需要迁移的Agent配置: ${agentName}`);
+              }
             }
           }
         }
