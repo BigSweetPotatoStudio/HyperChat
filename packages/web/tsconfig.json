@@ -29,11 +29,13 @@
     "src",
     "types",
     "**/*.json",
-    "../shared/",
-    "../shared/**/*.json",
+    "../shared/src",
+    "../shared/src/**/*.json",
+    "../electron/src",
+    "../core/src",
+    "../core/**/*.json",
   ],
   "exclude": [
-    "node_modules",
-    "../electron"
+    "node_modules"
   ]
 }
