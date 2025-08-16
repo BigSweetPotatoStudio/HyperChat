@@ -11,9 +11,6 @@
       "./types"
     ],
     "paths": {
-      "@dadigua/hyperchat-shared/*": [
-        "../shared/src/*"
-      ],
       "@dadigua/hyperchat-shared": [
         "../shared/src/index.ts"
       ],
