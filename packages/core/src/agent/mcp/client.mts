@@ -146,7 +146,15 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       );
 
       this.logInfo("CompatibilityCallToolResultSchema success:", res);
-      return (res as { toolResult?: unknown }).toolResult || res;
+      const result = (res as { toolResult?: unknown }).toolResult || res;
+      // 确保返回值有必需的content属性
+      if (typeof result === 'object' && result !== null && !('content' in result)) {
+        return {
+          content: [{ type: "text", text: JSON.stringify(result) }],
+          ...result
+        } as MCPTypes.CallToolResult;
+      }
+      return result as MCPTypes.CallToolResult;
     } catch (error) {
       // 检查是否是中断错误
       if (abortController?.signal?.aborted) {
@@ -179,7 +187,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     }
     this.logInfo("MCP callPrompt", functionName, args);
     await this.ensureConnected();
-    return await this.client.getPrompt({ name: functionName, arguments: args as ToolCallArgs });
+    return await this.client.getPrompt({ name: functionName, arguments: args as Record<string, string> });
   }
 
   private mapToolsToHyperChatFormat(tools: MCPTypes.Tool[]): HyperChatCompletionTool[] {
@@ -392,9 +400,12 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       capabilities: {}
     });
     // console.log("Opening InMemory transport for MCP client:", this.serverName, this.workspacePath, this.options.createServer);
+    if (!this.options.createServer) {
+      throw new Error("createServer option is required for InMemory transport");
+    }
     const transport = await this.options.createServer();
     // console.log("InMemory transport created:", transport);
-    await client.connect(transport);
+    await client.connect(transport as any);
     return client;
   }
 
