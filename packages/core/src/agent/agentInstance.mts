@@ -727,4 +727,47 @@ ${prompt || ''}`;
     }
     await this.commandManager.createExampleCommands();
   }
+
+  /**
+   * 静态方法：创建新的 Agent 实例
+   */
+  static async createAgent(agentPath: string, config: AgentConfig): Promise<AgentInstance> {
+    // 确保目录存在
+    await fs.promises.mkdir(agentPath, { recursive: true });
+    
+    // 创建 Agent 实例
+    const agent = new AgentInstance(agentPath, config);
+    
+    // 初始化并保存配置
+    await agent.init();
+    await agent.saveConfig();
+    
+    // 创建默认记忆文件
+    const memoryPath = path.join(agentPath, 'memory.md');
+    if (!fs.existsSync(memoryPath)) {
+      const defaultMemory = `# ${config.name} Agent Memory
+
+${config.prompt || 'This is an AI assistant created by HyperChat.'}
+
+## Capabilities
+- General conversation and assistance
+- Task planning and organization
+- Information lookup and research
+
+---
+*This memory was automatically created by HyperChat.*`;
+      
+      await fs.promises.writeFile(memoryPath, defaultMemory, 'utf-8');
+    }
+    
+    // 创建聊天记录目录
+    const chatLogsDir = path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS);
+    await fs.promises.mkdir(chatLogsDir, { recursive: true });
+    
+    // 创建子Agent目录
+    const subAgentsDir = path.join(agentPath, 'sub_agents');
+    await fs.promises.mkdir(subAgentsDir, { recursive: true });
+    
+    return agent;
+  }
 }

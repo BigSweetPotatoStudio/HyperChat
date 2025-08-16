@@ -7,6 +7,7 @@
 
 import { AgentInstance } from '../workspace/index.mjs';
 import { findAgent, DEFAULT_AGENT_NAME } from './utils/agentDiscovery.mjs';
+import { findOrCreateDefaultAgent } from './utils/createDefaultAgent.mjs';
 
 /**
  * 全局Agent管理器类
@@ -46,10 +47,18 @@ export class CliAgentManager {
     // 使用Agent发现机制获取Agent
     let agentName = options.agentName || DEFAULT_AGENT_NAME;
     
-    const foundAgent = await findAgent(agentName, {
+    let foundAgent = await findAgent(agentName, {
       agentPath: options.agentPath,
       workspace: options.workspace
     });
+
+    // 如果没找到Agent，并且是寻找默认Agent（Hyper），则自动创建
+    if (!foundAgent && agentName === DEFAULT_AGENT_NAME) {
+      console.log(`🔧 Default agent '${DEFAULT_AGENT_NAME}' not found, creating...`);
+      foundAgent = await findOrCreateDefaultAgent({
+        workspacePath: options.workspace
+      });
+    }
 
     if (!foundAgent) {
       throw new Error(`Agent not found: ${agentName}`);

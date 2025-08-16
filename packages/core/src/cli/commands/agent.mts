@@ -8,6 +8,7 @@ import { workspaceManager } from '../../workspace/index.mjs';
 import { t } from '../../i18n.mjs';
 import { agentCommands } from '../../commands/agentCommands.mjs';
 import type { AgentConfig } from '@dadigua/hyperchat-shared';
+import { WorkSpaceServers } from '../../mcp/servers/index.mjs';
 /**
  * 获取当前工作区路径（使用新的会话管理器，只读模式）
  */
@@ -160,7 +161,7 @@ export async function createAgent(name: string) {
       name: name,
       prompt: basePrompt, // 只保存基础 prompt，不预先调用 getBuiltinPrompts
       description: `${name} 助手`,
-      allowMCPs: [] as string[],
+      allowMCPs: WorkSpaceServers.map(server => server.name),
       isConfirmCallTool: false,
       tags: ['cli-created']
     };

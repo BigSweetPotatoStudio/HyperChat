@@ -10,6 +10,9 @@ import { EnvManager } from '../../data/managers/envManager.mjs';
 import { t } from '../../i18n.mjs';
 import { Logger } from '../utils/logger.mjs';
 import type { DiscoveredAgent } from './agentDiscovery.mjs';
+import { AgentInstance } from '../../agent/agentInstance.mjs';
+import type { AgentConfig } from '@dadigua/hyperchat-shared';
+import { WorkSpaceServers } from '../../mcp/servers/index.mjs';
 
 /**
  * 默认Agent名称
@@ -17,44 +20,24 @@ import type { DiscoveredAgent } from './agentDiscovery.mjs';
 export const DEFAULT_AGENT_NAME = 'Hyper';
 
 /**
- * 默认Agent配置模板（YAML格式）
+ * 默认Agent配置模板（AgentConfig格式）
  */
-const DEFAULT_AGENT_CONFIG_YAML = `name: ${DEFAULT_AGENT_NAME}
-description: "HyperChat default AI assistant"
-model: "moonshot-v2"
-provider: "moonshot"
-temperature: 0.7
-maxTokens: 4000
-systemPrompt: "You are Hyper, a helpful AI assistant created by HyperChat. You are knowledgeable, friendly, and always ready to help users with their questions and tasks."
-tools: []
-enabled: true
-created: "${new Date().toISOString()}"
-updated: "${new Date().toISOString()}"
-`;
-
-/**
- * 默认Agent记忆模板
- */
-const DEFAULT_AGENT_MEMORY = `# ${DEFAULT_AGENT_NAME} Agent Memory
-
-This is the default HyperChat AI assistant. I'm here to help you with various tasks and questions.
-
-## My Capabilities
-- General conversation and assistance
-- Code help and programming questions  
-- Information lookup and research
-- Task planning and organization
-- Creative writing and brainstorming
-
-## Personality
-- Helpful and friendly
-- Professional but approachable
-- Clear and concise communication
-- Always ready to learn and adapt
-
----
-*This memory was automatically created by HyperChat CLI.*
-`;
+function createDefaultAgentConfig(): AgentConfig {
+  return {
+    name: DEFAULT_AGENT_NAME,
+    prompt: "You are Hyper, a helpful AI assistant created by HyperChat. You are knowledgeable, friendly, and always ready to help users with their questions and tasks.",
+    allowMCPs: WorkSpaceServers.map(server => server.name),
+    blockMCPTools: [],
+    isConfirmCallTool: false,
+    maxTokens: 4000,
+    maxContextTokens: 32000,
+    tags: ['default', 'assistant'],
+    subAgents: [],
+    version: 1,
+    temperature: 0.7,
+    description: "HyperChat default AI assistant"
+  };
+}
 
 /**
  * 寻找默认Agent：本地 > 全局 > 创建
@@ -159,24 +142,9 @@ async function createGlobalDefaultAgent(): Promise<DiscoveredAgent> {
     DEFAULT_AGENT_NAME
   );
   
-  // 创建Agent目录
-  fs.mkdirSync(globalAgentPath, { recursive: true });
-  
-  // 创建Agent配置文件
-  const configPath = path.join(globalAgentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
-  fs.writeFileSync(configPath, DEFAULT_AGENT_CONFIG_YAML, 'utf8');
-  
-  // 创建Agent记忆文件
-  const memoryPath = path.join(globalAgentPath, 'memory.md');
-  fs.writeFileSync(memoryPath, DEFAULT_AGENT_MEMORY, 'utf8');
-  
-  // 创建聊天记录目录
-  const chatLogsDir = path.join(globalAgentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS);
-  fs.mkdirSync(chatLogsDir, { recursive: true });
-  
-  // 创建子Agent目录（为将来扩展准备）
-  const subAgentsDir = path.join(globalAgentPath, 'sub_agents');
-  fs.mkdirSync(subAgentsDir, { recursive: true });
+  // 使用 AgentInstance 静态方法创建默认Agent
+  const defaultConfig = createDefaultAgentConfig();
+  await AgentInstance.createAgent(globalAgentPath, defaultConfig);
   
   return {
     name: DEFAULT_AGENT_NAME,
@@ -223,16 +191,16 @@ export async function checkDefaultAgentExists(workspacePath?: string): Promise<{
 
 /**
  * 确保默认Agent配置是最新的
- * 由于使用YAML格式，这里简化为检查文件存在性
+ * 使用 AgentInstance 方法重新创建配置
  */
 export async function ensureDefaultAgentConfig(agentPath: string): Promise<void> {
   const configPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
   
   if (!fs.existsSync(configPath)) {
-    // 如果配置文件不存在，创建它
-    fs.writeFileSync(configPath, DEFAULT_AGENT_CONFIG_YAML, 'utf8');
+    // 如果配置文件不存在，使用 AgentInstance 创建
+    const defaultConfig = createDefaultAgentConfig();
+    await AgentInstance.createAgent(agentPath, defaultConfig);
   }
   
-  // 对于YAML格式，我们保持简单，只确保文件存在
-  // 如果需要更复杂的配置更新，可以在这里使用YAML解析库
+  // 对于现有配置文件，保持不变，避免覆盖用户自定义的设置
 }
