@@ -4,7 +4,7 @@
     "name": "Dadigua",
     "email": "0laopo0@gmail.com"
   },
-  "version": "2.0.0-alpha.58",
+  "version": "2.0.0-alpha.59",
   "private": true,
   "scripts": {
     "dev": "node scripts/build.mjs dev",
@@ -45,7 +45,6 @@
     "@ant-design/x": "^1.1.1",
     "@anthropic-ai/sdk": "^0.39.0",
     "@modelcontextprotocol/sdk": "^1.13.3",
-    "@monaco-editor/react": "^4.7.0",
     "@openrouter/ai-sdk-provider": "^0.7.2",
     "ai": "^4.3.16",
     "boxen": "^7.1.1",
