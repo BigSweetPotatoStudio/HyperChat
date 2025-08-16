@@ -50,6 +50,7 @@ export class AiChannel {
     },
     public messages: MyMessage[] = []
   ) {
+
   }
   addMessage(
     message: MyMessage,
@@ -485,17 +486,6 @@ export class AiChannel {
         }
 
 
-        // console.log("tool_calls", tool_calls);
-        // let localtool = tools.find(
-        //   (t) => t.name === tool.function.name,
-        // );
-        // let clientName = localtool?.clientName;
-        // let clientName = "";
-        // if (!clientName) {
-        //   console.error("client not found", tool);
-        //   throw new Error("client not found");
-        // }
-
         // 生成工具消息的 messageId
         const toolMessageId = MessageConverter.generateToolMessageId(this.messages.length);
 
@@ -686,6 +676,7 @@ export class AiChannel {
         model: aiOptions.model,
         schema: schema,
         prompt: prompt,
+        mode: "tool",
         providerOptions: {
           // 这里可以添加提供者选项
           "qwen": {

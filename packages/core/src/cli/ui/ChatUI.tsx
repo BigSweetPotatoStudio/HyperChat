@@ -362,12 +362,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
     }
 
     if (trimmedInput === '/compress') {
-      // 检查是否有足够的消息可以压缩
-      if (!aiChannel?.tokenUsage) {
-        addSystemMessage(`❌ ${t`Token usage information not available`}`);
-        setInput('');
-        return;
-      }
 
       const hasContent = messages.length > 1; // 至少需要有一些对话内容
       if (!hasContent) {
@@ -401,7 +395,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
           });
 
           forceRefresh();
-          addSystemMessage(`✅ ${t`Memory compression completed successfully`}`);
         } else {
           throw new Error(t`Memory compression not available`);
         }

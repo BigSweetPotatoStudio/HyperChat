@@ -206,8 +206,7 @@ export class MemoryCompressor {
       });
 
       onUpdate && onUpdate({ type: "compress_error", error });
-      Logger.error("Memory compression failed:", error);
-      Logger.warn("记忆压缩失败，继续使用完整对话历史");
+      Logger.error("Memory compression failed:", String(error));
 
       return memoryMessage;
     }

@@ -11,7 +11,7 @@ tags: []
 subAgents: []
 version: 1
 temperature: 0.7
-modelKey: glm:glm-4.5
+modelKey: kimi:kimi-k2-0711-preview
 maxAttachedDialogs: 5
 compressionStrategy: tokens
 description: ''
