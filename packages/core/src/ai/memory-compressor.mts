@@ -178,7 +178,7 @@ export class MemoryCompressor {
         useModelKey
       );
 
-      memoryMessage.content = summary.summary;
+      memoryMessage.content = summary.summary + "\n" + summary.important_context;
       memoryMessage.memory_key_points = summary.key_points;
       memoryMessage.memory_original_count = compressMessagesCount;
       memoryMessage.content_date = Date.now();
@@ -246,7 +246,7 @@ ${conversationText}
 - title: 对话的简短标题，3-10个字
 - summary: 对话的简洁摘要
 - key_points: 重要观点和决策的数组
-- important_context: 需要保留的重要上下文信息`;
+- important_context: 需要保留的重要上下文信息，字符串`;
 
     return await completionParseFn(
       { modelKey },

@@ -160,9 +160,6 @@ export async function initializeAIEnvironment(options: {
 export function createAIChannel(): AiChannel {
   const aiChannel = new AiChannel();
 
-  // 注册 AI 设置（现在不需要传入任何参数）
-  aiChannel.register();
-
   return aiChannel;
 }
 

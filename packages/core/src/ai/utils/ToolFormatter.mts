@@ -16,9 +16,10 @@ export class ToolFormatter {
     const result: ToolSet = {};
 
     for (const tool of tools) {
+      const schema = this.convertSchema(tool);
       result[tool.name] = {
         description: tool.description || '',
-        inputSchema: this.convertSchema(tool),
+        inputSchema: schema || z.object({}),
       };
     }
 

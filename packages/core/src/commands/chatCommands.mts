@@ -109,8 +109,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     if (!aiChannel) {
       // 创建新的 AI 通道
       aiChannel = new AiChannel({}, [...messages]);
-      // 注册扩展（现在不需要传入任何参数）
-      aiChannel.register();
     } else {
       // 使用现有的 aiChannel，更新消息（如果需要同步）
       // 这里可能需要根据实际需求决定是否同步消息
@@ -227,9 +225,6 @@ export async function aiCompletionParse(params: AICompletionParseRequest): Promi
 
     // 创建 AI 通道
     const aiChannel = new AiChannel({}, []);
-
-    // 注册扩展
-    aiChannel.register();
 
     // 将 JSON Schema 转换为 Zod Schema
     const zodSchema = createZodSchemaFromJsonSchema(schema);

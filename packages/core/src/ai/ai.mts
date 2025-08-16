@@ -6,7 +6,7 @@ import type { KnownProvider } from "@dadigua/hyperchat-shared";
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { LanguageModel, StreamTextResult, ToolChoice, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
-import { generateObject, streamObject, jsonSchema, smoothStream, streamText } from 'ai';
+import { generateObject, streamObject, jsonSchema, smoothStream, streamText, tool } from 'ai';
 import { z, ZodSchema } from "zod";
 // 兼容旧版本的 zod
 if (typeof globalThis !== 'undefined') {
@@ -29,6 +29,7 @@ import { MessageConverter } from "./utils/MessageConverter.mjs";
 import { ToolFormatter } from "./utils/ToolFormatter.mjs";
 import { EnvManager } from "../data/managers/envManager.mjs";
 import { buildEffectiveConfig } from "../utils/aiConfigHelper.mjs";
+import { resolve } from "path";
 
 
 
@@ -48,9 +49,16 @@ export class AiChannel {
     public options?: {
 
     },
-    public messages: MyMessage[] = []
-  ) {
+    public messages: MyMessage[] = [],
 
+  ) {
+    // 初始化记忆压缩器
+    if (!this.ext.memoryCompressor) {
+      const summaryGenerator = createDefaultMemorySummaryGenerator(
+        this.completionParse.bind(this)
+      );
+      this.ext.memoryCompressor = new MemoryCompressor(summaryGenerator);
+    }
   }
   addMessage(
     message: MyMessage,
@@ -607,9 +615,9 @@ export class AiChannel {
       return newMessage.content as string;
     }
   }
-  ext!: {
+  ext: {
     memoryCompressor?: MemoryCompressor;
-  };
+  } = {};
 
   // 获取 MCP 工具 - Agent-centered版本（使用封装的getMCPTools方法）
   private getMcpTools(agentInstance: AgentInstance, allowMCPs?: string[], blockMCPTools?: string[]): HyperChatCompletionTool[] {
@@ -626,17 +634,6 @@ export class AiChannel {
     const writer = sseWriter || this.sseWriter;
     if (writer && !writer.isClosed()) {
       writer.write({ type, data: { ...(data as object), messageId } });
-    }
-  }
-  register(ext?: Partial<this["ext"]>) {
-    this.ext = { ...this.ext, ...ext };
-
-    // 初始化记忆压缩器
-    if (!this.ext.memoryCompressor) {
-      const summaryGenerator = createDefaultMemorySummaryGenerator(
-        this.completionParse.bind(this)
-      );
-      this.ext.memoryCompressor = new MemoryCompressor(summaryGenerator);
     }
   }
 
@@ -671,47 +668,64 @@ export class AiChannel {
     let aiOptions = await this.getAIOptions(modelKey);
     if (!aiOptions || !aiOptions.model) throw new Error('AI model not initialized');
 
-    try {
-      const res = await streamObject({
+    return new Promise(async (resolve, reject) => {
+      await streamText({
         model: aiOptions.model,
-        schema: schema,
-        prompt: prompt,
-        mode: "tool",
-        providerOptions: {
-          // 这里可以添加提供者选项
-          "qwen": {
-            enable_thinking: false,
-          }
-        }
+        tools: {
+          weather: tool({
+            description: '请返回json',
+            inputSchema: schema,
+            execute: async (json) => {
+              resolve(json);
+            },
+          }),
+        },
+        onError: (e) => {
+          reject(e)
+        },
+        prompt: prompt
       });
-
-      // 可选：处理流式更新
-      for await (const d of res.fullStream) {
-        // 这里可以添加实时更新逻辑，如果需要的话
-        // console.log('Partial object:', partialObject);
-        if (d.type === 'error') {
-          throw d.error;
-        }
-      }
-
-      return res.object;
-    } catch (error) {
-
-      const res = await generateObject({
-        model: aiOptions.model,
-        schema: schema,
-        prompt: prompt,
-        providerOptions: {
-          // 这里可以添加提供者选项
-          "qwen": {
-            enable_thinking: false,
-          }
-        }
-      });
+    })
+    // const result = await streamText({
+    //   model: 'openai/gpt-4o',
+    //   tools: {
+    //     weather: tool({
+    //       description: 'Get the weather in a location',
+    //       inputSchema: schema,
+    //       execute: async ({ location }) => ({
+    //         location,
+    //         temperature: 72 + Math.floor(Math.random() * 21) - 10,
+    //       }),
+    //     }),
+    //   },
+    //   prompt: 'What is the weather in San Francisco?',
+    // });
 
 
-      return res.object;
-    }
+    // const res = await streamObject({
+    //   model: aiOptions.model,
+    //   schema: schema,
+    //   prompt: prompt,
+    //   mode: "tool",
+    //   providerOptions: {
+    //     // 这里可以添加提供者选项
+    //     "qwen": {
+    //       enable_thinking: false,
+    //     }
+    //   }
+    // });
+
+    // // 可选：处理流式更新
+    // for await (const d of res.fullStream) {
+    //   // 这里可以添加实时更新逻辑，如果需要的话
+    //   // console.log('Partial object:', partialObject);
+    //   if (d.type === 'error') {
+    //     throw d.error;
+    //   }
+    // }
+    // let obj = await res.object
+    // return obj;
+
 
   }
 
