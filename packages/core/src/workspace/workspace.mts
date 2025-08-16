@@ -6,7 +6,7 @@ import {
   WorkspaceFileNode,
   AgentConfig
 } from "./types.mjs";
-import type { ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared/types";
+import type { ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared";
 import { AgentManager } from "./agentManager.mjs";
 import { AgentInstance } from "../agent/agentInstance.mjs";
 import { Logger } from "../log.mjs";

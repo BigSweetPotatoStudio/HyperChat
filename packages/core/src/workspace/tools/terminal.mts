@@ -1,7 +1,7 @@
 import os from "os";
 import { EventEmitter } from "events";
 import { Logger } from "../../log.mjs";
-import type { TerminalMessage, TerminalMessageExtended } from "@dadigua/hyperchat-shared/types";
+import type { TerminalMessage, TerminalMessageExtended } from "@dadigua/hyperchat-shared";
 import { getMessageService } from "../../message_service.mjs";
 
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";

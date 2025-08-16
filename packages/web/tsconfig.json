@@ -1,33 +1,41 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": false,
-    "baseUrl": "./src",
+    "outDir": "./dist",
+    "rootDir": "../",
     "jsxFactory": "React.createElement",
     "jsxFragmentFactory": "React.Fragment",
     "jsx": "react",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
+    ],
     "paths": {
-      "@/*": [
-        "./*"
-      ],
       "@dadigua/hyperchat-shared/*": [
         "../shared/src/*"
       ],
       "@dadigua/hyperchat-shared": [
         "../shared/src/index.ts"
-      ]
+      ],
+      "@/*": [
+        "./*"
+      ],
     },
+    "composite": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
     "src",
     "types",
-    "eval"
+    "**/*.json",
+    "../shared/src",
+    "../shared/src/**/*.json",
+    "../electron/src",
+    "../core/src",
+    "../core/**/*.json",
   ],
   "exclude": [
-    "node_modules",
-    "src/pages/hyperAgent",
-    "src/pages/chat",
-    "src/pages/market",
-    "src/pages/hypertools"
+    "node_modules"
   ]
 }

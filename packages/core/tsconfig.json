@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../",
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "typeRoots": [
@@ -14,7 +14,7 @@
         "../shared/src/*"
       ],
       "@dadigua/hyperchat-shared": [
-        "../shared/src/index.mts"
+        "../shared/src/index.ts"
       ]
     },
     "composite": true,
@@ -23,7 +23,10 @@
   },
   "include": [
     "src",
-    "types/*"
+    "types",
+    "**/*.json",
+    "../shared/src",
+    "../shared/src/**/*.json",
   ],
   "exclude": [
     "node_modules",

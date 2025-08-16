@@ -4,7 +4,7 @@
  */
 
 import { useRef, useCallback, useReducer, useEffect, useState } from 'react';
-import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
+import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 // import { message } from 'antd';
 // import { t } from '../i18n';

@@ -50,10 +50,10 @@ import { addChatRecentUsage } from "../utils/storage";
 
 import {
   ChatHistoryItem,
-} from "@dadigua/hyperchat-shared/types";
+} from "@dadigua/hyperchat-shared";
 import { type AISettings, type AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
-import { MyMessage } from "@dadigua/hyperchat-shared/types";
+import { MyMessage } from "@dadigua/hyperchat-shared";
 import { Messages } from "./messages";
 import { Icon } from "./icon";
 import { HyperChatEditor, HyperChatEditorRef } from "./HyperChatEditor";
@@ -62,7 +62,7 @@ import { blobToBase64, getMyUuid, JsonSchema2FormItemOrNull, urlToBase64 } from 
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
 import { CurrentWorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
-import { CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
+import { CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared";
 import { filterMCPTools, convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
 import { AgentCommonFormItems } from "./AgentManagement";
 import { useChatStream } from "../hooks/useChatStream";

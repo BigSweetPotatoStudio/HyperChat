@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { MyMessage } from "@dadigua/hyperchat-shared/types";
+import { MyMessage } from "@dadigua/hyperchat-shared";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { CustomMessageList, CustomMessageListRef } from "./CustomMessageList";
 

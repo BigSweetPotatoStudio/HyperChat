@@ -4,7 +4,7 @@
  */
 
 import { AiChannel } from "../ai/ai.mjs";
-import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
+import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getBuiltinPrompts } from "../ai/hyperchat-builtin-prompts.mjs";
 import { getAppSettingsManager } from "../data/appSettingsService.mjs";

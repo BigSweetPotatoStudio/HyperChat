@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import type {
   MessageData,
   TerminalMessage,
-} from "@dadigua/hyperchat-shared/types";
+} from "@dadigua/hyperchat-shared";
 
 /**
  * ����p{�

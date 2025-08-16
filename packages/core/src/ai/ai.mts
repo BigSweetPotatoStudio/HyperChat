@@ -538,7 +538,7 @@ export class AiChannel {
           tool.function.args || {},
           this.mcpAbortController
         )
-          .then((res: MCPTypes.CallToolResult & { isError?: boolean }) => {
+          .then((res: any) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";
               params.onUpdate && params.onUpdate();

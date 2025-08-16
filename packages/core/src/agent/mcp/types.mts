@@ -2,7 +2,7 @@
  * 工作区 MCP 类型定义
  */
 
-import type { MCPServerConfig, IMCPClient } from "@dadigua/hyperchat-shared/types";
+import type { MCPServerConfig, IMCPClient } from "@dadigua/hyperchat-shared";
 
 export type MCPType = "builtin" | "custom";
 

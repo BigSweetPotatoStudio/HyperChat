@@ -91,7 +91,7 @@ export function SelectFile(props: SelectFileProps): React.ReactElement {
 
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];
-        const filePath = file?.path;
+        const filePath = (file as any)?.path;
         if (filePath) {
           setValue(filePath);
           props.onChange?.(filePath);

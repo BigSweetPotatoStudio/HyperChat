@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat",
-  "version": "2.0.0-alpha.55",
+  "version": "2.0.0-alpha.56",
   "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
   "license": "MIT",
@@ -8,8 +8,8 @@
   "main": "dist/main.mjs",
   "module": "dist/main.mjs",
   "bin": {
-    "hyperchat": "dist/cli/index.mjs",
-    "hc": "dist/cli/index.mjs"
+    "hyperchat": "dist/core/src/cli/index.mjs",
+    "hc": "dist/core/src/cli/index.mjs"
   },
   "files": [
     "dist/**/*",
@@ -31,11 +31,12 @@
     "@ai-sdk/google": "2.0.0",
     "@ai-sdk/openai": "2.0.0",
     "@ai-sdk/openai-compatible": "1.0.0",
-    "@dadigua/hyperchat-shared": "file:../shared",
-    "@openrouter/ai-sdk-provider": "1.0.0-beta.6",
     "@inkjs/ui": "2.0.0",
+    "@openrouter/ai-sdk-provider": "1.0.0-beta.6",
+    "@types/js-yaml": "^4.0.9",
     "@types/marked": "5.0.2",
     "@types/react": "19.1.8",
+    "@types/uuid": "^10.0.0",
     "adm-zip": "^0.5.14",
     "ai": "5.0.0",
     "bonjour": "^3.5.0",
@@ -85,6 +86,7 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
+    "@types/body-parser": "^1.19.6",
     "@types/cors": "^2.8.18",
     "@types/cross-spawn": "^6.0.6",
     "@types/express": "^5.0.2",
@@ -109,9 +111,10 @@
   "scripts": {
     "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx --inspect=19999 src/cli/index.mts serve",
     "dev:proxy": "nodemon -w src --exec cross-env myEnv=dev HTTP_PROXY=http://localhost:8899 NODE_TLS_REJECT_UNAUTHORIZED=0 npx tsx --inspect=19999 src/cli/index.mts serve",
+    "dev:cli": "npx tsx src/cli/index.mts chat",
+    "dev:cli-proxy": "HTTP_PROXY=http://localhost:8899 NODE_TLS_REJECT_UNAUTHORIZED=0 npx tsx src/cli/index.mts chat",
     "start": "npx tsx src/cli/index.mts serve",
     "build": "node build.mjs",
-    "build:tsc": "tsc --project tsconfig.build.json",
     "typecheck": "npx tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
