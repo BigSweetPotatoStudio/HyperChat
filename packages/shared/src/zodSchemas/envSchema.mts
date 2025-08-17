@@ -37,7 +37,6 @@ export const EnvSchema = z.object({
   // 基础环境配置
   NODE_ENV: EnvTypeSchema.default("production"),
   HyperChat_MY_ENV: z.string().default("prod").describe("Custom environment flag"),
-  HyperChat_Runtime: RuntimeEnvSchema.default("nodejs").describe("Runtime environment type"),
 
   // 路径配置
   HyperChat_AppDataDir: z.string().optional().describe("Global application data directory path"),

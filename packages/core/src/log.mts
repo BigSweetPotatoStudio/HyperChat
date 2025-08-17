@@ -16,17 +16,11 @@ import { os } from "zx";
  * - electron: 全局路径的 .hyperchat/logs
  */
 function getLogDir(): string {
-  const runtime = process.env.HyperChat_Runtime || "nodejs";
-  
-  if (runtime === "electron") {
-    // Electron环境：使用全局路径
-    const globalAppDataDir = process.env.HyperChat_AppDataDir || 
-      path.join(os.homedir(), "Documents", "HyperChat");
-    return path.join(globalAppDataDir, ".hyperchat", "logs");
-  } else {
-    // Node.js环境：使用当前工作目录
-    return path.join(process.cwd(), ".hyperchat", "logs");
-  }
+
+  // Electron环境：使用全局路径
+  const globalAppDataDir = process.env.HyperChat_AppDataDir || path.join(os.homedir(), "Documents", "HyperChat");
+  return path.join(globalAppDataDir, "logs");
+
 }
 
 const logDir = getLogDir();
