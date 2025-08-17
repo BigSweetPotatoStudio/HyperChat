@@ -79,52 +79,7 @@ export class ElectronCommandFactory {
     }
   }
 
-  // HyperTool 打开浏览器
-  async hyperToolOpenBrowser(url: string, { userAgent }: { userAgent?: string } = {}): Promise<void> {
-    // const config = getConfig();
-    // if (config?.Web_Tools_Platform === "electron") {
-    //   const { BrowserWindow } = await import("electron");
-    //   let win = new BrowserWindow({
-    //     width: 1280,
-    //     height: 720,
-    //     webPreferences: {
-    //       webSecurity: false,
-    //     },
-    //   });
-
-    //   await win.loadURL(url, {
-    //     userAgent: userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-    //   });
-    // } else if (config?.Web_Tools_Platform === "chrome") {
-    //   // await createBrowser(true, url)
-    // } else {
-    //   throw new Error("HyperTool Settings Web_Tools_Platform is none");
-    // }
-  }
-
-  // 打开浏览器窗口
-  async openBrowser({
-    url,
-    userAgent
-  }: {
-    url: string;
-    userAgent?: string;
-  }): Promise<void> {
-    const { BrowserWindow } = await import("electron");
-    let win = new BrowserWindow({
-      width: 1280,
-      height: 720,
-      webPreferences: {
-        webSecurity: false,
-      },
-    });
-
-    await win.loadURL(url, {
-      userAgent:
-        userAgent ||
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    });
-  }
+  
 }
 
 // 导出实例

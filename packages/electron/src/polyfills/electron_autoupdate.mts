@@ -3,6 +3,7 @@ import pkg from "electron-updater";
 const { autoUpdater } = pkg;
 
 import { Logger } from "../../../core/src/log.mjs";
+import { getMessageService } from "../../../core/src/message_service.mjs";
 
 
 class CheckUpdate {
@@ -77,10 +78,10 @@ class CheckUpdate {
   }
 }
 async function sendToRender(type: any, data: any) {
-  // getMessageService().sendAllToRenderer({
-  //   type: type,
-  //   data: data,
-  // });
+  getMessageService().sendAllToRenderer({
+    type: type,
+    data: data,
+  });
 }
 
 export const checkUpdate = new CheckUpdate();

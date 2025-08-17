@@ -12,7 +12,7 @@ import { $, within, argv, sleep, fs, fetch, usePowerShell, os, path } from "zx";
 // }
 
 if (argv.dev) {
-  await $`npx tsc`;
+  await $`npm run build`;
   await $`npx cross-env myEnv=dev electron .`;
 }
 

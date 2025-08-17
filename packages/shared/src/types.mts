@@ -74,7 +74,7 @@ export interface MessageData<T extends keyof MessageDataMap = keyof MessageDataM
   type: T;
   data?: MessageDataMap[T];
   timestamp?: string;
-  workspacePath: string;
+  workspacePath?: string;
 }
 
 /**
