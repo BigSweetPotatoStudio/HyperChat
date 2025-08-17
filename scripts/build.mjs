@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
-import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, rmSync, cpSync } from 'fs';
+import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -44,10 +44,9 @@ const tasks = {
   clean() {
     console.log('🧹 清理构建产物...');
     const dirs = [
-      'packages/shared/dist',
       'packages/web/build',
       'packages/web/dist',
-      'packages/core/dist', // CLI 现在包含在 Core 中
+      'packages/core/dist',
       'packages/core/web-build',
       'packages/electron/dist',
       'packages/electron/web-build'
@@ -103,8 +102,13 @@ const tasks = {
     // 创建输出目录
     ensureDir(distDir);
 
-    // 使用 TypeScript 编译
-    exec('npm run build', { cwd: coreDir });
+    // 先确保 Web 已构建
+    if (!existsSync(join(rootDir, 'packages/web/build'))) {
+      await tasks.buildWeb();
+    }
+
+    // 使用完整构建流程（包含web构建）
+    exec('npm run build:full', { cwd: coreDir });
 
     // 复制必要文件
     const filesToCopy = ['README.md'];
@@ -142,28 +146,15 @@ const tasks = {
   // 构建 Electron
   async buildElectron() {
     console.log('\n💻 构建 Electron 应用...');
+    const electronDir = join(rootDir, 'packages/electron');
 
     // 先确保 Web 已构建
     if (!existsSync(join(rootDir, 'packages/web/build'))) {
       await tasks.buildWeb();
     }
 
-    const electronDir = join(rootDir, 'packages/electron');
-
-    // 安装 Electron 依赖（独立安装）
-    console.log('  📦 安装 Electron 依赖...');
-    exec('npm install', { cwd: electronDir });
-
-    // 复制 Web 构建产物
-    const webBuildSrc = join(rootDir, 'packages/web/build');
-    const webBuildDest = join(electronDir, 'web-build');
-
-    ensureDir(webBuildDest);
-    cpSync(webBuildSrc, webBuildDest, { recursive: true });
-    console.log('  ✅ 已复制 Web 构建产物');
-
-    // 运行 Electron 构建
-    exec('npm run build', { cwd: electronDir });
+    // 使用 Electron 包的完整构建流程
+    exec('npm run build:electron', { cwd: electronDir });
   },
 
   // 构建所有
@@ -173,10 +164,8 @@ const tasks = {
     // 清理
     tasks.clean();
 
-    // 按顺序构建 (shared 必须先构建，因为其他包依赖它)
-    await tasks.buildShared();
-    await tasks.buildWeb();
-    await tasks.buildCore(); // CLI 现在包含在 Core 构建中
+    // 构建各包 (不再需要shared，使用路径别名替换)
+    await tasks.buildCore(); // Core 构建现在包含web构建
     await tasks.buildElectron();
 
     console.log('\n✨ 所有构建已完成！');
@@ -189,61 +178,29 @@ const tasks = {
     // 清理
     tasks.clean();
 
-    // 构建 shared 包 (发布版)
-    await tasks.buildSharedForPublish();
-
     // 构建 core 包 (发布版) 
     args.push('--publish'); // 确保传递 --publish 参数
     await tasks.buildCore();
 
     console.log('\n✨ 发布构建已完成！');
     console.log('\n📝 下一步：');
-    console.log('1. 运行: npm run publish:shared');
-    console.log('2. 运行: npm run publish:core');
+    console.log('1. 运行: npm run publish:core');
   },
 
-  // 发布 shared 包
-  async publishShared() {
-    console.log('📤 发布 Shared 包...');
-    const sharedDir = join(rootDir, 'packages/shared');
-
-    // 检查是否已经构建
-    if (!existsSync(join(sharedDir, 'dist'))) {
-      console.log('⚠️  检测到 Shared 包未构建，先进行构建...');
-      await tasks.buildSharedForPublish();
-    }
-
-    const publishTag = process.env.NPM_PUBLISH_TAG || 'latest';
-    const tagFlag = publishTag === 'latest' ? '' : ` --tag ${publishTag}`;
-    console.log(`📦 发布标签: ${publishTag}`);
-    exec(`npm publish --access public${tagFlag}`, { cwd: sharedDir });
-    console.log('✅ Shared 包发布完成！');
-  },
 
   // 发布 core 包  
   async publishCore() {
     console.log('📤 发布 Core 包...');
     const coreDir = join(rootDir, 'packages/core');
 
-    // 1. 先构建前端
-    console.log('🌐 构建前端资源...');
-    await tasks.buildWeb();
-
-    // 2. 复制前端构建产物到 core 的 web-build 目录
-    console.log('📋 复制前端构建产物到 Core 包...');
-    const webBuildSrc = join(rootDir, 'packages/web/build');
-    const webBuildDest = join(coreDir, 'web-build');
-    
-    ensureDir(webBuildDest);
-    cpSync(webBuildSrc, webBuildDest, { recursive: true });
-    console.log('  ✅ 已复制前端构建产物到 Core 包');
-
-    // 3. 重新构建 Core 包以应用发布配置
-    console.log('⚠️  重新构建 Core 包以应用发布配置...');
-    if (!args.includes('--publish')) {
-      args.push('--publish'); // 确保传递 --publish 参数
+    // 检查是否已经构建
+    if (!existsSync(join(coreDir, 'dist'))) {
+      console.log('⚠️  检测到 Core 包未构建，先进行构建...');
+      if (!args.includes('--publish')) {
+        args.push('--publish'); // 确保传递 --publish 参数
+      }
+      await tasks.buildCore();
     }
-    await tasks.buildCore();
 
     const publishTag = process.env.NPM_PUBLISH_TAG || 'latest';
     const tagFlag = publishTag === 'latest' ? '' : ` --tag ${publishTag}`;
@@ -259,17 +216,10 @@ const tasks = {
     // 1. 构建发布版本
     await tasks.buildForPublish();
 
-    // 2. 发布 shared 包
-    await tasks.publishShared();
-
-    // 等待一段时间确保 npm 同步
-    console.log('⏳ 等待 npm 同步...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // 3. 发布 core 包
+    // 2. 发布 core 包
     await tasks.publishCore();
 
-    console.log('\n🎉 所有包发布完成！');
+    console.log('\n🎉 Core 包发布完成！');
   },
 
   // 开发模式
@@ -314,16 +264,13 @@ HyperChat 构建脚本
 
 构建命令:
   clean              清理所有构建产物
-  buildShared        构建 Shared 包
-  buildSharedForPublish  构建 Shared 包 (发布版)
   buildWeb           构建 Web 前端
-  buildCore          构建 Core 包
+  buildCore          构建 Core 包 (包含Web前端)
   buildElectron      构建 Electron 应用
   buildAll           构建所有包
-  buildForPublish    构建所有包 (发布版)
+  buildForPublish    构建Core包 (发布版)
 
 发布命令:
-  publishShared      发布 Shared 包到 npm
   publishCore        发布 Core 包到 npm  
   publishAll         完整发布流程 (推荐)
 
@@ -338,14 +285,13 @@ HyperChat 构建脚本
   node scripts/build.mjs buildAll
   node scripts/build.mjs dev web
   node scripts/build.mjs buildForPublish
-  node scripts/build.mjs publishAll
+  node scripts/build.mjs publishCore
 
 发布流程:
   1. node scripts/build.mjs publishAll  # 推荐：一键发布
   或者分步执行：
   2a. node scripts/build.mjs buildForPublish
-  2b. node scripts/build.mjs publishShared
-  2c. node scripts/build.mjs publishCore
+  2b. node scripts/build.mjs publishCore
 `);
   }
 };
