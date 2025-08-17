@@ -106,7 +106,9 @@ function replacePathAliases() {
           targetPath = join(distDir, 'shared', 'src', sharedPackagePath);
         }
         
-        const relativePath = relative(fileDir, targetPath);
+        let relativePath = relative(fileDir, targetPath);
+        // 修复Windows路径：将反斜杠替换为正斜杠
+        relativePath = relativePath.replace(/\\/g, '/');
         
         // 确保路径格式正确（使用./开头）
         const normalizedRelativePath = relativePath.startsWith('.') ? relativePath : './' + relativePath;
