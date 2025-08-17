@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require("electron/renderer");
+import { contextBridge, ipcRenderer } from "electron/renderer";
 
 console.log("preload");
 
@@ -11,6 +11,9 @@ console.log("preload");
 //   // },
 // });
 
-// contextBridge.exposeInMainWorld("electron", {
-//   platform: process.platform,
-// });
+contextBridge.exposeInMainWorld("electron", {
+    platform: process.platform,
+});
+
+contextBridge.exposeInMainWorld("isElectron", true);
+

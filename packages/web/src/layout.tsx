@@ -226,7 +226,7 @@ export function Layout() {
     (async () => {
 
       // 如果在 Electron 环境中，检查更新
-      if (process.env.myRuntime == "electron") {
+      if (window.isElectron) {
         let res = await callElectron("checkUpdate");
         if (res) {
           console.log("checkUpdate: ", res);

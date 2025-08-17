@@ -164,7 +164,7 @@ export async function callElectron<k extends keyof ElectronCommand>(
 ): Promise<ReturnType<ElectronCommand[k]>> {
   try {
     const { signal } = options;
-    const res = await fetch(`${getURL_PRE()}/Electron/${command}`, {
+    const res = await fetch(`${getURL_PRE()}/callElectron/${command}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

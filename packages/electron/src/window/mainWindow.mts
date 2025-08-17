@@ -55,7 +55,7 @@ export const createWindow = () => {
       // contextIsolation: true,
       webviewTag: true, // 启用 webview 标签
       webSecurity: false,
-      preload: path.join(__dirname, "./preload.js"), // 设置预加载的脚本
+      preload: path.join(__dirname, "../preload.mjs"), // 设置预加载的脚本
       sandbox: false,
       allowRunningInsecureContent: true,
     },

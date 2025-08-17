@@ -20,7 +20,7 @@ import {
 } from "electron";
 import "./polyfills/electron_autoupdate.mjs";
 import path from "node:path";
-import { initHttp } from "../../core/src/http.mjs";
+import { initElectronHttp } from "./http/electronHttp.mjs";
 import { createWindow } from "./window/mainWindow.mjs";
 
 import { getWorkspaceManager } from "../../core/src/workspace/index.mjs";
@@ -108,9 +108,9 @@ app.whenReady().then(async () => {
   // 初始化工作区
   let workspace = await getWorkspaceManager().initialize(appDataDir);
   await workspace.start();
-  // 初始化 HTTP 服务器，处理 Web 请求和 MCP 连接
-  await initHttp().catch((e) => {
-    Logger.info("initHttp error: ", e);
+  // 初始化 HTTP 服务器，处理 Web 请求和 MCP 连接，以及 Electron 特有接口
+  await initElectronHttp().catch((e) => {
+    Logger.info("initElectronHttp error: ", e);
   });
 
   try {

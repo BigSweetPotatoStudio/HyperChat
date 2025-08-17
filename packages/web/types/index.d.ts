@@ -20,6 +20,7 @@ interface Window {
     navigate: (path: string) => void;
     location: any;
   };
+  isElectron: boolean;
 }
 
 declare module "*.png" {
