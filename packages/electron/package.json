@@ -2,6 +2,7 @@
   "name": "@dadigua/hyperchat-electron",
   "author": "Dadigua <0laopo0@gmail.com>",
   "build": {
+    "afterSign": "./build/notarize.js",
     "appId": "men.dadigua.hpyerchat",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "asar": true,

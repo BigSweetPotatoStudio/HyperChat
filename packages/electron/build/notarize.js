@@ -1,11 +1,11 @@
-require("dotenv").config();
-const { notarize } = require("@electron/notarize");
-const path = require("path");
-const os = require("os");
-const fs = require("fs");
+import "dotenv/config";
+import { notarize } from "@electron/notarize";
+import path from "path";
+import os from "os";
+import fs from "fs";
 
-exports.default = async function notarizing(context) {
-  if (context.electronPlatformName !== "darwin" || process.env.GH_TOKEN == "") {
+export default async function notarizing(context) {
+  if (context.electronPlatformName !== "darwin" || !process.env.GH_TOKEN) {
     console.log("Skipping notarization");
     return;
   }
