@@ -14,8 +14,8 @@ import { Logger } from "../../../core/src/log.mjs";
 export function genElectronRouter(electronCommandInstance: typeof ElectronCommand): Router {
     const router = Router();
 
-    // 获取 ElectronCommand 类的所有方法名（排除构造函数）
-    const functionNames = Object.getOwnPropertyNames(electronCommandInstance)
+    // 获取 ElectronCommand 类的所有方法名（从原型获取，排除构造函数）
+    const functionNames = Object.getOwnPropertyNames(Object.getPrototypeOf(electronCommandInstance))
         .filter(name => name !== "constructor" && typeof (electronCommandInstance as any)[name] === "function");
 
     Logger.info(`Registering Electron commands: ${functionNames.join(', ')}`);

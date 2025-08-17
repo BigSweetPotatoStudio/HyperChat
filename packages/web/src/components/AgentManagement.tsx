@@ -7,9 +7,6 @@ import {
   Empty,
   Dropdown,
   Modal,
-  Drawer,
-  Descriptions,
-  Typography,
   message,
   Form,
   Input,
@@ -29,21 +26,18 @@ import {
   MoreOutlined,
   EditOutlined,
   DeleteOutlined,
-  InfoCircleOutlined,
-  SmileOutlined,
   MessageOutlined,
   HistoryOutlined,
+  FolderOpenOutlined,
 } from "@ant-design/icons";
-import { call } from "../common/call";
+import { call, callElectron } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
 import { useAISettings } from "../contexts/AppSettingsContext";
-import EmojiPicker from 'emoji-picker-react';
 import { HyperChatEditor } from "./HyperChatEditor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { AgentConfig, ChatHistoryItem, createDefaultBaseAIConfig, IMCPClient } from "@dadigua/hyperchat-shared";
 import { convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
-const { Title } = Typography;
 
 
 interface Agent {
@@ -67,10 +61,8 @@ export interface AgentManagementRef {
 }
 
 export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementProps>(({ workspace, agents, onRefresh, onOpenChat, mcpClients }, ref) => {
-  const [agentDetailDrawer, setAgentDetailDrawer] = useState(false);
   const [agentEditModal, setAgentEditModal] = useState(false);
   const [chatHistoryModal, setChatHistoryModal] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [chatHistoryAgent, setChatHistoryAgent] = useState<Agent | null>(null);
   const [chatHistoryList, setChatHistoryList] = useState<ChatHistoryItem[]>([]);
@@ -105,11 +97,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     createAgent
   }), []);
 
-  // 显示Agent详情
-  const showAgentDetails = (agent: Agent) => {
-    setSelectedAgent(agent);
-    setAgentDetailDrawer(true);
-  };
 
   // 编辑Agent
   const editAgent = (agent: Agent) => {
@@ -122,6 +109,25 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     setEditingAgent(null);
     form.resetFields();
     setAgentEditModal(true);
+  };
+
+  // 打开Agent文件夹（仅在Electron环境）
+  const openAgentFolder = async (agent: Agent) => {
+    if (!window.isElectron) {
+      message.warning(t`This feature is only available in desktop app`);
+      return;
+    }
+
+    try {
+      // 构建Agent文件夹路径：workspacePath/.hyperchat/agents/agentName
+      const agentFolderPath = `${workspace.path}/.hyperchat/agents/${agent.config.name}`;
+      
+      await callElectron("openExplorer", { path: agentFolderPath });
+      message.success(t`Agent folder opened in file explorer`);
+    } catch (error) {
+      console.error("Failed to open agent folder:", error);
+      message.error(t`Failed to open agent folder`);
+    }
   };
 
   // 保存Agent
@@ -310,12 +316,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   label: t`Chat History`,
                   onClick: () => viewChatHistory(agent),
                 },
-                {
-                  key: "details",
-                  icon: <InfoCircleOutlined />,
-                  label: t`View Details`,
-                  onClick: () => showAgentDetails(agent),
-                },
                 // 编辑功能 - 所有 Agent 都可以编辑
                 {
                   key: "edit",
@@ -323,6 +323,13 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   label: t`Edit`,
                   onClick: () => editAgent(agent),
                 },
+                // 打开文件夹功能 - 仅在 Electron 环境显示
+                ...(window.isElectron ? [{
+                  key: "openFolder",
+                  icon: <FolderOpenOutlined />,
+                  label: t`Open Folder`,
+                  onClick: () => openAgentFolder(agent),
+                }] : []),
                 {
                   type: "divider" as const
                 },
@@ -436,100 +443,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         )}
       </div>
 
-      {/* Agent详情抽屉 */}
-      <Drawer
-        title={t`Agent Details`}
-        open={agentDetailDrawer}
-        onClose={() => {
-          setAgentDetailDrawer(false);
-          setSelectedAgent(null);
-        }}
-        width={600}
-      >
-        {selectedAgent && (
-          <div>
-            <Descriptions
-              title={selectedAgent.config.name || selectedAgent.config.name}
-              bordered
-              column={1}
-              size="small"
-            >
-              <Descriptions.Item label={t`Name`}>
-                {selectedAgent.config.name || selectedAgent.config.name}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Key`}>
-                {selectedAgent.config.name}
-              </Descriptions.Item>
-              {/* Scope information removed in Agent-centered architecture */}
-              <Descriptions.Item label={t`Description`}>
-                {selectedAgent.config.description || t`No description`}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Model`}>
-                {selectedAgent.config.modelKey
-                  ? getModelDisplayName(selectedAgent.config.modelKey)
-                  : "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Chat Logs`}>
-                {selectedAgent.chatLogsCount || 0}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Tools`}>
-                {selectedAgent.config.allowMCPs ? selectedAgent.config.allowMCPs.length : 0}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Last Chat`}>
-                {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Compression Strategy`}>
-                tokens
-              </Descriptions.Item>
-              {selectedAgent.config.maxContextTokens && (
-                <Descriptions.Item label={t`Max Context Tokens`}>
-                  {selectedAgent.config.maxContextTokens}
-                </Descriptions.Item>
-              )}
-            </Descriptions>
-
-            {/* Prompt内容 */}
-            {selectedAgent.config.prompt && (
-              <div className="mt-4">
-                <Title level={5}>{t`Prompt`}</Title>
-                <div className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap">
-                  {selectedAgent.config.prompt}
-                </div>
-              </div>
-            )}
-
-            {/* MCP 配置 */}
-            {selectedAgent.config.allowMCPs && selectedAgent.config.allowMCPs.length > 0 && (
-              <div className="mt-4">
-                <Title level={5}>{t`Allowed MCPs`}</Title>
-                <Space wrap>
-                  {selectedAgent.config.allowMCPs.map((mcp: string) => (
-                    <Tag key={mcp} color="purple">{mcp}</Tag>
-                  ))}
-                </Space>
-              </div>
-            )}
-
-            {/* 其他配置 */}
-            <div className="mt-4">
-              <Title level={5}>{t`Settings`}</Title>
-              <div className="space-y-2">
-                <div>Tool Confirmation: {selectedAgent.config.isConfirmCallTool ? 'Enabled' : 'Disabled'}</div>
-                {selectedAgent.config.temperature !== undefined && (
-                  <div>Temperature: {selectedAgent.config.temperature}</div>
-                )}
-                {selectedAgent.config.maxTokens !== undefined && (
-                  <div>Max Tokens: {selectedAgent.config.maxTokens}</div>
-                )}
-                <div>Compression Strategy: tokens</div>
-                {selectedAgent.config.maxContextTokens !== undefined && (
-                  <div>Max Context Tokens: {selectedAgent.config.maxContextTokens}</div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </Drawer>
 
       {/* Agent编辑模态框 */}
       <Modal

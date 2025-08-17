@@ -11,6 +11,7 @@ import {
   List,
   Typography,
   Modal,
+  message,
 } from "antd";
 import {
   FolderOpenOutlined,
@@ -20,6 +21,7 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import { t } from "../../i18n";
+import { callElectron } from "../../common/call";
 
 const { Text } = Typography;
 
@@ -65,6 +67,29 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
     }
   }, [selectedPath, form]);
 
+  // 处理文件夹选择
+  const handleDirectorySelect = async () => {
+    // 检查是否在 Electron 环境中
+    if (window.isElectron) {
+      try {
+        const selectedDir = await callElectron("selectFile", {
+          type: "openDirectory"
+        });
+        
+        if (selectedDir) {
+          form.setFieldsValue({ path: selectedDir });
+          onPathSelect(selectedDir);
+        }
+      } catch (error) {
+        console.error("Failed to select directory:", error);
+        message.error(t`Failed to select directory`);
+      }
+    } else {
+      // 在浏览器环境中，使用原有的目录浏览器
+      onDirectoryBrowserOpen();
+    }
+  };
+
   return (
     <Form form={form} name="workspace_open_form" layout="vertical" initialValues={initialValues}>
       <Form.Item
@@ -82,7 +107,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           />
           <Button
             icon={<FolderOpenOutlined />}
-            onClick={onDirectoryBrowserOpen}
+            onClick={handleDirectorySelect}
           >
             {t`Select Directory`}
           </Button>

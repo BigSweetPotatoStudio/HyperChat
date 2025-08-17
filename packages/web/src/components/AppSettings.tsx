@@ -7,6 +7,8 @@ import {
   Alert,
   message,
   Card,
+  Switch,
+  List,
 } from "antd";
 import {
   AppstoreOutlined,
@@ -14,9 +16,11 @@ import {
   ExperimentOutlined,
   SaveOutlined,
   ReloadOutlined,
+  RocketOutlined,
 } from "@ant-design/icons";
 import { setCurrLang, t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { callElectron } from "../common/call";
 import {
   AppearanceSchema,
   SystemSchema,
@@ -40,6 +44,10 @@ export function AppSettings({
   const [activeTab, setActiveTab] = useState("appearance");
   const [hasChanges, setHasChanges] = useState(false);
   const [currentValues, setCurrentValues] = useState(settings);
+  
+  // Electron 自启动状态
+  const [autoLaunchEnabled, setAutoLaunchEnabled] = useState(false);
+  const [autoLaunchLoading, setAutoLaunchLoading] = useState(false);
 
   // 监听设置变化
   useEffect(() => {
@@ -48,6 +56,22 @@ export function AppSettings({
       setHasChanges(false);
     }
   }, [settings]);
+
+  // 加载自启动状态（仅在 Electron 环境）
+  useEffect(() => {
+    const loadAutoLaunchStatus = async () => {
+      if (!window.isElectron) return;
+      
+      try {
+        const isEnabled = await callElectron("isAutoLauncher");
+        setAutoLaunchEnabled(isEnabled);
+      } catch (error) {
+        console.error("Failed to load auto launch status:", error);
+      }
+    };
+    
+    loadAutoLaunchStatus();
+  }, []);
 
   // 处理表单值变化
   const handleFormChange = (values: z.infer<typeof AppSettingsSchema>) => {
@@ -65,6 +89,31 @@ export function AppSettings({
     } catch (error) {
       console.error("Failed to save settings:", error);
       message.error(t`Failed to save settings`);
+    }
+  };
+
+  // 切换自启动
+  const handleAutoLaunchToggle = async (enabled: boolean) => {
+    if (!window.isElectron) {
+      message.warning(t`Auto launch is only available in desktop app`);
+      return;
+    }
+
+    setAutoLaunchLoading(true);
+    try {
+      if (enabled) {
+        await callElectron("enableAutoLauncher");
+        message.success(t`Auto launch enabled`);
+      } else {
+        await callElectron("disableAutoLauncher");
+        message.success(t`Auto launch disabled`);
+      }
+      setAutoLaunchEnabled(enabled);
+    } catch (error) {
+      console.error("Failed to toggle auto launch:", error);
+      message.error(t`Failed to change auto launch setting`);
+    } finally {
+      setAutoLaunchLoading(false);
     }
   };
 
@@ -146,6 +195,47 @@ export function AppSettings({
         />
       ),
     },
+    // 只在 Electron 环境下显示自启动设置
+    ...(window.isElectron ? [{
+      key: "autolaunch",
+      label: (
+        <span>
+          <RocketOutlined />
+          {t`Auto Launch`}
+        </span>
+      ),
+      children: (
+        <Card title={t`Auto Launch Settings`} size="small">
+          <List
+            size="small"
+            dataSource={[
+              {
+                title: t`Launch HyperChat on system startup`,
+                description: t`Automatically start HyperChat when you log in to your computer`,
+                key: 'autolaunch'
+              }
+            ]}
+            renderItem={(item) => (
+              <List.Item
+                actions={[
+                  <Switch
+                    key="switch"
+                    checked={autoLaunchEnabled}
+                    loading={autoLaunchLoading}
+                    onChange={handleAutoLaunchToggle}
+                  />
+                ]}
+              >
+                <List.Item.Meta
+                  title={item.title}
+                  description={item.description}
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+      ),
+    }] : []),
     {
       key: "info",
       label: (

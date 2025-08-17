@@ -32,8 +32,9 @@ import {
   SettingOutlined,
   MinusCircleOutlined,
   ApiOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
-import { call } from "../common/call";
+import { call, callElectron } from "../common/call";
 import { t } from "../i18n";
 import { HyperChatCompletionTool, IMCPClient, MCPServerConfig, MCPGatewaySchema } from "@dadigua/hyperchat-shared";
 import Editor from "@monaco-editor/react";
@@ -301,6 +302,25 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
     }
   };
 
+  // 打开MCP配置文件（仅在Electron环境）
+  const openMcpConfigFile = async () => {
+    if (!window.isElectron) {
+      message.warning(t`This feature is only available in desktop app`);
+      return;
+    }
+
+    try {
+      // 构建MCP配置文件路径：workspacePath/.hyperchat/mcp.json
+      const mcpConfigPath = `${workspace.path}/.hyperchat/mcp.json`;
+      
+      await callElectron("openExplorer", { path: mcpConfigPath });
+      message.success(t`MCP configuration file opened in file explorer`);
+    } catch (error) {
+      console.error("Failed to open MCP config file:", error);
+      message.error(t`Failed to open MCP configuration file`);
+    }
+  };
+
   // 删除MCP客户端
   const deleteMcpClient = async (client: IMCPClient) => {
     try {
@@ -559,6 +579,15 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
               onClick={() => setAddMcpModalOpen(true)}
               title={t`Add MCP server`}
             />
+            {window.isElectron && (
+              <Button
+                type="text"
+                size="small"
+                icon={<FileTextOutlined />}
+                onClick={openMcpConfigFile}
+                title={t`Open MCP configuration file`}
+              />
+            )}
             {isFirstWorkspace && (
               <Button
                 type="text"
