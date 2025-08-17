@@ -4,7 +4,7 @@
     "name": "Dadigua",
     "email": "0laopo0@gmail.com"
   },
-  "version": "2.0.0-alpha.60",
+  "version": "2.0.0-alpha.61",
   "private": true,
   "scripts": {
     "dev": "node scripts/build.mjs dev",
