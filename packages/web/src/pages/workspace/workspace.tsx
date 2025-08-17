@@ -30,9 +30,10 @@ export type { WorkspaceInfo, CurrentWorkspaceDetails, ChatTab } from "./types";
 
 interface WorkspaceProps {
   workspacePath: string;
+  isPrimary?: boolean;
 }
 
-export function Workspace({ workspacePath }: WorkspaceProps) {
+export function Workspace({ workspacePath, isPrimary = false }: WorkspaceProps) {
   const refresh = useForceUpdate();
 
   // 通用错误处理函数
@@ -82,6 +83,7 @@ export function Workspace({ workspacePath }: WorkspaceProps) {
           agentsCount: workspaceData.agentsCount,
           mcpServersCount: 0, // 在新架构中不再有工作区级别的MCP服务器计数
           isGlobal: workspaceData.isGlobal,
+          isPrimary: workspaceData.isPrimary || isPrimary,
         };
 
         setCurrentWorkspace(currentWorkspaceInfo);

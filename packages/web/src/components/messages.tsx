@@ -17,10 +17,6 @@ export const Messages = ({ messages, onSumbit, readOnly, status, onClone }: {
 
     return (
         <CustomMessageList
-            ref={(e) => {
-                // containerRef.current = e;
-                // setContainer && setContainer(e);
-            }}
             messages={messages}
             onSumbit={onSumbit}
             readOnly={readOnly}
@@ -29,10 +25,6 @@ export const Messages = ({ messages, onSumbit, readOnly, status, onClone }: {
             contexts={contexts.current}
             onContextUpdate={refresh}
             className="bubble-list"
-            // style={{
-            //     paddingRight: 4,
-            //     height: messages?.length > 0 ? "100%" : 0,
-            // }}
         />
     );
 };

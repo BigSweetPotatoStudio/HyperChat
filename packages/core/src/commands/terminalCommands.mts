@@ -13,7 +13,7 @@ export const terminalCommands = {
    */
   async OpenTerminal() {
     const workspaceManager = getWorkspaceManager();
-    const workspacePath = workspaceManager.getCurrentWorkspacePath();
+    const workspacePath = workspaceManager.getCurrentWorkspace().workspacePath;
     const terminal = getWorkspaceTerminal(workspacePath);
     const terminalInstance = await terminal.createTerminal(workspacePath);
     return terminalInstance.id;
@@ -25,7 +25,7 @@ export const terminalCommands = {
    */
   async GetTerminals() {
     const workspaceManager = getWorkspaceManager();
-    const workspacePath = workspaceManager.getCurrentWorkspacePath();
+    const workspacePath = workspaceManager.getCurrentWorkspace().workspacePath;
     const terminal = getWorkspaceTerminal(workspacePath);
     const allTerminals = terminal.getAllTerminals();
     // 由于现在每个工作区有独立的终端管理器，直接返回所有终端

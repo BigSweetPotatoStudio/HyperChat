@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Select, Switch, Space } from 'antd';
-import { GithubFilled, SyncOutlined, SettingOutlined, ApiOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { GithubFilled, SyncOutlined, SettingOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAppearanceSettings } from '../contexts/AppSettingsContext';
 import {
@@ -16,10 +16,9 @@ interface AppActionsProps {
   onAIProviderClick: () => void;
   onRefresh: () => void;
   onAppSettingsClick?: () => void;
-  onMCPGatewaysClick?: () => void;
 }
 
-export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, onMCPGatewaysClick }: AppActionsProps) {
+export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }: AppActionsProps) {
   const navigate = useNavigate();
   const [syncStatus, setSyncStatus] = useState(0); // 同步状态：0-正常，1-同步中，-1-失败
   const { appearance, updateAppearance } = useAppearanceSettings();
@@ -86,15 +85,6 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, o
         {t`AI Providers`}
       </Button>
 
-      {/* MCP Gateways 设置按钮 */}
-      {onMCPGatewaysClick && (
-        <Button
-          onClick={onMCPGatewaysClick}
-          icon={<ApiOutlined />}
-        >
-          {t`MCP Gateways`}
-        </Button>
-      )}
 
       {/* 数据迁移弹窗 */}
       <DataMigration

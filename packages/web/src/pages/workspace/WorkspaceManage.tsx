@@ -24,8 +24,7 @@ import { AppHeader } from '../../components/AppHeader';
 import { AppActions } from '../../components/AppActions';
 import { AppSettings } from '../../components/AppSettings';
 import { ProviderSettings } from '../../components/ProviderSettings';
-import { MCPGatewaysSettings } from '../../components/MCPGatewaysSettings';
-import { AppSettingsSchema, MCPGatewaySchema } from '@dadigua/hyperchat-shared';
+import { AppSettingsSchema } from '@dadigua/hyperchat-shared';
 import type { z } from 'zod';
 import { useForceUpdate } from '../../hooks/useForceUpdate';
 
@@ -67,7 +66,6 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
   const [drawerStates, setDrawerStates] = useState({
     modelConfig: false,
     appSettings: false,
-    mcpGateways: false,
   });
 
   // 加载全局工作区路径
@@ -101,8 +99,8 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
               path: workspaceData.path,
               name: workspaceData.name,
               isGlobal: workspaceData.isGlobal,
-              closable: false,
-              isPrimary: workspaceInfo.isPrimary
+              closable: workspaceInfo.isPrimary ? false : true,
+              isPrimary: workspaceInfo.isPrimary || false
             };
 
             loadedTabs.push(newTab);
@@ -178,7 +176,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
           name: workspaceData.name,
           isGlobal: workspaceData.isGlobal,
           closable: true, // 默认工作区不可关闭,
-          isPrimary: false,
+          isPrimary: workspaceData.isPrimary || false,
         };
 
         setWorkspaceTabs(prev => [...prev, newTab]);
@@ -209,7 +207,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
               name: workspaceData.name,
               isGlobal: workspaceData.isGlobal,
               closable: true, // 默认工作区不可关闭,
-              isPrimary: false,
+              isPrimary: workspaceData.isPrimary || false,
             };
 
             setWorkspaceTabs(prev => [...prev, newTab]);
@@ -307,40 +305,6 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
     }
   };
 
-  // 处理 MCP Gateways 设置
-  const handleMCPGateways = async () => {
-    try {
-      // 加载应用设置以获取当前的 MCP Gateways 配置
-      const settings = await call("getAppSettings");
-      setAppSettings(settings);
-      setDrawerStates(prev => ({ ...prev, mcpGateways: true }));
-    } catch (error) {
-      console.error("Failed to load MCP gateways:", error);
-      message.error(t`Failed to load MCP gateways`);
-    }
-  };
-
-  // 更新 MCP Gateways 配置
-  const updateMCPGateways = async (gateways: z.infer<typeof MCPGatewaySchema>[]) => {
-    try {
-      const updates = { mcpGateWays: gateways };
-      await updateAppSettings(updates);
-
-      // 刷新 MCP 路由以应用新的网关配置
-      try {
-        await call("refreshMcpRoutes");
-        console.log('MCP routes refreshed successfully');
-      } catch (routeError) {
-        console.warn('Failed to refresh MCP routes, but settings were saved:', routeError);
-        // 不阻止设置保存，只是警告路由刷新失败
-      }
-
-      message.success(t`MCP Gateways updated successfully`);
-    } catch (error) {
-      console.error("Failed to update MCP gateways:", error);
-      message.error(t`Failed to update MCP gateways`);
-    }
-  };
 
   // 处理标签页切换
   const handleTabChange = async (activeKey: string) => {
@@ -350,7 +314,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
   };
 
   // 处理标签页编辑（添加/删除）
-  const handleTabEdit = (targetKey: string | React.MouseEvent | React.KeyboardEvent, action: 'add' | 'remove') => {
+  const handleTabEdit = async (targetKey: string | React.MouseEvent | React.KeyboardEvent, action: 'add' | 'remove') => {
     if (action === 'add') {
       setOpenModalOpen(true);
     } else if (action === 'remove' && typeof targetKey === 'string') {
@@ -360,17 +324,29 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
         return;
       }
 
-      const newTabs = workspaceTabs.filter(tab => tab.key !== targetKey);
-      setWorkspaceTabs(newTabs);
+      try {
+        // 通知后端卸载工作区
+        await call("removeWorkspace", {
+          workspacePath: targetKey
+        });
 
-      // 如果关闭的是当前活动标签页，切换到其他标签页
-      if (activeTabKey === targetKey) {
-        const remainingTab = newTabs.length > 0 ? newTabs[newTabs.length - 1] : null;
-        if (remainingTab) {
-          handleTabChange(remainingTab.key);
-        } else {
-          setActiveTabKey('');
+        const newTabs = workspaceTabs.filter(tab => tab.key !== targetKey);
+        setWorkspaceTabs(newTabs);
+
+        // 如果关闭的是当前活动标签页，切换到其他标签页
+        if (activeTabKey === targetKey) {
+          const remainingTab = newTabs.length > 0 ? newTabs[newTabs.length - 1] : null;
+          if (remainingTab) {
+            handleTabChange(remainingTab.key);
+          } else {
+            setActiveTabKey('');
+          }
         }
+
+        message.success(t`Workspace removed successfully`);
+      } catch (error) {
+        console.error("Failed to remove workspace:", error);
+        message.error(t`Failed to remove workspace`);
       }
     }
   };
@@ -379,14 +355,14 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
   const renderWorkspaceLabel = (tab: WorkspaceTab) => {
     return (
       <Space>
-        {tab.isGlobal ? <GlobalOutlined /> : <FolderOpenOutlined />}
+        {tab.isPrimary ? <GlobalOutlined /> : <FolderOpenOutlined />}
         <div style={{ textAlign: 'left' }}>
           <div>{tab.name}</div>
           <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
             {tab.path}
           </div>
         </div>
-        {tab.isGlobal && <Tag color="blue">{t`Default`}</Tag>}
+        {tab.isPrimary && <Tag color="blue">{t`Default`}</Tag>}
       </Space>
     );
   };
@@ -397,7 +373,7 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
       key: tab.key,
       label: renderWorkspaceLabel(tab),
       closable: tab.closable,
-      children: <Workspace key={tab.key} workspacePath={tab.path} />
+      children: <Workspace key={tab.key} workspacePath={tab.path} isPrimary={tab.isPrimary} />
     }));
   };
 
@@ -427,7 +403,6 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
                       onAIProviderClick={() => setDrawerStates(prev => ({ ...prev, modelConfig: true }))}
                       onRefresh={refresh}
                       onAppSettingsClick={handleAppSettings}
-                      onMCPGatewaysClick={handleMCPGateways}
                     />
                   )
                 }}
@@ -541,32 +516,6 @@ export const WorkspaceManage: React.FC<WorkspaceManageProps> = () => {
         <ProviderSettings />
       </Drawer>
 
-      {/* MCP Gateways 设置抽屉 */}
-      <Drawer
-        width={800}
-        title={t`MCP Gateways Settings`}
-        open={drawerStates.mcpGateways}
-        onClose={() => {
-          setDrawerStates(prev => ({ ...prev, mcpGateways: false }));
-          setAppSettings(null);
-        }}
-      >
-        {appSettings && (
-          <MCPGatewaysSettings
-            gateways={(appSettings.mcpGateWays?.filter(gateway =>
-              gateway.name && typeof gateway.name === 'string'
-            ) || []) as Array<{
-              name: string;
-              description?: string;
-              allowMCPs: string[];
-              blockMCPTools: string[];
-            }>}
-            onUpdate={updateMCPGateways}
-            availableMCPs={[]} // TODO: 获取可用的 MCP 列表
-            mcpClients={[]} // TODO: 获取 MCP 客户端列表
-          />
-        )}
-      </Drawer>
     </div>
   );
 };

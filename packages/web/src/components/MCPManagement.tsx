@@ -17,8 +17,6 @@ import {
   Alert,
   Form,
   Radio,
-  Popconfirm,
-  Divider,
 } from "antd";
 import {
   ReloadOutlined,
@@ -33,13 +31,16 @@ import {
   ExperimentOutlined,
   SettingOutlined,
   MinusCircleOutlined,
+  ApiOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
-import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@dadigua/hyperchat-shared";
+import { HyperChatCompletionTool, IMCPClient, MCPServerConfig, MCPGatewaySchema } from "@dadigua/hyperchat-shared";
 import Editor from "@monaco-editor/react";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { useForceUpdate } from "../hooks";
+import { MCPGatewaysSettings } from "./MCPGatewaysSettings";
+import type { z } from 'zod';
 
 const { Title, Text } = Typography;
 
@@ -99,9 +100,66 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
   const [mcpConfigResult, setMcpConfigResult] = useState<{ data: any; error: any }>({ data: null, error: null });
 
+  // MCP Gateways 相关状态
+  const [mcpGatewaysDrawer, setMcpGatewaysDrawer] = useState(false);
+  const [mcpGateways, setMcpGateways] = useState<z.infer<typeof MCPGatewaySchema>[]>([]);
+
   // Monaco编辑器引用
   const monacoRef = useRef<any>(null);
   const editorRef = useRef<any>(null);
+
+  // 判断是否为第一个工作区（只有第一个工作区才能设置MCP网关）
+  const isFirstWorkspace = workspace.isPrimary;
+
+  // 加载MCP Gateways配置
+  const loadMCPGateways = async () => {
+    if (!isFirstWorkspace) return;
+    
+    try {
+      const settings = await call("getAppSettings");
+      const gateways = (settings.mcpGateWays?.filter((gateway: any) =>
+        gateway.name && typeof gateway.name === 'string'
+      ) || []) as z.infer<typeof MCPGatewaySchema>[];
+      setMcpGateways(gateways);
+    } catch (error) {
+      console.error("Failed to load MCP gateways:", error);
+      message.error(t`Failed to load MCP gateways`);
+    }
+  };
+
+  // 更新MCP Gateways配置
+  const updateMCPGateways = async (gateways: z.infer<typeof MCPGatewaySchema>[]) => {
+    if (!isFirstWorkspace) return;
+    
+    try {
+      const updates = { mcpGateWays: gateways };
+      await call("updateAppSettings", { updates });
+
+      // 刷新 MCP 路由以应用新的网关配置
+      try {
+        await call("refreshMcpRoutes");
+        console.log('MCP routes refreshed successfully');
+      } catch (routeError) {
+        console.warn('Failed to refresh MCP routes, but settings were saved:', routeError);
+      }
+
+      setMcpGateways(gateways);
+      message.success(t`MCP Gateways updated successfully`);
+    } catch (error) {
+      console.error("Failed to update MCP gateways:", error);
+      message.error(t`Failed to update MCP gateways`);
+    }
+  };
+
+  // 显示MCP Gateways设置
+  const showMCPGateways = () => {
+    if (!isFirstWorkspace) {
+      message.warning(t`MCP Gateways can only be configured in the first workspace`);
+      return;
+    }
+    loadMCPGateways();
+    setMcpGatewaysDrawer(true);
+  };
 
   // 添加MCP服务器
   const addMcpServer = () => {
@@ -501,6 +559,15 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
               onClick={() => setAddMcpModalOpen(true)}
               title={t`Add MCP server`}
             />
+            {isFirstWorkspace && (
+              <Button
+                type="text"
+                size="small"
+                icon={<ApiOutlined />}
+                onClick={showMCPGateways}
+                title={t`MCP Gateways Settings`}
+              />
+            )}
             <Button
               type="text"
               size="small"
@@ -1248,6 +1315,31 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
           </div>
         )}
       </Modal>
+
+      {/* MCP Gateways 设置抽屉 */}
+      <Drawer
+        width={800}
+        title={t`MCP Gateways Settings`}
+        open={mcpGatewaysDrawer}
+        onClose={() => {
+          setMcpGatewaysDrawer(false);
+          setMcpGateways([]);
+        }}
+        styles={{
+          body: {
+            padding: 16,
+          }
+        }}
+      >
+        {isFirstWorkspace && (
+          <MCPGatewaysSettings
+            gateways={mcpGateways}
+            onUpdate={updateMCPGateways}
+            availableMCPs={mcpClients.map(client => client.serverName)}
+            mcpClients={mcpClients}
+          />
+        )}
+      </Drawer>
     </>
   );
 });

@@ -68,7 +68,7 @@ export const workspaceCommands = {
 
     const config = workspace.getConfig();
     const summary = await workspace.getSummary();
-    const workspacePath = workspaceManager.getCurrentWorkspacePath();
+    const workspacePath = workspaceManager.getCurrentWorkspace().workspacePath;
     const isGlobal = workspaceManager.isGlobalWorkspace(workspacePath);
 
     return {
@@ -131,7 +131,7 @@ export const workspaceCommands = {
     try {
       const workspaceManager = getWorkspaceManager();
       let workspace;
-      
+
       if (workspacePath) {
         workspace = await workspaceManager.get(workspacePath, true);
         if (!workspace) {
@@ -140,9 +140,9 @@ export const workspaceCommands = {
       } else {
         workspace = workspaceManager.getCurrentWorkspace();
       }
-      
+
       if (!workspace) return [];
-      
+
       // 确保工作区已初始化
       if (!workspace.isInitialized()) {
         await workspace.initialize();
@@ -243,9 +243,9 @@ export const workspaceCommands = {
   }>> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const currentPath = workspaceManager.getCurrentWorkspacePath();
+      const currentPath = workspaceManager.getCurrentWorkspace().workspacePath;
       const allWorkspaces = workspaceManager.getAll();
-      
+
       return allWorkspaces.map(({ path, workspace }) => ({
         path,
         isPrimary: path === currentPath,
@@ -298,13 +298,14 @@ export const workspaceCommands = {
     isGlobal: boolean;
     isInitialized: boolean;
     isStarted: boolean;
+    isPrimary: boolean;
   }> {
     try {
       const workspaceManager = getWorkspaceManager();
-      
+
       // 创建工作区实例
       const workspace = await workspaceManager.create(workspacePath, forceCreate);
-      
+
       // 初始化工作区
       if (!workspace.isInitialized()) {
         await workspace.initialize();
@@ -312,15 +313,16 @@ export const workspaceCommands = {
       if (!workspace.isStarted()) {
         await workspace.start();
       }
-      
+
       // 获取工作区信息
       const config = workspace.getConfig();
       const isGlobal = workspaceManager.isGlobalWorkspace(workspacePath);
-      
+
       return {
         path: workspacePath,
         name: config.name || (isGlobal ? 'Global Workspace' : 'Workspace'),
         isGlobal,
+        isPrimary: false,
         isInitialized: workspace.isInitialized(),
         isStarted: workspace.isStarted()
       };
@@ -348,24 +350,25 @@ export const workspaceCommands = {
     isGlobal: boolean;
     isInitialized: boolean;
     isStarted: boolean;
+    isPrimary: boolean;
   } | null> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = await workspaceManager.get(workspacePath, true);
-      
+
       if (!workspace) {
         return null;
       }
-      
+
       // 确保工作区已初始化
       if (!workspace.isInitialized()) {
         await workspace.initialize();
       }
-      
+
       const config = workspace.getConfig();
       const summary = await workspace.getSummary();
       const isGlobal = workspaceManager.isGlobalWorkspace(workspacePath);
-      
+
       return {
         path: workspacePath,
         name: config.name || (isGlobal ? 'Global Workspace' : 'Workspace'),
@@ -374,7 +377,8 @@ export const workspaceCommands = {
         agentsCount: summary.agentsCount,
         isGlobal,
         isInitialized: workspace.isInitialized(),
-        isStarted: workspace.isStarted()
+        isStarted: workspace.isStarted(),
+        isPrimary: workspacePath == workspaceManager.getCurrentWorkspace().workspacePath
       };
     } catch (error) {
       console.error("Failed to get workspace info:", error);
@@ -394,8 +398,8 @@ export const workspaceCommands = {
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
-      // 不能移除当前工作区
-      const currentPath = workspaceManager.getCurrentWorkspacePath();
+      // 不能移除主工作区
+      const currentPath = workspaceManager.getCurrentWorkspace().workspacePath;
       if (workspacePath === currentPath) {
         throw new Error("Cannot remove current workspace");
       }
@@ -422,7 +426,7 @@ export const workspaceCommands = {
     try {
       const workspaceManager = getWorkspaceManager();
       let workspace;
-      
+
       if (workspacePath) {
         workspace = await workspaceManager.get(workspacePath, true);
         if (!workspace) {
@@ -431,12 +435,12 @@ export const workspaceCommands = {
       } else {
         workspace = workspaceManager.getCurrentWorkspace();
       }
-      
+
       // 确保工作区已初始化
       if (!workspace.isInitialized()) {
         await workspace.initialize();
       }
-      
+
       // 通过工作区获取所有 Agent 摘要信息
       return await workspace.getAllAgentsSummary();
     } catch (error) {
@@ -457,7 +461,7 @@ export const workspaceCommands = {
     try {
       const workspaceManager = getWorkspaceManager();
       let workspace;
-      
+
       if (workspacePath) {
         workspace = await workspaceManager.get(workspacePath, true);
         if (!workspace) {
@@ -466,12 +470,12 @@ export const workspaceCommands = {
       } else {
         workspace = workspaceManager.getCurrentWorkspace();
       }
-      
+
       // 确保工作区已初始化
       if (!workspace.isInitialized()) {
         await workspace.initialize();
       }
-      
+
       return workspace.getMcpClients();
     } catch (error) {
       console.error("Failed to get workspace MCP clients:", error);

@@ -264,16 +264,6 @@ export class WorkspaceManager {
   }
 
   /**
-   * 获取当前工作区路径
-   */
-  getCurrentWorkspacePath(): string {
-    if (!this.primaryWorkspacePath) {
-      throw new Error("工作区管理器尚未初始化");
-    }
-    return this.primaryWorkspacePath;
-  }
-
-  /**
    * 切换到新工作区（单工作区模式兼容 - 实际上是重新初始化）
    * @param workspacePath 工作区路径
    * @param force 是否强制创建工作区

@@ -622,256 +622,235 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
   return (
     <div className="workspace-chat h-full">
-      <XProvider>
-        <div className="h-full flex flex-col">
-          {/* 系统提示词显示区域 */}
-          {systemMessages.length > 0 && (
-            <div className="flex-shrink-0 border-b bg-blue-50 p-1">
-              <div className="text-sm font-medium text-blue-300 mb-2 flex items-center">
-                <Icon name="brain" className="mr-2" />
-                <span className="mr-2 text-blue-700">
-                  {agentName ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
-                </span>
-              </div>
-
-              <div className="text-sm line-clamp-1 text-gray-700 bg-white p-0 rounded border border-blue-200">
-                {systemMessages}
-              </div>
-
+      {/* <XProvider> */}
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 72px)' }}>
+        {/* 系统提示词显示区域 - 固定头部 */}
+        {systemMessages.length > 0 && (
+          <div className="flex-shrink-0 bg-blue-50 border-b border-blue-200 p-3">
+            <div className="flex items-center mb-2">
+              <Icon name="brain" className="mr-2 text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">
+                {agentName ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
+              </span>
             </div>
+
+            <div className="text-sm text-gray-700 bg-white px-3 py-2 rounded-md border border-blue-200 line-clamp-1">
+              {systemMessages}
+            </div>
+          </div>
+        )}
+
+        {/* 聊天消息区域 */}
+        <div className="flex-1 min-h-0 p-4">
+          {(nonSystemMessages.length == 0) && (
+            <Welcome
+              icon={agentName ? "🤖" : "💬"}
+              title={t`Welcome Chat`}
+              className="mb-4"
+              description={agentName ? t`Chatting with agent` : t`Start chatting in your workspace`}
+            />
           )}
 
-          {/* 聊天消息区域 */}
-          <div className="flex-1 overflow-auto p-0">
-            {(nonSystemMessages.length == 0) && (
-              <>
-                <Welcome
-                  icon={agentName ? "🤖" : "💬"}
-                  title={t`Welcome Chat`}
-                  className="mb-4"
-                  description={agentName ? t`Chatting with agent` : t`Start chatting in your workspace`}
+          <Messages
+            messages={nonSystemMessages}
+            onSumbit={(messages) => {
+              // 合并系统消息和用户提交的消息
+              currentChat.current.messages = [...messages];
+              // 同步到 chatStream
+              chatStream.setMessages([...messages]);
+              refresh();
+              onRequest();
+            }}
+            status={loading ? "runing" : "stop"}
+          />
+        </div>
+
+        {/* 操作栏 - 固定尾部 */}
+        <div className="flex-shrink-0 bg-gray-50 border-t border-gray-200 p-3">
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center space-x-2">
+              <Tooltip title={t`New Chat`}>
+                <Button
+                  size="small"
+                  icon={<ClearOutlined />}
+                  onClick={() => {
+                    currentChatReset({
+                      messages: [],
+                    });
+                  }}
                 />
-              </>
-            )}
+              </Tooltip>
+              <Divider type="vertical" />
 
-            <Messages
-              messages={nonSystemMessages}
-              onSumbit={(messages) => {
-                // 合并系统消息和用户提交的消息
-                currentChat.current.messages = [...messages];
-                // 同步到 chatStream
-                chatStream.setMessages([...messages]);
-                refresh();
-                onRequest();
-              }}
-              status={loading ? "runing" : "stop"}
-            />
-          </div>
-
-          {/* 操作栏 */}
-          <div className="flex-shrink-0 border-t p-2">
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center space-x-2">
-                <Tooltip title={t`New Chat`}>
-                  <Button
+              <Tooltip title={t`Select LLM`}>
+                <span className="inline-block">
+                  <Icon name="brain" />{" "}
+                  <Select
                     size="small"
-                    icon={<ClearOutlined />}
-                    onClick={() => {
-                      currentChatReset({
-                        messages: [],
-                      });
-                    }}
-                  />
-                </Tooltip>
-                <Divider type="vertical" />
-
-                <Tooltip title={t`Select LLM`}>
-                  <span className="inline-block">
-                    <Icon name="brain" />{" "}
-                    <Select
-                      size="small"
-                      showSearch
-                      optionFilterProp="label"
-                      placeholder={
-                        aiSettings && aiSettings.models && aiSettings.models.length > 0
-                          ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
-                          : "Please add a LLM model"
-                      }
-                      className="w-64"
-                      // allowClear
-                      disabled={aiSettingsLoading}
-                      value={effectiveConfigForModel.modelKey}
-                      onChange={(value) => {
-                        if (!currentChat.current.configOverrides) {
-                          currentChat.current.configOverrides = {};
-                        }
-                        currentChat.current.configOverrides.modelKey = value;
-                        refresh();
-                      }}
-                      options={aiSettings ? getGroupedModelOptions(aiSettings) : []}
-                    />
-                  </span>
-                </Tooltip>
-              </div>
-
-              <div className="flex items-center space-x-2">
-
-                {/* Token使用信息 */}
-                {chatStream.tokenUsage && (
-                  <div style={{
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '6px',
-                    border: '1px solid #e9ecef',
-                    fontSize: '12px'
-                  }}>
-                    <Flex justify="space-between" align="center">
-                      <Space size={8}>
-                        <InfoCircleOutlined style={{ color: '#6c757d' }} />
-                        <span style={{
-                          color: '#495057', fontWeight: 500
-                        }}>
-                          {`${t`Token Usage`}: ${chatStream.tokenUsage.current.toLocaleString()} / ${chatStream.tokenUsage.max.toLocaleString()}`}
-                          {chatStream.tokenUsage.type && (
-                            <span style={{
-                              marginLeft: '4px',
-                              fontSize: '10px',
-                              color: chatStream.tokenUsage.type === 'actual' ? '#52c41a' : '#faad14',
-                              fontWeight: 'normal'
-                            }}>
-                              ({chatStream.tokenUsage.type === 'actual' ? t`Actual` : t`Estimated`})
-                            </span>
-                          )}
-                        </span>
-                        <Progress
-                          percent={chatStream.tokenUsage.percentage}
-                          size="small"
-                          strokeColor={
-                            chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
-                              chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
-                                '#52c41a'
-                          }
-                          showInfo={false}
-                          style={{ width: '80px', minWidth: '80px' }}
-                        />
-                        <span style={{
-                          color: chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
-                            chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
-                              '#52c41a',
-                          fontWeight: 500,
-                          marginRight: '4px'
-                        }}>
-                          {chatStream.tokenUsage.percentage}%
-                        </span>
-                      </Space>
-                      <Tooltip title={
-                        chatStream.tokenUsage.percentage >= 80 ?
-                          (chatStream.tokenUsage.percentage >= 90 ? `⚠️ ${t`Memory compression will be triggered soon`}` : `⚡ ${t`Approaching compression threshold`}`) :
-                          t`Manually compress memory`
-                      }>
-                        <Button
-                          size="small"
-                          type={chatStream.tokenUsage.percentage >= 80 ? 'primary' : 'default'}
-                          icon={<CompressOutlined />}
-                          loading={compressLoading}
-                          onClick={handleManualCompress}
-                          disabled={chatStream.messages.length <= 1}
-                        >
-                          {t`Compress`}
-                        </Button>
-                      </Tooltip>
-                    </Flex>
-                  </div>
-                )}
-
-                <Tooltip title={t`Settings`}>
-                  <Button
-                    size="small"
-                    icon={<SettingOutlined />}
-                    onClick={() => {
-                      // 打开设置模态框时，设置当前表单值
-                      const currentEffectiveConfig = getEffectiveConfig();
-                      settingsForm.resetFields();
-                      settingsForm.setFieldsValue({
-                        modelKey: currentEffectiveConfig.modelKey,
-                        temperature: currentEffectiveConfig.temperature ?? 1,
-                        maxTokens: currentEffectiveConfig.maxTokens ?? 4000,
-                        isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
-                        allowMCPs: currentEffectiveConfig.allowMCPs || [],
-                        blockMCPTools: currentEffectiveConfig.blockMCPTools || [],
-                        compressionStrategy: "tokens",
-                        maxContextTokens: currentEffectiveConfig.maxContextTokens,
-                      });
-                      setIsSettingsShow(true);
-                    }}
-                  />
-                </Tooltip>
-              </div>
-            </div>
-            <MyAttachR
-              resourceResList={resourceResListRef.current}
-              resourceResListRemove={(x) => {
-                resourceResListRef.current =
-                  resourceResListRef.current.filter((v) => v.uid != x.uid);
-                refresh();
-                message.success(t`Delete Success`);
-              }}
-              promptResList={promptResList.current}
-              promptResListRemove={(x) => {
-
-                promptResList.current = promptResList.current.filter((v) => v.uid != x.uid);
-                refresh();
-                message.success(t`Delete Success`);
-              }}
-            ></MyAttachR>
-
-
-            {/* 发送框 */}
-            <div className="my-sender-container">
-              <HyperChatEditor
-                ref={editorRef}
-                value={value}
-                onChange={(nextVal) => {
-                  setValue(nextVal);
-                }}
-                onSubmit={(s) => {
-                  if (s == "") return;
-                  if (loading) {
-                    message.warning(t`Please wait for the current request to finish`);
-                    return;
-                  }
-                  if (aiSettingsLoading) {
-                    message.warning(t`AI settings are loading, please wait...`);
-                    return;
-                  }
-                  addToSendHistory(s);
-                  onRequest(s);
-                  setValue("");
-                  editorRef.current?.setValue("");
-                }}
-                onDragFile={async (file: File) => {
-                  if (!file) return;
-
-                  if ((file as any).path) {
-                    editorRef.current?.insertTextAtCursor((file as any).path);
-                  } else {
-                    if (file.type.includes("image")) {
-                      let path = await blobToBase64(file);
-                      resourceResListRef.current.push({
-                        type: "image_url",
-                        image_url: {
-                          url: path,
-                        },
-                        uid: v4(),
-                      });
-                      refresh();
-                    } else {
-                      message.warning(t`please upload image`);
+                    showSearch
+                    optionFilterProp="label"
+                    placeholder={
+                      aiSettings && aiSettings.models && aiSettings.models.length > 0
+                        ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
+                        : "Please add a LLM model"
                     }
-                  }
-                }}
-                onParseFile={async (file) => {
-                  if (!file) return;
+                    className="w-64"
+                    // allowClear
+                    disabled={aiSettingsLoading}
+                    value={effectiveConfigForModel.modelKey}
+                    onChange={(value) => {
+                      if (!currentChat.current.configOverrides) {
+                        currentChat.current.configOverrides = {};
+                      }
+                      currentChat.current.configOverrides.modelKey = value;
+                      refresh();
+                    }}
+                    options={aiSettings ? getGroupedModelOptions(aiSettings) : []}
+                  />
+                </span>
+              </Tooltip>
+            </div>
 
+            <div className="flex items-center space-x-2">
+
+              {/* Token使用信息 */}
+              {chatStream.tokenUsage && (
+                <div style={{
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '6px',
+                  border: '1px solid #e9ecef',
+                  fontSize: '12px'
+                }}>
+                  <Flex justify="space-between" align="center">
+                    <Space size={8}>
+                      <InfoCircleOutlined style={{ color: '#6c757d' }} />
+                      <span style={{
+                        color: '#495057', fontWeight: 500
+                      }}>
+                        {`${t`Token Usage`}: ${chatStream.tokenUsage.current.toLocaleString()} / ${chatStream.tokenUsage.max.toLocaleString()}`}
+                        {chatStream.tokenUsage.type && (
+                          <span style={{
+                            marginLeft: '4px',
+                            fontSize: '10px',
+                            color: chatStream.tokenUsage.type === 'actual' ? '#52c41a' : '#faad14',
+                            fontWeight: 'normal'
+                          }}>
+                            ({chatStream.tokenUsage.type === 'actual' ? t`Actual` : t`Estimated`})
+                          </span>
+                        )}
+                      </span>
+                      <Progress
+                        percent={chatStream.tokenUsage.percentage}
+                        size="small"
+                        strokeColor={
+                          chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
+                            chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
+                              '#52c41a'
+                        }
+                        showInfo={false}
+                        style={{ width: '80px', minWidth: '80px' }}
+                      />
+                      <span style={{
+                        color: chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
+                          chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
+                            '#52c41a',
+                        fontWeight: 500,
+                        marginRight: '4px'
+                      }}>
+                        {chatStream.tokenUsage.percentage}%
+                      </span>
+                    </Space>
+                    <Tooltip title={
+                      chatStream.tokenUsage.percentage >= 80 ?
+                        (chatStream.tokenUsage.percentage >= 90 ? `⚠️ ${t`Memory compression will be triggered soon`}` : `⚡ ${t`Approaching compression threshold`}`) :
+                        t`Manually compress memory`
+                    }>
+                      <Button
+                        size="small"
+                        type={chatStream.tokenUsage.percentage >= 80 ? 'primary' : 'default'}
+                        icon={<CompressOutlined />}
+                        loading={compressLoading}
+                        onClick={handleManualCompress}
+                        disabled={chatStream.messages.length <= 1}
+                      >
+                        {t`Compress`}
+                      </Button>
+                    </Tooltip>
+                  </Flex>
+                </div>
+              )}
+
+              <Tooltip title={t`Settings`}>
+                <Button
+                  size="small"
+                  icon={<SettingOutlined />}
+                  onClick={() => {
+                    // 打开设置模态框时，设置当前表单值
+                    const currentEffectiveConfig = getEffectiveConfig();
+                    settingsForm.resetFields();
+                    settingsForm.setFieldsValue({
+                      modelKey: currentEffectiveConfig.modelKey,
+                      temperature: currentEffectiveConfig.temperature ?? 1,
+                      maxTokens: currentEffectiveConfig.maxTokens ?? 4000,
+                      isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
+                      allowMCPs: currentEffectiveConfig.allowMCPs || [],
+                      blockMCPTools: currentEffectiveConfig.blockMCPTools || [],
+                      compressionStrategy: "tokens",
+                      maxContextTokens: currentEffectiveConfig.maxContextTokens,
+                    });
+                    setIsSettingsShow(true);
+                  }}
+                />
+              </Tooltip>
+            </div>
+          </div>
+          <MyAttachR
+            resourceResList={resourceResListRef.current}
+            resourceResListRemove={(x) => {
+              resourceResListRef.current =
+                resourceResListRef.current.filter((v) => v.uid != x.uid);
+              refresh();
+              message.success(t`Delete Success`);
+            }}
+            promptResList={promptResList.current}
+            promptResListRemove={(x) => {
+
+              promptResList.current = promptResList.current.filter((v) => v.uid != x.uid);
+              refresh();
+              message.success(t`Delete Success`);
+            }}
+          ></MyAttachR>
+
+
+          {/* 发送框 */}
+          <div className="my-sender-container">
+            <HyperChatEditor
+              ref={editorRef}
+              value={value}
+              onChange={(nextVal) => {
+                setValue(nextVal);
+              }}
+              onSubmit={(s) => {
+                if (s == "") return;
+                if (loading) {
+                  message.warning(t`Please wait for the current request to finish`);
+                  return;
+                }
+                if (aiSettingsLoading) {
+                  message.warning(t`AI settings are loading, please wait...`);
+                  return;
+                }
+                addToSendHistory(s);
+                onRequest(s);
+                setValue("");
+                editorRef.current?.setValue("");
+              }}
+              onDragFile={async (file: File) => {
+                if (!file) return;
+
+                if ((file as any).path) {
+                  editorRef.current?.insertTextAtCursor((file as any).path);
+                } else {
                   if (file.type.includes("image")) {
                     let path = await blobToBase64(file);
                     resourceResListRef.current.push({
@@ -885,151 +864,169 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                   } else {
                     message.warning(t`please upload image`);
                   }
-                }}
-                onKeyDown={handleKeyDown}
-                submitType="enter"
-                autoHeight
-                rows={1}
-                maxRows={10}
-                fontSize={16}
-                lineHeight={28}
-                placeholder={t`Start inputting...`}
-                style={{
-                  border: "0px",
-                  padding: "8px 0px 8px",
-                }}
-              />
-              {/* 发送区域操作栏 */}
-              <div className="flex justify-between items-center p-2 border-t bg-gray-50 rounded-b">
-                <Flex align="center" gap={8}>
+                }
+              }}
+              onParseFile={async (file) => {
+                if (!file) return;
 
-                  <Upload
-                    disabled={!supportImage}
-                    className={`${!supportImage ? 'pointer-events-none opacity-50 text-gray-400' : ''}`}
-                    accept="image/*"
-                    fileList={[]}
-                    beforeUpload={async (file) => {
-                      if (file.type.includes("image")) {
-                        let path = await blobToBase64(file);
-                        resourceResListRef.current.push({
-                          type: "image_url",
-                          image_url: {
-                            url: await urlToBase64(path),
-                          },
-                          uid: v4(),
-                        });
-                        refresh();
-                      } else {
-                        message.warning(t`please upload image`);
-                      }
-                      return false;
-                    }}
-                  >
-                    <Tooltip title={t`Upload Image`}>
-                      <Button
-                        type="text"
-                        icon={<LinkOutlined />}
-                        size="small"
-                      />
-                    </Tooltip>
-                  </Upload>
-                  <Tooltip title={t`MCP and Tools`} placement="bottom">
-                    <div>
-                      {supportTool == null || supportTool == true ? (
-                        <Space.Compact>
-                          <Button onClick={() => {
-                            setIsToolsShow(true);
-                          }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
+                if (file.type.includes("image")) {
+                  let path = await blobToBase64(file);
+                  resourceResListRef.current.push({
+                    type: "image_url",
+                    image_url: {
+                      url: path,
+                    },
+                    uid: v4(),
+                  });
+                  refresh();
+                } else {
+                  message.warning(t`please upload image`);
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              submitType="enter"
+              autoHeight
+              rows={1}
+              maxRows={10}
+              fontSize={16}
+              lineHeight={28}
+              placeholder={t`Start inputting...`}
+              style={{
+                border: "0px",
+                padding: "8px 0px 8px",
+              }}
+            />
+            {/* 发送区域操作栏 */}
+            <div className="flex justify-between items-center p-2 border-t bg-gray-50 rounded-b">
+              <Flex align="center" gap={8}>
 
-
-                            {(() => {
-
-                              let len = mcpClients.filter((v) => {
-                                return effectiveConfigForModel.allowMCPs.includes(v.serverName);
-                              }).length;
-                              return len;
-                            })()}
-                            <Icon name="chuizi-copy" ></Icon>{
-
-                              (() => {
-                                let tools: IMCPClient["tools"] = [];
-
-                                mcpClients.filter(x => effectiveConfigForModel.allowMCPs.includes(x.serverName)).forEach((v) => {
-                                  tools = tools.concat(
-                                    v.tools.filter((t) => {
-                                      return !effectiveConfigForModel.blockMCPTools.includes(t.displayName);
-                                    }),
-                                  );
-                                });
-                                return (
-                                  <>
-                                    {tools.length}
-                                  </>
-                                )
-                              })()
-                            }
-                          </Button>
-
-                        </Space.Compact>
-                      ) : (
-                        <>  <Button
-                          size="small"
-                          type="text"
-                          icon={<Icon name="mcp"></Icon>}
-                          onClick={() => { }}
-                        >{t`LLM not support`}</Button>  </>
-                      )}
-                    </div>
+                <Upload
+                  disabled={!supportImage}
+                  className={`${!supportImage ? 'pointer-events-none opacity-50 text-gray-400' : ''}`}
+                  accept="image/*"
+                  fileList={[]}
+                  beforeUpload={async (file) => {
+                    if (file.type.includes("image")) {
+                      let path = await blobToBase64(file);
+                      resourceResListRef.current.push({
+                        type: "image_url",
+                        image_url: {
+                          url: await urlToBase64(path),
+                        },
+                        uid: v4(),
+                      });
+                      refresh();
+                    } else {
+                      message.warning(t`please upload image`);
+                    }
+                    return false;
+                  }}
+                >
+                  <Tooltip title={t`Upload Image`}>
+                    <Button
+                      type="text"
+                      icon={<LinkOutlined />}
+                      size="small"
+                    />
                   </Tooltip>
+                </Upload>
+                <Tooltip title={t`MCP and Tools`} placement="bottom">
+                  <div>
+                    {supportTool == null || supportTool == true ? (
+                      <Space.Compact>
+                        <Button onClick={() => {
+                          setIsToolsShow(true);
+                        }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
 
-                  {/* 附件显示区域
+
+                          {(() => {
+
+                            let len = mcpClients.filter((v) => {
+                              return effectiveConfigForModel.allowMCPs.includes(v.serverName);
+                            }).length;
+                            return len;
+                          })()}
+                          <Icon name="chuizi-copy" ></Icon>{
+
+                            (() => {
+                              let tools: IMCPClient["tools"] = [];
+
+                              mcpClients.filter(x => effectiveConfigForModel.allowMCPs.includes(x.serverName)).forEach((v) => {
+                                tools = tools.concat(
+                                  v.tools.filter((t) => {
+                                    return !effectiveConfigForModel.blockMCPTools.includes(t.displayName);
+                                  }),
+                                );
+                              });
+                              return (
+                                <>
+                                  {tools.length}
+                                </>
+                              )
+                            })()
+                          }
+                        </Button>
+
+                      </Space.Compact>
+                    ) : (
+                      <>  <Button
+                        size="small"
+                        type="text"
+                        icon={<Icon name="mcp"></Icon>}
+                        onClick={() => { }}
+                      >{t`LLM not support`}</Button>  </>
+                    )}
+                  </div>
+                </Tooltip>
+
+                {/* 附件显示区域
                   {resourceResListRef.current.length > 0 && (
                     <span className="text-sm text-gray-500">
                       {resourceResListRef.current.length} {t`attachments`}
                     </span>
                   )} */}
-                </Flex>
+              </Flex>
 
-                <Flex align="center" gap={8}>
-                  {loading && (
-                    <Button
-                      size="small"
-                      type="text"
-                      onClick={() => {
-                        chatStream.cancelChatStream(currentChat.current.key);
-                      }}
-                    >
-                      {t`Cancel`}
-                    </Button>
-                  )}
-
+              <Flex align="center" gap={8}>
+                {loading && (
                   <Button
-                    type="primary"
                     size="small"
-                    icon={loading ? <LoadingOutlined /> : <SendOutlined />}
-                    loading={loading}
-                    disabled={!value.trim() || loading || aiSettingsLoading}
+                    type="text"
                     onClick={() => {
-                      if (value.trim()) {
-                        if (aiSettingsLoading) {
-                          message.warning(t`AI settings are loading, please wait...`);
-                          return;
-                        }
-                        addToSendHistory(value);
-                        onRequest(value);
-                        setValue("");
-                        editorRef.current?.setValue("");
-                      }
+                      chatStream.cancelChatStream(currentChat.current.key);
                     }}
                   >
-                    {aiSettingsLoading ? t`Loading Settings...` : loading ? t`Sending` : t`Send`}
+                    {t`Cancel`}
                   </Button>
-                </Flex>
-              </div>
+                )}
+
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={loading ? <LoadingOutlined /> : <SendOutlined />}
+                  loading={loading}
+                  disabled={!value.trim() || loading || aiSettingsLoading}
+                  onClick={() => {
+                    if (value.trim()) {
+                      if (aiSettingsLoading) {
+                        message.warning(t`AI settings are loading, please wait...`);
+                        return;
+                      }
+                      addToSendHistory(value);
+                      onRequest(value);
+                      setValue("");
+                      editorRef.current?.setValue("");
+                    }
+                  }}
+                >
+                  {aiSettingsLoading ? t`Loading Settings...` : loading ? t`Sending` : t`Send`}
+                </Button>
+              </Flex>
             </div>
           </div>
         </div>
-      </XProvider >
+      </div>
+      {/* </XProvider> */}
 
       <Modal
         width={1000}

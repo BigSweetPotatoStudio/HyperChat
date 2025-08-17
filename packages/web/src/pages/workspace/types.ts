@@ -26,6 +26,7 @@ export interface WorkspaceInfo {
   agentsCount: number;
   mcpServersCount: number;
   isGlobal: boolean;
+  isPrimary: boolean;
   name: string;
   description?: string;
   created: number;

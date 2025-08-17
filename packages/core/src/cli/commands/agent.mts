@@ -16,7 +16,7 @@ async function getCurrentWorkspacePath(): Promise<string> {
   // Agent 查询只需要配置，不需要启动服务
   const currentWorkingDirectory = process.cwd();
   await workspaceManager.initialize(currentWorkingDirectory);
-  return workspaceManager.getCurrentWorkspacePath();
+  return workspaceManager.getCurrentWorkspace().workspacePath;
 }
 
 /**
