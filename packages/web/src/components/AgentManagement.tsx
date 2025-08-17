@@ -226,6 +226,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     setChatHistoryAgent(agent);
     setChatHistoryModal(true);
 
+    // 清空旧的缓存数据，确保显示加载状态
+    setChatHistoryList([]);
+    setChatHistoryPagination({ current: 1, pageSize: 10, total: 0 });
+
     // 重置分页状态并加载第一页
     await loadChatHistory(agent, 1, 10);
   };
@@ -705,16 +709,27 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                     <List.Item
                       key={chatLog.key || index}
                       className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => {
+                      onClick={async () => {
                         // 关闭历史记录模态框
                         setChatHistoryModal(false);
                         setChatHistoryAgent(null);
                         setChatHistoryList([]);
                         setChatHistoryPagination({ current: 1, pageSize: 10, total: 0 });
 
-                        // 打开聊天并加载历史记录
+                        // 重新获取最新的聊天记录数据，而不是使用缓存的chatLog
                         if (chatHistoryAgent && onOpenChat) {
-                          onOpenChat(chatHistoryAgent, chatLog);
+                          try {
+                            const freshChatLog = await call('getAgentChatLog', {
+                              agentName: chatHistoryAgent.config.name,
+                              chatLogKey: chatLog.key,
+                              workspacePath: workspace.path
+                            });
+                            onOpenChat(chatHistoryAgent, freshChatLog || chatLog);
+                          } catch (error) {
+                            console.error("Failed to get fresh chat log:", error);
+                            // 降级使用缓存的数据
+                            onOpenChat(chatHistoryAgent, chatLog);
+                          }
                         }
                       }}
                       actions={[
