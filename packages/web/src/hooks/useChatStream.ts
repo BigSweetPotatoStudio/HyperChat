@@ -155,6 +155,7 @@ export function useChatStream(params: ChatStreamParams) {
               completion_tokens: delta.usage.outputTokens || 0,
               total_tokens: delta.usage.totalTokens || 0,
             };
+            message.content_status = "success";
           }
         }
 
@@ -162,22 +163,22 @@ export function useChatStream(params: ChatStreamParams) {
       });
 
       // 处理消息完成事件
-      eventSource.addEventListener('chat_message_complete', (event) => {
-        // const data = JSON.parse(event.data);
+      // eventSource.addEventListener('chat_message_complete', (event) => {
+      //   // const data = JSON.parse(event.data);
 
-        // 找到最后一条助手消息并标记为完成
-        const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
+      //   // 找到最后一条助手消息并标记为完成
+      //   const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
 
-        if (lastAssistantIndex !== -1) {
-          stateRef.current.messages[lastAssistantIndex] = {
-            ...stateRef.current.messages[lastAssistantIndex],
-            content_status: 'success',
-          };
-        }
+      //   if (lastAssistantIndex !== -1) {
+      //     stateRef.current.messages[lastAssistantIndex] = {
+      //       ...stateRef.current.messages[lastAssistantIndex],
+      //       content_status: 'success',
+      //     };
+      //   }
 
-        stateRef.current.loading = false;
-        useForceUpdate();
-      });
+      //   stateRef.current.loading = false;
+      //   useForceUpdate();
+      // });
 
       // 处理token使用信息事件
       eventSource.addEventListener('token_usage_update', (event) => {

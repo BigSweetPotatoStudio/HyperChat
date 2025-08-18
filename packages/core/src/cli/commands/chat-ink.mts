@@ -240,8 +240,8 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
           workspaceInfo,
           effectiveConfig,
           initialMessage
-        })
-      );
+        }), {
+      });
 
       await waitUntilExit();
       return;

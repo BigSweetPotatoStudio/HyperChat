@@ -169,7 +169,7 @@ ${prompt || ''}`;
       try {
         const content = fs.readFileSync(this.configPath, "utf-8");
         const parsed = this.parseAgentConfig(content);
-        
+
         // 合并配置
         this.config = { ...this.config, ...parsed.config };
 
@@ -191,8 +191,10 @@ ${prompt || ''}`;
    * 解析 Agent 配置文件（支持 YAML Front Matter + Markdown 格式）
    */
   private parseAgentConfig(content: string): { config: Partial<AgentConfig>; prompt: string } {
+    content = content.replace(/\r\n/g, '\n');
+
     const trimmedContent = content.trim();
-    
+
     // 检查是否是新的 YAML Front Matter + Markdown 格式
     if (trimmedContent.startsWith('---')) {
       const frontMatterEnd = trimmedContent.indexOf('\n---\n', 3);
@@ -200,7 +202,7 @@ ${prompt || ''}`;
         // 新格式：YAML Front Matter + Markdown
         const frontMatter = trimmedContent.substring(3, frontMatterEnd);
         const markdownContent = trimmedContent.substring(frontMatterEnd + 5).trim();
-        
+
         try {
           const config = yaml.load(frontMatter) as Partial<AgentConfig>;
           return {
@@ -213,7 +215,7 @@ ${prompt || ''}`;
         }
       }
     }
-    
+
     // 旧格式：纯 YAML（向后兼容）
     try {
       const config = yaml.load(trimmedContent) as AgentConfig;
@@ -251,16 +253,16 @@ ${prompt || ''}`;
   private generateAgentConfigContent(): string {
     // 分离 prompt 和其他配置
     const { prompt, ...configWithoutPrompt } = this.config;
-    
+
     // 生成 YAML Front Matter
     const frontMatter = yaml.dump(configWithoutPrompt, { indent: 2 });
-    
+
     // 生成完整内容
     const content = `---
 ${frontMatter}---
 
 ${prompt || ''}`;
-    
+
     return content;
   }
 
@@ -711,10 +713,10 @@ ${prompt || ''}`;
     if (!this.commandManager) {
       return null;
     }
-    
+
     // 确保命令已加载
     await this.commandManager.loadCommands();
-    
+
     return this.commandManager.executeCommand(commandName, args);
   }
 
@@ -734,14 +736,14 @@ ${prompt || ''}`;
   static async createAgent(agentPath: string, config: AgentConfig): Promise<AgentInstance> {
     // 确保目录存在
     await fs.promises.mkdir(agentPath, { recursive: true });
-    
+
     // 创建 Agent 实例
     const agent = new AgentInstance(agentPath, config);
-    
+
     // 初始化并保存配置
     await agent.init();
     await agent.saveConfig();
-    
+
     // 创建默认记忆文件
     const memoryPath = path.join(agentPath, 'memory.md');
     if (!fs.existsSync(memoryPath)) {
@@ -756,18 +758,18 @@ ${config.prompt || 'This is an AI assistant created by HyperChat.'}
 
 ---
 *This memory was automatically created by HyperChat.*`;
-      
+
       await fs.promises.writeFile(memoryPath, defaultMemory, 'utf-8');
     }
-    
+
     // 创建聊天记录目录
     const chatLogsDir = path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS);
     await fs.promises.mkdir(chatLogsDir, { recursive: true });
-    
+
     // 创建子Agent目录
     const subAgentsDir = path.join(agentPath, 'sub_agents');
     await fs.promises.mkdir(subAgentsDir, { recursive: true });
-    
+
     return agent;
   }
 }

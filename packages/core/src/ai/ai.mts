@@ -6,7 +6,7 @@ import type { KnownProvider } from "@dadigua/hyperchat-shared";
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { LanguageModel, StreamTextResult, ToolChoice, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
-import { generateObject, streamObject, jsonSchema, smoothStream, streamText, tool } from 'ai';
+import { generateObject, streamObject, jsonSchema, smoothStream, streamText, generateText, tool } from 'ai';
 import { z, ZodSchema } from "zod";
 // 兼容旧版本的 zod
 if (typeof globalThis !== 'undefined') {
@@ -220,6 +220,7 @@ export class AiChannel {
       chatKey?: string; // 聊天 Key
       userMessage?: MyMessage; // 用户消息
       agentInstance: AgentInstance; // Agent实例，用于获取MCP工具（必填）
+      stream?: boolean; // 是否使用流式输出，默认为true
     } & BaseAIConfig,
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
     context: { step: number } = { step: 0 },
@@ -312,27 +313,98 @@ export class AiChannel {
     try {
       let aiOptions = await this.getAIOptions(params.modelKey, params.agentInstance);
       if (!aiOptions || !aiOptions.model) throw new Error('AI model not initialized');
-      let newOptions: Parameters<typeof streamText>[0] = {
+
+      // 默认stream为true
+      const useStream = params.stream !== false;
+
+      let baseOptions = {
         ...options,
         model: aiOptions.model,
         temperature: params.temperature,
         maxOutputTokens: params.maxTokens,
       }
-      const result = await streamText({
-        ...newOptions,
-        experimental_transform: smoothStream({
-          delayInMs: 200, // 增加延迟，使流式显示更明显
-          chunking: 'word', // 按单词分块，更细致的流式效果
-        }),
-        abortSignal: this.abortController.signal,
-      });
-      this.messages.push(newMessage);
-      newMessage.content_status = "dataLoading";
 
-      let toolIndex = 0;
-      for await (const delta of result.fullStream) {
-        // console.log("delta", delta);
-        if (delta.type == "error") {
+      if (useStream) {
+        // 流式模式 - 使用 streamText
+        const result = await streamText({
+          ...baseOptions,
+          experimental_transform: smoothStream({
+            delayInMs: 500, // 增加延迟，使流式显示更明显
+            chunking: 'line', // 按单词分块，更细致的流式效果
+          }),
+          abortSignal: this.abortController.signal,
+        });
+        this.messages.push(newMessage);
+        newMessage.content_status = "dataLoading";
+
+        let toolIndex = 0;
+        for await (const delta of result.fullStream) {
+          // console.log("delta", delta);
+          newMessage.content_date = Date.now();
+          if (delta.type == "error") {
+            if (params.sseWriter) {
+              params.sseWriter.write({
+                type: "chat_message_update",
+                data: {
+                  messageId: messageId,
+                  delta: delta,
+                },
+              });
+            }
+            throw delta.error;
+          }
+          if (delta.type == "text-delta") {
+            newMessage.content += (delta.text || "");
+          }
+          if (delta.type == "reasoning-delta") {
+            // Logger.debug("reasoning", delta);
+            newMessage.reasoning_content += (delta.text || "");
+          }
+          if (delta.type == "tool-call") {
+            newMessage.content_tool_calls = newMessage.content_tool_calls || [];
+            let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools).find(
+              (t) => t.name === delta.toolName
+            );
+            if (!localTool) {
+              Logger.warn(`Tool ${delta.toolName} not found in MCP tools.`);
+              continue;
+            }
+            let hypertool = {
+              index: toolIndex++,
+              id: delta.toolCallId,
+              type: "function" as const,
+              function: {
+                name: delta.toolName,
+                args: delta.input || {},
+              },
+              originalName: localTool.originalName,
+              displayName: localTool.displayName,
+            };
+            (delta as typeof delta & { hypertool: typeof hypertool }).hypertool = hypertool;
+            newMessage.content_tool_calls.push(hypertool);
+          }
+          if (delta.type == "finish-step") {
+            newMessage.content_status = "success";
+            if (delta.usage) {
+              newMessage.content_usage = {
+                prompt_tokens: delta.usage.inputTokens || 0,
+                completion_tokens: delta.usage.outputTokens || 0,
+                total_tokens: delta.usage.totalTokens || 0,
+              }
+            }
+          }
+          // 更新并发送token使用信息
+          this.updateTokenUsage(params);
+          if (params.sseWriter && this.tokenUsage) {
+            params.sseWriter.write({
+              type: 'token_usage_update',
+              data: {
+                tokenUsage: this.tokenUsage
+              }
+            });
+          }
+          params.onUpdate && params.onUpdate();
+          // 发送 delta 更新
           if (params.sseWriter) {
             params.sseWriter.write({
               type: "chat_message_update",
@@ -342,63 +414,95 @@ export class AiChannel {
               },
             });
           }
-          throw delta.error;
+
         }
-        if (delta.type == "text-delta") {
-          newMessage.content += (delta.text || "");
-          newMessage.content_date = Date.now();
+      } else {
+        // 非流式模式 - 使用 generateText
+        // 创建专门的generateText选项，去除不兼容的属性
+        const { onStepFinish, ...generateOptions } = baseOptions;
+        const result = await generateText({
+          ...generateOptions,
+          abortSignal: this.abortController.signal,
+        });
+
+        this.messages.push(newMessage);
+
+        // 设置内容
+        newMessage.content = result.text;
+        newMessage.content_date = Date.now();
+
+        // 设置推理内容
+        if (result.reasoning) {
+          newMessage.reasoning_content = Array.isArray(result.reasoning)
+            ? result.reasoning.map(r => r.text).join('')
+            : result.reasoning;
         }
-        if (delta.type == "reasoning-delta") {
-          // Logger.debug("reasoning", delta);
-          newMessage.reasoning_content += (delta.text || "");
-          newMessage.content_date = Date.now();
-        }
-        if (delta.type == "tool-call") {
-          newMessage.content_tool_calls = newMessage.content_tool_calls || [];
-          let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools).find(
-            (t) => t.name === delta.toolName
-          );
-          if (!localTool) {
-            Logger.warn(`Tool ${delta.toolName} not found in MCP tools.`);
-            continue;
-          }
-          let hypertool = {
-            index: toolIndex++,
-            id: delta.toolCallId,
-            type: "function" as const,
-            function: {
-              name: delta.toolName,
-              args: delta.input || {},
-            },
-            originalName: localTool.originalName,
-            displayName: localTool.displayName,
-          };
-          (delta as typeof delta & { hypertool: typeof hypertool }).hypertool = hypertool;
-          newMessage.content_tool_calls.push(hypertool);
-        }
-        if (delta.type == "finish-step") {
-          if (delta.usage) {
-            newMessage.content_usage = {
-              prompt_tokens: delta.usage.inputTokens || 0,
-              completion_tokens: delta.usage.outputTokens || 0,
-              total_tokens: delta.usage.totalTokens || 0,
+
+        // 处理工具调用
+        if (result.toolCalls && result.toolCalls.length > 0) {
+          newMessage.content_tool_calls = [];
+          let toolIndex = 0;
+
+          for (const toolCall of result.toolCalls) {
+            let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools).find(
+              (t) => t.name === toolCall.toolName
+            );
+            if (!localTool) {
+              Logger.warn(`Tool ${toolCall.toolName} not found in MCP tools.`);
+              continue;
             }
+
+            let hypertool = {
+              index: toolIndex++,
+              id: toolCall.toolCallId,
+              type: "function" as const,
+              function: {
+                name: toolCall.toolName,
+                args: toolCall.input || {},
+              },
+              originalName: localTool.originalName,
+              displayName: localTool.displayName,
+            };
+            newMessage.content_tool_calls.push(hypertool);
           }
+        }
+
+        // 设置使用统计
+        if (result.usage) {
+          const usage = result.usage;
+          newMessage.content_usage = {
+            prompt_tokens: usage.inputTokens || 0,
+            completion_tokens: usage.outputTokens || 0,
+            total_tokens: usage.totalTokens || 0,
+          }
+        }
+
+        newMessage.content_status = "success";
+
+        // 更新并发送token使用信息
+        this.updateTokenUsage(params);
+        if (params.sseWriter && this.tokenUsage) {
+          params.sseWriter.write({
+            type: 'token_usage_update',
+            data: {
+              tokenUsage: this.tokenUsage
+            }
+          });
         }
         params.onUpdate && params.onUpdate();
-        // 发送 delta 更新
+        // 发送完整消息更新
         if (params.sseWriter) {
           params.sseWriter.write({
-            type: "chat_message_update",
+            type: "chat_message_replace",
             data: {
               messageId: messageId,
-              delta: delta,
+              message: newMessage,
             },
           });
         }
       }
 
-      params.onUpdate && params.onUpdate();
+
 
     } catch (e) {
       this.lastMessage.content_status = "error";
@@ -416,31 +520,18 @@ export class AiChannel {
       params.onUpdate && params.onUpdate();
       throw e;
     }
-    this.lastMessage.content_status = "success";
-    this.lastMessage.content_date = Date.now();
 
     // 发送聊天完成事件
-    if (params.sseWriter) {
-      params.sseWriter.write({
-        type: "chat_message_complete",
-        data: {
-          // result: this.lastMessage.content,
-        },
-      });
-    }
+    // if (params.sseWriter) {
+    //   params.sseWriter.write({
+    //     type: "chat_message_complete",
+    //     data: {
+    //       // result: this.lastMessage.content,
+    //     },
+    //   });
+    // }
 
-    // 更新并发送token使用信息
-    this.updateTokenUsage(params);
-    if (params.sseWriter && this.tokenUsage) {
-      params.sseWriter.write({
-        type: 'token_usage_update',
-        data: {
-          tokenUsage: this.tokenUsage
-        }
-      });
-    }
 
-    params.onUpdate && params.onUpdate();
 
     // if (this.options.toolMode == "compatible" && (this.lastMessage.content.toString()).includes("<tool_use>")) {
     //   let res = extractTool(this.lastMessage.content.toString());
@@ -459,7 +550,7 @@ export class AiChannel {
     //   }
     // }
 
-    params.onUpdate && params.onUpdate();
+    // params.onUpdate && params.onUpdate();
     // console.log("tool_calls", tool_calls, call_tool);
     if (newMessage.content_tool_calls && newMessage.content_tool_calls.length > 0) {
       for (let tool of newMessage.content_tool_calls) {

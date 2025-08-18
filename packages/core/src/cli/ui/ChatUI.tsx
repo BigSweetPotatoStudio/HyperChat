@@ -481,6 +481,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
         prompt: systemPrompt,
         maxContextTokens: effectiveConfig.maxContextTokens || 4000,
         agentInstance: agent, // 直接传递AgentInstance对象
+        stream: false, // 在 ink 模式下使用非流式输出
         onUpdate: async () => {
           // 强制刷新UI显示
           forceRefresh();
