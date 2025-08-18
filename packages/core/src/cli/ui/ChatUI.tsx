@@ -141,12 +141,12 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
         const commands = await agent.getCommands();
         const formattedCommands: Command[] = commands.map(cmd => ({
           command: `/${cmd.name}`,
-          description: cmd.content.split('\n')[0].substring(0, 50),
+          description: cmd.content.split('\n')[0].trim().substring(0, 40),
           isAgentCommand: true
         }));
         setAgentCommands(formattedCommands);
       } catch (error) {
-        // 静默处理错误
+        // 静默处理错误 - agent 命令是可选功能
       }
     };
     loadAgentCommands();

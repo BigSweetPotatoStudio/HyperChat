@@ -161,7 +161,7 @@
     "de": "Anbieter hinzufügen"
   },
   "Agent": {
-    "zh": "代理",
+    "zh": "agent",
     "ja": "エージェント",
     "ko": "에이전트",
     "fr": "Agent",
@@ -210,7 +210,7 @@
     "de": "Agent erfolgreich aktualisiert"
   },
   "Agents": {
-    "zh": "代理",
+    "zh": "agent",
     "ja": "エージェント",
     "ko": "에이전트",
     "fr": "Agents",
@@ -3745,7 +3745,7 @@
     "de": "Verwendung: hyperchat agent create <name>"
   },
   "Usage: hyperchat agent delete <name>": {
-    "zh": "用法: hyperchat 代理 删除 <名称>",
+    "zh": "用法: hyperchat agent 删除 <名称>",
     "ja": "使用法: hyperchat agent delete <name>",
     "ko": "사용법: hyperchat 에이전트 삭제 <이름>",
     "fr": "Utilisation: hyperchat agent supprimer <nom>",
@@ -4340,7 +4340,7 @@
     "de": "Fehler beim Herunterfahren des Dienstes:"
   },
   "Error: Agent": {
-    "zh": "错误: 代理",
+    "zh": "错误: agent",
     "ja": "エラー: エージェント",
     "ko": "오류: 에이전트",
     "fr": "Erreur : Agent",
@@ -4760,7 +4760,7 @@
     "de": "Arbeitsbereich:"
   },
   "agents": {
-    "zh": "代理",
+    "zh": "agent",
     "ja": "エージェント",
     "ko": "에이전트",
     "fr": "agents",

@@ -239,8 +239,9 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
         type: 'command' as SuggestionType,
         displayText: cmd.command,
         value: cmd.command,
-        description: cmd.description
-      }));
+        description: cmd.description,
+        isAgentCommand: cmd.isAgentCommand || false
+      } as any));
       
       setSuggestions(suggestions);
       setCurrentSuggestionType('command');
@@ -250,7 +251,7 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
       setShowSuggestions(false);
       setSuggestions([]);
     }
-  }, [availableCommands]);
+  }, [availableCommands, agentCommands]);
   
   // 候选框导航
   const navigateSuggestions = useCallback((direction: 'up' | 'down') => {
@@ -473,6 +474,8 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
           marginTop={0}
           paddingX={1}
           flexDirection="column"
+          width="100%"
+          minWidth={60}
         >
           <Text color="cyan" bold>
             {currentSuggestionType === 'command' ? 
@@ -480,31 +483,60 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
               '📁 ' + t`File path suggestions:` + (currentAtSymbolInfo ? ` @${currentAtSymbolInfo.pathPart}` : '')
             }
           </Text>
-          {suggestions.map((suggestion, index) => (
-            <Box key={`${suggestion.type}-${suggestion.value}-${index}`} marginY={0}>
-              <Text 
-                color={index === suggestionIndex ? "black" : "white"}
-                backgroundColor={index === suggestionIndex ? "cyan" : undefined}
-                bold={index === suggestionIndex}
-              >
-                {index === suggestionIndex ? '► ' : '  '}
-                {suggestion.displayText}
-                {suggestion.description && (
-                  <Text color={index === suggestionIndex ? "black" : "gray"}>
-                    {' '}- {suggestion.description}
-                  </Text>
-                )}
-                {(suggestion as any).isAgentCommand && (
-                  <Text color="yellow"> [Agent]</Text>
-                )}
-              </Text>
-            </Box>
-          ))}
-          <Text color="gray" dimColor>
-            💡 {currentSuggestionType === 'command' 
-              ? t`Use ↑↓ to navigate, Tab/Enter to select with space, Esc to close`
-              : t`Use ↑↓ to navigate, Tab/Enter to select file/folder, Esc to close`
+          {suggestions.map((suggestion, index) => {
+            const isSelected = index === suggestionIndex;
+            const command = suggestion.displayText || '';
+            const desc = suggestion.description || '';
+            const isAgent = (suggestion as any).isAgentCommand || false;
+            
+            // 构建显示文本 - 分段处理
+            const prefix = isSelected ? '► ' : '  ';
+            const mainText = `${prefix}${command}`;
+            const descText = desc ? ` - ${desc}` : '';
+            const agentText = isAgent ? ' [Agent]' : '';
+            
+            // 计算可用长度，为框架留出空间
+            const maxLength = 95;
+            let displayText = mainText;
+            let remainingLength = maxLength - displayText.length;
+            
+            // 添加描述（如果有空间）
+            if (descText && remainingLength > descText.length) {
+              displayText += descText;
+              remainingLength -= descText.length;
+            } else if (descText && remainingLength > 10) {
+              // 截断描述
+              const truncatedDesc = descText.substring(0, remainingLength - 6) + '...';
+              displayText += truncatedDesc;
+              remainingLength = 0;
             }
+            
+            // 添加 Agent 标签（如果有空间）
+            if (agentText && remainingLength >= agentText.length) {
+              displayText += agentText;
+            }
+            
+            return (
+              <Box key={`${suggestion.type}-${suggestion.value}-${index}`}>
+                <Text 
+                  color={isSelected ? "black" : "greenBright"}
+                  backgroundColor={isSelected ? "cyan" : undefined}
+                  bold={isSelected}
+                >
+                  {displayText}
+                </Text>
+              </Box>
+            );
+          })}
+          <Text color="magenta">
+            {(() => {
+              const helpText = currentSuggestionType === 'command' 
+                ? `💡 ${t`Use ↑↓ to navigate, Tab/Enter to select with space, Esc to close`}`
+                : `💡 ${t`Use ↑↓ to navigate, Tab/Enter to select file/folder, Esc to close`}`;
+              
+              // 限制帮助文本长度
+              return helpText.length > 80 ? helpText.substring(0, 77) + '...' : helpText;
+            })()}
           </Text>
         </Box>
       )}
