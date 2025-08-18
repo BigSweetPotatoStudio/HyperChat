@@ -763,7 +763,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, lo
               <>
                 <Text>📍 {t`Workspace:`} {workspaceInfo.path}</Text>
                 {workspaceInfo.currentAgent && (
-                  <Text>🌐 {t`Current Agent:`} {workspaceInfo.currentAgent}</Text>
+                  <Text>🌐 {t`Current Agent:`} {workspaceInfo.currentAgent} <Text color="gray">({agent.getAgentPath()})</Text></Text>
                 )}
                 {workspaceInfo.currentModel && (
                   <Text>🤖 {t`Model:`} {workspaceInfo.currentModel}</Text>

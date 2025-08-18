@@ -62,12 +62,12 @@ replacePathAliases();
  */
 function replacePathAliases() {
   const sharedPackageName = '@dadigua/hyperchat-shared';
-  
+
   // 检查shared包的输出文件类型
   const sharedIndexPath = join(distDir, 'shared', 'src', 'index.mjs');
   const sharedIndexJsPath = join(distDir, 'shared', 'src', 'index.js');
   const sharedIndexDtsPath = join(distDir, 'shared', 'src', 'index.d.ts');
-  
+
   let sharedPackagePath;
   let sharedDtsPath;
   if (existsSync(sharedIndexPath)) {
@@ -80,53 +80,55 @@ function replacePathAliases() {
     console.warn('警告: 找不到shared包的index文件');
     return;
   }
-  
+
   // 查找所有.mjs和.d.ts文件
   const mjsFiles = findFiles(distDir, '.mjs');
   const dtsFiles = findFiles(distDir, '.d.ts');
   const dmtsFiles = findFiles(distDir, '.d.mts');
-  
+
   const allFiles = [...mjsFiles, ...dtsFiles, ...dmtsFiles];
-  
+
   console.log(`找到 ${allFiles.length} 个文件需要处理 (.mjs: ${mjsFiles.length}, .d.ts: ${dtsFiles.length}, .d.mts: ${dmtsFiles.length})`);
-  
+
   allFiles.forEach(filePath => {
     try {
       let content = readFileSync(filePath, 'utf8');
-      
+
       // 检查是否包含需要替换的别名
       if (content.includes(sharedPackageName)) {
         // 计算相对路径
         const fileDir = dirname(filePath);
         const isTypeDeclaration = filePath.endsWith('.d.ts') || filePath.endsWith('.d.mts');
-        
+
         let targetPath;
         if (isTypeDeclaration) {
           targetPath = join(distDir, 'shared', 'src', sharedDtsPath);
         } else {
           targetPath = join(distDir, 'shared', 'src', sharedPackagePath);
         }
-        
-        const relativePath = relative(fileDir, targetPath);
-        
+
+        let relativePath = relative(fileDir, targetPath);
+        // 修复Windows路径：将反斜杠替换为正斜杠
+        relativePath = relativePath.replace(/\\/g, '/');
+
         // 确保路径格式正确（使用./开头）
         const normalizedRelativePath = relativePath.startsWith('.') ? relativePath : './' + relativePath;
-        
+
         // 替换所有引用（支持import type和import语句）
         const originalContent = content;
-        
+
         // 替换import type引用
         content = content.replace(
           new RegExp(`from\s+['"]${sharedPackageName}['"]`, 'g'),
           `from '${normalizedRelativePath}'`
         );
-        
+
         // 替换import引用（确保不重复替换）
         content = content.replace(
           new RegExp(`['"]${sharedPackageName}['"]`, 'g'),
           `'${normalizedRelativePath}'`
         );
-        
+
         if (content !== originalContent) {
           writeFileSync(filePath, content, 'utf8');
           console.log(`已更新: ${filePath} -> ${normalizedRelativePath}`);
@@ -143,15 +145,15 @@ function replacePathAliases() {
  */
 function findFiles(dir, extension) {
   const files = [];
-  
+
   function traverse(currentDir) {
     if (!existsSync(currentDir)) return;
-    
+
     const items = readdirSync(currentDir, { withFileTypes: true });
-    
+
     items.forEach(item => {
       const fullPath = join(currentDir, item.name);
-      
+
       if (item.isDirectory()) {
         traverse(fullPath);
       } else if (item.name.endsWith(extension)) {
@@ -159,7 +161,7 @@ function findFiles(dir, extension) {
       }
     });
   }
-  
+
   traverse(dir);
   return files;
 }
