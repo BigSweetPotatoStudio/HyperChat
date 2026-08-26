@@ -1,5 +1,12 @@
 [中文](README.zh.md) | [English](README.md)
 
+> [!WARNING]
+> **Project status: No longer maintained / 项目状态：已停止维护**
+>
+> HyperChat is no longer maintained. No new features, bug fixes, or technical support will be provided. This repository remains available as a historical archive.
+>
+> HyperChat 已停止维护，不再提供功能更新、问题修复或技术支持。本仓库仅作为历史归档保留。
+
 
 ## Introduction
 
@@ -23,7 +30,7 @@ HyperChat is an open-source Chat client that supports MCP and can use APIs from 
 - [x] Command line run, `npx -y @dadigua/hyper-chat`, default port 16100, password 123456, Web access http://localhost:16100/123456/
 - [x] Docker 
     * Command line version `docker pull dadigua/hyperchat-mini:latest`
-    * Ubuntu desktop + Chrome + BrowserUse version (**coming soon**)
+    * Ubuntu desktop + Chrome + BrowserUse version (**not released**)
 - [x] `WebDAV` supports incremental sync
 - [x] Added `HyperPrompt` prompt syntax, supports variables (text + js code variables), basic syntax checking + hover real-time preview.
 - [x] `MCP` extension
