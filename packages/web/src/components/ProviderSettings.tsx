@@ -150,6 +150,7 @@ const ProviderIcon: React.FC<{ iconType: string; className?: string }> = ({ icon
   const iconMap: Record<string, { bg: string; text: string; content: string }> = {
     openai: { bg: 'bg-[#1a1a1a]', text: 'text-white', content: 'O' },
     anthropic: { bg: 'bg-[#D2691E]', text: 'text-white', content: 'A' },
+    'api-route': { bg: 'bg-[#10b981]', text: 'text-white', content: 'R' },
     openrouter: { bg: 'bg-[#5d5fef]', text: 'text-white', content: 'O' },
     gemini: { bg: 'bg-[#4285f4]', text: 'text-white', content: 'G' },
     qwen: { bg: 'bg-[#ff6a00]', text: 'text-white', content: 'Q' },
@@ -304,6 +305,7 @@ export function ProviderSettings() {
       { key: 'anthropic', label: 'Anthropic', baseURL: 'https://api.anthropic.com/v1', icon: 'anthropic', description: 'Claude models', hasApiKey: true, isBuiltIn: true },
       { key: 'gemini', label: 'Google Gemini', baseURL: 'https://generativelanguage.googleapis.com/v1beta', icon: 'gemini', description: 'Google Gemini models', hasApiKey: true, isBuiltIn: true },
       { key: '302', label: '302.AI', baseURL: 'https://api.302.ai/v1', icon: '302', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
+      { key: 'api-route', label: 'API Route', baseURL: 'https://global.api-route.com/v1', icon: 'api-route', description: 'OpenAI-compatible AI gateway', hasApiKey: true, isBuiltIn: true },
       { key: 'openrouter', label: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', icon: 'openrouter', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
       { key: 'qwen', label: 'Qwen', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', icon: 'qwen', description: 'Alibaba Qwen models', hasApiKey: true, isBuiltIn: true },
       { key: 'deepseek', label: 'DeepSeek', baseURL: 'https://api.deepseek.com', icon: 'deepseek', description: 'DeepSeek models', hasApiKey: true, isBuiltIn: true },
