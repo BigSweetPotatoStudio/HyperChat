@@ -6,6 +6,7 @@ export const KnownProviderSchema = z.enum([
   "anthropic",
   "gemini",
   "302",
+  "api-route",
   "openrouter",
   "qwen",
   "deepseek",
