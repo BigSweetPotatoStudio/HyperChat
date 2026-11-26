@@ -154,8 +154,12 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         ...(effectiveConfig.temperature !== undefined ? { temperature: effectiveConfig.temperature } : {}),
         ...(effectiveConfig.maxTokens !== undefined ? { max_tokens: effectiveConfig.maxTokens } : {}),
       }
-    ).then(async () => {
-      // 完成后保存聊天记录
+    ).then(() => {
+      // 只在整个聊天轮次结束后通知客户端，包括后续工具调用和模型回复。
+      sseWriter?.write({
+        type: 'chat_message_complete',
+        data: { sessionId },
+      });
     }).catch(async (error) => {
       Logger.error("Chat completion error:", error);
     });
