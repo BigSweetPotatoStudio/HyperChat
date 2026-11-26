@@ -99,7 +99,6 @@ export function useChatStream(params: ChatStreamParams) {
           stateRef.current.messages.push(data.message);
         }
 
-        stateRef.current.loading = data.message.role === 'assistant';
         stateRef.current.error = null;
 
         useForceUpdate();
@@ -162,23 +161,15 @@ export function useChatStream(params: ChatStreamParams) {
         useForceUpdate();
       });
 
-      // 处理消息完成事件
-      // eventSource.addEventListener('chat_message_complete', (event) => {
-      //   // const data = JSON.parse(event.data);
+      // 只有整个聊天轮次完成后才结束加载，单步完成和工具消息都不是终点。
+      eventSource.addEventListener('chat_message_complete', () => {
+        if (eventSourceRef.current !== eventSource) {
+          return;
+        }
 
-      //   // 找到最后一条助手消息并标记为完成
-      //   const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
-
-      //   if (lastAssistantIndex !== -1) {
-      //     stateRef.current.messages[lastAssistantIndex] = {
-      //       ...stateRef.current.messages[lastAssistantIndex],
-      //       content_status: 'success',
-      //     };
-      //   }
-
-      //   stateRef.current.loading = false;
-      //   useForceUpdate();
-      // });
+        stateRef.current.loading = false;
+        useForceUpdate();
+      });
 
       // 处理token使用信息事件
       eventSource.addEventListener('token_usage_update', (event) => {
